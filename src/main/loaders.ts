@@ -135,6 +135,20 @@ function runProcess(
 }
 
 // 로더 서버를 폴더에 설치한다. (바닐라 server.jar는 이미 받아 둔 상태)
+// 버전을 바꿀 때 쓰는 받기: 같은 이름의 예전 파일이 있어도 새로 받아서 바꿔 끼운다.
+// (downloadFile은 파일이 이미 있고 확인할 해시가 없으면 받지 않아서, 예전 버전 파일이 그대로 남았다)
+// 새 파일을 옆에 다 받은 다음 바꾸므로, 받다가 실패해도 예전 파일은 그대로 남는다
+async function downloadReplacing(task: Parameters<typeof downloadFile>[0]): Promise<void> {
+  const tmp = task.dest + '.new'
+  fs.rmSync(tmp, { force: true })
+  try {
+    await downloadFile({ ...task, dest: tmp })
+    fs.renameSync(tmp, task.dest)
+  } finally {
+    fs.rmSync(tmp, { force: true })
+  }
+}
+
 export async function installLoader(
   loader: Loader,
   mcVersion: string,
@@ -151,7 +165,7 @@ export async function installLoader(
     if (!dl) throw new Error(`Paper 빌드 ${loaderVersion}을(를) 찾지 못했어요.`)
     const msg = 'Paper 서버 파일을 받고 있어요'
     report(msg, 'loader')
-    await downloadFile({
+    await downloadReplacing({
       url: dl.url,
       dest: path.join(dir, 'server.jar'),
       sha256: dl.checksums?.sha256, // Paper가 주는 SHA-256으로 손상 여부를 확인한다
@@ -163,7 +177,7 @@ export async function installLoader(
   if (loader === 'purpur') {
     const msg = 'Purpur 서버 파일을 받고 있어요'
     report(msg, 'loader')
-    await downloadFile({
+    await downloadReplacing({
       onBytes: (d, t) => report(msg, 'loader', d, t),
       url: `${PURPUR_API}/${encodeURIComponent(mcVersion)}/${encodeURIComponent(loaderVersion)}/download`,
       dest: path.join(dir, 'server.jar')
@@ -177,7 +191,7 @@ export async function installLoader(
     const installers = (await json<{ version: string; stable: boolean }[]>(`${FABRIC_META}/installer`)) ?? []
     const installer = (installers.find((i) => i.stable) ?? installers[0])?.version
     if (!installer) throw new Error('Fabric 설치 프로그램 정보를 찾지 못했어요.')
-    await downloadFile({
+    await downloadReplacing({
       url: `${FABRIC_META}/loader/${mcVersion}/${loaderVersion}/${installer}/server/jar`,
       dest: path.join(dir, 'fabric-server-launch.jar')
     })
