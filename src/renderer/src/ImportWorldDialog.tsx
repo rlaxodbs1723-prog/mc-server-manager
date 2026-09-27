@@ -137,9 +137,14 @@ function MapBrowser({ serverVersion, onPick }: { serverVersion: string; onPick: 
         setTotal(res.total)
         setHits((prev) => (offset ? [...prev, ...res.hits] : res.hits))
       } catch (e) {
+        if (my !== seq.current) return
         setError(cleanError(e))
+        if (!offset) {
+          setHits([]) // 새로 찾다 실패하면 이전 결과를 남기지 않는다
+          setTotal(0)
+        }
       } finally {
-        setLoading(false)
+        if (my === seq.current) setLoading(false)
       }
     },
     [sort]

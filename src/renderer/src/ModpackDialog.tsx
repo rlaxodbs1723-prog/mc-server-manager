@@ -253,7 +253,13 @@ function Browser({ onBack, onOpen, uploading, onPickFile, onDropFile }: BrowserP
         setMore(res.more)
         setHits((prev) => appendHits(offset ? prev : [], res.hits))
       } catch (e) {
-        if (my === seq.current) setError(cleanError(e))
+        if (my !== seq.current) return
+        setError(cleanError(e))
+        // 새로 찾다 실패하면 이전 결과(다른 사이트 결과일 수 있다)를 남기지 않는다
+        if (!offset) {
+          setHits([])
+          setMore(false)
+        }
       } finally {
         if (my === seq.current) setLoading(false)
       }
