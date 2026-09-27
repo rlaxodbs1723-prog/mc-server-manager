@@ -344,7 +344,13 @@ async function whileRunning(folder: string): Promise<void> {
     expect(threw, '이상한 이름을 막지 않았어요 (명령어 끼워 넣기)')
   })
   await check('게임 규칙: 목록 읽기 + 바꾸기', async () => {
-    const rules = await listGameRules(folder)
+    const rules = await listGameRules(folder).catch(async (e) => {
+      // 원인을 알 수 있게, 같은 명령을 보이게 보내서 서버가 뭐라고 답하는지 남긴다
+      const from = getLog(folder).length
+      sendCommand(folder, 'help gamerule')
+      await sleep(5000)
+      throw new Error(`${e.message}\n      서버 답(보이게 다시 물음): ${getLog(folder).slice(from, from + 4).join(' | ') || '(없음)'}`)
+    })
     const keep = rules.find((r) => /keep_?inventory/i.test(r.name))
     expect(rules.length > 20 && keep, `규칙을 못 읽었어요 (${rules.length}개)`)
     setGameRule(folder, keep!.name, 'true')

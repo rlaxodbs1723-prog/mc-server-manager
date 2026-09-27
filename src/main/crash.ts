@@ -59,6 +59,14 @@ const titleOf = (c: Ctx, id: string): string =>
 
 // 위에서부터 먼저 맞는 것을 쓴다. 구체적인 원인일수록 위에 둔다.
 const RULES: Rule[] = [
+  // 옛날(1.7 전) 방식의 플레이어 파일(players 폴더)이 든 맵: 서버가 켜질 때 바꾸려다 실패하고 멈춘다
+  (c) =>
+    has(c, /Could not convert file for|Conversion failed, please try again later/i) && {
+      title: '월드 안의 옛날 플레이어 파일을 바꾸지 못했어요',
+      cause: '이 월드에는 아주 옛날 방식으로 저장된 플레이어 파일(players 폴더)이 들어 있어요. 서버가 켜질 때 이것을 새 방식으로 바꾸려다 실패해서 멈췄어요. 받은 맵에서 자주 생겨요.',
+      fixes: ['서버 폴더 → 월드 폴더 안의 players 폴더를 지우고 다시 켜 보세요.'],
+      action: 'folder'
+    },
   // 월드 생성 설정이 없어도 서버가 "Failed to load datapacks"라고 찍어서, 데이터팩 규칙보다 먼저 본다
   (c) =>
     has(c, /Overworld settings missing|Unable to read or access the world gen settings file/i) && {

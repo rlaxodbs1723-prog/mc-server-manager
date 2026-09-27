@@ -129,7 +129,11 @@ export async function importWorld(folderPath: string, source: string, mcVersion?
   const staging = path.join(folderPath, '.importing-world')
   fs.rmSync(staging, { recursive: true, force: true })
   try {
-    await fs.promises.cp(src, staging, { recursive: true, filter: (p) => path.basename(p) !== 'session.lock' })
+    // 1.x 서버에서, 새 방식(playerdata)과 옛날 방식(players, 1.7 전)이 같이 든 월드는 옛날 것을 빼고 가져온다.
+    // 남겨 두면 서버가 켜질 때 옛날 파일을 바꾸려다 실패하고 멈춘다 (받은 맵에서 자주 생긴다). 26.x부터는 players가 새 방식이라 건드리지 않는다
+    const legacyPlayers =
+      /^1\./.test(mcVersion ?? '') && fs.existsSync(path.join(src, 'playerdata')) && fs.existsSync(path.join(src, 'players')) ? path.join(src, 'players') : null
+    await fs.promises.cp(src, staging, { recursive: true, filter: (p) => path.basename(p) !== 'session.lock' && p !== legacyPlayers })
   } catch (e) {
     fs.rmSync(staging, { recursive: true, force: true })
     throw e
