@@ -138,7 +138,8 @@ export async function createBackup(folderPath: string, auto = false, note?: stri
       })
     }
     fs.mkdirSync(dir, { recursive: true })
-    for (const w of worlds) await fs.promises.cp(path.join(folderPath, w), path.join(dir, w), { recursive: true })
+    // session.lock은 켜진 서버가 잠가 둬서 복사할 수 없고, 백업에 필요도 없다 (서버가 켜질 때 새로 만든다)
+    for (const w of worlds) await fs.promises.cp(path.join(folderPath, w), path.join(dir, w), { recursive: true, filter: (p) => path.basename(p) !== 'session.lock' })
     const item: BackupItem = { id, createdAt: now.getTime(), auto, sizeBytes: sizeOf(dir), worlds, ...(note && { note }) }
     fs.writeFileSync(path.join(dir, META), JSON.stringify(item, null, 2))
     if (auto) await pruneAuto(folderPath)

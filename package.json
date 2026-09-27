@@ -9,7 +9,9 @@
     "start": "electron-vite dev",
     "build": "electron-vite build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "dist": "electron-vite build && electron-builder --win"
+    "dist": "electron-vite build && electron-builder --win",
+    "test": "node tests/run.mjs",
+    "test:full": "node tests/run.mjs --full"
   },
   "dependencies": {
     "lucide-react": "^1.48.0",
