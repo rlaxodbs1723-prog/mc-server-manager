@@ -36,6 +36,7 @@ function setState(folderPath: string, state: ServerState): void {
 
 // 앱이 조용히 물어본 명령의 답을 가로챈다. true를 돌려주면 그 줄은 콘솔에 보이지 않는다.
 const interceptors = new Map<string, Set<(line: string) => boolean>>()
+const finishedFns = new WeakSet<(line: string) => boolean>() // 답을 다 받고 늦은 답만 숨기는 중인 것
 
 // 명령어를 콘솔에 보이지 않게 보내고, 답으로 온 줄을 모은다.
 // collect가 true를 돌려준 줄만 모으며, idleMs 동안 새 답이 없으면(또는 maxMs가 지나면) 끝낸다.
@@ -52,10 +53,14 @@ export function quietQuery(
     let idle: ReturnType<typeof setTimeout>
     const set = interceptors.get(folderPath) ?? new Set()
     interceptors.set(folderPath, set)
+    // 끝난 질문이 늦은 답을 숨기려고 남겨 둔 것은 치운다. 안 그러면 같은 질문을 곧바로 다시 할 때(예: 규칙을 바꾸고 목록 다시 읽기)
+    // 새 답까지 "늦게 온 답"으로 숨겨 버려서 아무 답도 못 받는다. 늦은 답은 이제 새 질문이 가로챈다
+    for (const f of set) if (finishedFns.has(f)) set.delete(f)
     let finished = false
     const done = (): void => {
       if (finished) return
       finished = true
+      finishedFns.add(fn)
       clearTimeout(idle)
       clearTimeout(max)
       resolve(lines)
