@@ -10,6 +10,7 @@ import { child, parseNbt } from './nbt'
 import { readProperties } from './properties'
 import { getState } from './runner'
 import { downloadMap } from './curseforge'
+import { getVersions } from './mojang'
 import { tempRoot, unpackWorld } from './worldzip'
 
 // 화면이 아무 경로나 보내지 못하게, 목록이나 폴더 고르기로 보여 준 월드만 가져올 수 있다
@@ -94,11 +95,28 @@ export async function prepareMap(modId: number, fileId: number, title: string, o
   }
 }
 
-export async function importWorld(folderPath: string, source: string): Promise<void> {
+// 새 버전에서 만든 월드는 예전 버전 서버에서 열리지 않는다 (마인크래프트는 월드를 예전 버전으로 되돌리지 못한다).
+// 가져오기 전에 막는다. 버전을 모르거나 목록에 없으면(인터넷 안 됨 등) 막지 않는다
+export async function assertWorldFits(source: string, mcVersion: string): Promise<void> {
+  const w = describe(path.resolve(source))?.version
+  if (!w || w === mcVersion) return
+  const list = await getVersions(true).catch(() => [])
+  const time = (id: string): number | undefined => {
+    const v = list.find((x) => x.id === id)
+    return v ? Date.parse(v.releaseTime) : undefined
+  }
+  const wt = time(w)
+  const st = time(mcVersion)
+  if (wt != null && st != null && wt > st)
+    throw new Error(`이 월드는 ${w}에서 만든 월드라 ${mcVersion} 서버에서는 열 수 없어요. 마인크래프트는 새 버전 월드를 예전 버전으로 열지 못해요. 서버 버전을 ${w} 이상으로 바꾼 뒤 가져와 주세요.`)
+}
+
+export async function importWorld(folderPath: string, source: string, mcVersion?: string): Promise<void> {
   if (getState(folderPath) !== 'stopped') throw new Error('서버를 끈 다음에 월드를 가져올 수 있어요.')
   const src = path.resolve(source)
   if (!offered.has(src)) throw new Error('목록에서 월드를 다시 골라 주세요.')
   if (!fs.existsSync(path.join(src, 'level.dat'))) throw new Error('월드 폴더가 아니에요 (level.dat이 없어요).')
+  if (mcVersion) await assertWorldFits(src, mcVersion)
   if (path.resolve(folderPath).startsWith(src + path.sep) || src.startsWith(path.resolve(folderPath) + path.sep))
     throw new Error('서버 안의 폴더는 가져올 수 없어요.')
 

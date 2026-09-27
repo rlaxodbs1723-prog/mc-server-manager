@@ -23,7 +23,8 @@ const OLD_VALUE = new RegExp(`${FROM_SERVER}([A-Za-z0-9_]+) = (\\S+)\\s*$`)
 const OLD_USAGE = new RegExp(`${FROM_SERVER}Usage: /gamerule`)
 
 export async function listGameRules(folderPath: string): Promise<GameRule[]> {
-  const help = await quietQuery(folderPath, ['help gamerule'], (l) => HELP_ONE.test(l) || HELP_ALL.test(l) || OLD_USAGE.test(l))
+  // 막 켜졌거나 모드가 많으면 서버가 바빠서 답이 몇 초 늦게 온다. 첫 답을 넉넉히 기다린다
+  const help = await quietQuery(folderPath, ['help gamerule'], (l) => HELP_ONE.test(l) || HELP_ALL.test(l) || OLD_USAGE.test(l), { firstMs: 8000, maxMs: 15000 })
   const names = new Set<string>()
   for (const line of help) {
     const one = HELP_ONE.exec(line)
@@ -40,7 +41,9 @@ export async function listGameRules(folderPath: string): Promise<GameRule[]> {
 
   const list = [...names]
   const answers = await quietQuery(folderPath, list.map((n) => `gamerule ${n}`), (l) => VALUE.test(l) || OLD_VALUE.test(l), {
-    idleMs: 700
+    idleMs: 700,
+    firstMs: 8000,
+    maxMs: 20000
   })
   const values = new Map<string, string>()
   for (const line of answers) {

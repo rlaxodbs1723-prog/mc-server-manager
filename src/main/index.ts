@@ -423,7 +423,7 @@ ipcMain.handle('prepareMap', (event, modId: number, fileId: number, title: strin
 ipcMain.handle('cancelMap', () => cancelTask('map-download'))
 ipcMain.handle('importWorld', (_event, folderPath: string, source: string) => {
   const target = checkServerFolder(folderPath)
-  return withLock(target, '월드 가져오기', () => importWorld(target, String(source)))
+  return withLock(target, '월드 가져오기', () => importWorld(target, String(source), readServerInfo(target).mcVersion))
 })
 ipcMain.handle('getWhitelist', (_event, folderPath: string) => whitelist.getWhitelist(checkServerFolder(folderPath)))
 ipcMain.handle('setWhitelistEnabled', (_event, folderPath: string, enabled: boolean) =>

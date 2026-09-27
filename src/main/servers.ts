@@ -24,7 +24,7 @@ import { getVersionMeta, type VersionMeta } from './mojang'
 import { startInvite } from './invite'
 import { autoBackupBeforeStart, backupRoot, createBackup, listBackups } from './backup'
 import { assertFree } from './lock'
-import { importWorld } from './worldimport'
+import { assertWorldFits, importWorld } from './worldimport'
 import { installModpack } from './modpack'
 import { getServerIcon } from './icon'
 import { notify } from './notify'
@@ -91,6 +91,7 @@ export async function createServer(
 ): Promise<ServerInfo> {
   if (!SOFTWARE_INFO[software]) throw new Error('지원하지 않는 서버 종류예요.')
   if (software !== 'vanilla' && !loaderVersion) throw new Error(`${SOFTWARE_INFO[software].label} 버전을 골라 주세요.`)
+  if (importWorldFrom) await assertWorldFits(importWorldFrom, mcVersion) // 폴더를 만들기 전에 막는다
   const folderPath = freeFolder(name)
 
   report({ message: '버전 정보를 확인하고 있어요', phase: 'meta' })
@@ -153,7 +154,7 @@ export async function createServer(
   if (Object.keys(chosen).length) writeProperties(folderPath, chosen)
   if (importWorldFrom) {
     report({ message: '싱글플레이 월드를 복사하고 있어요' })
-    await importWorld(folderPath, importWorldFrom)
+    await importWorld(folderPath, importWorldFrom, mcVersion)
   }
   fs.rmSync(path.join(folderPath, CREATING_FILE), { force: true })
   report({ message: '완료' })

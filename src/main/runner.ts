@@ -43,7 +43,7 @@ export function quietQuery(
   folderPath: string,
   commands: string[],
   collect: (line: string) => boolean,
-  { idleMs = 500, maxMs = 8000 } = {}
+  { idleMs = 500, maxMs = 8000, firstMs = idleMs * 4 }: { idleMs?: number; maxMs?: number; firstMs?: number } = {}
 ): Promise<string[]> {
   const r = running.get(folderPath)
   if (!r || r.state !== 'running') return Promise.reject(new Error('서버가 켜져 있을 때만 할 수 있어요.'))
@@ -73,7 +73,7 @@ export function quietQuery(
     }
     set.add(fn)
     const max = setTimeout(done, maxMs)
-    idle = setTimeout(done, idleMs * 4) // 첫 답은 조금 더 기다린다
+    idle = setTimeout(done, firstMs) // 첫 답은 조금 더 기다린다 (서버가 바쁘면 늦게 온다)
     for (const c of commands) r.proc.stdin.write(c.replace(/[\r\n]+/g, ' ') + '\n')
   })
 }
