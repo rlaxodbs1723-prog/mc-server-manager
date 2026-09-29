@@ -9,11 +9,13 @@
     "start": "electron-vite dev",
     "build": "electron-vite build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "dist": "electron-vite build && electron-builder --win",
+    "dist": "electron-vite build && electron-builder --win --publish never",
     "test": "node tests/run.mjs",
-    "test:full": "node tests/run.mjs --full"
+    "test:full": "node tests/run.mjs --full",
+    "release": "electron-vite build && electron-builder --win --publish always"
   },
   "dependencies": {
+    "electron-updater": "^6.8.9",
     "yauzl": "^3.4.0",
     "yazl": "^3.3.1"
   },
@@ -84,6 +86,14 @@
       "uninstallerIcon": "resources/icon.ico",
       "artifactName": "MC-Server-Manager-Setup-${version}.${ext}",
       "deleteAppDataOnUninstall": false
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "rlaxodbs1723-prog",
+        "repo": "mc-server-manager",
+        "releaseType": "release"
+      }
+    ]
   }
 }

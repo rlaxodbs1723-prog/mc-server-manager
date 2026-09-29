@@ -1,7 +1,9 @@
-import { Copy, Minus, Settings, Square, WifiOff, X } from 'lucide-react'
+import { Copy, Download, Minus, Settings, Square, WifiOff, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import AppSettingsDialog from './AppSettingsDialog'
-import type { SiteStatus } from '../../shared-types'
+import type { SiteStatus, UpdateState } from '../../shared-types'
+import { Confirm, useToast } from './ui'
+import { cleanError } from './util'
 import { useEffect, useState } from 'react'
 import { TaskButton } from './tasks'
 
@@ -10,6 +12,14 @@ export default function TitleBar() {
   const [maximized, setMaximized] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [sites, setSites] = useState<SiteStatus>({ modrinth: true, curseforge: true })
+  const toast = useToast()
+  const [update, setUpdate] = useState<UpdateState>({ state: 'none' })
+  const [askUpdate, setAskUpdate] = useState(false)
+  const [running, setRunning] = useState(0) // 업데이트하면 꺼지는 서버 수 (확인 창에 보여 준다)
+  useEffect(() => {
+    window.api.getUpdate().then(setUpdate).catch(() => undefined)
+    return window.api.onUpdate(setUpdate)
+  }, [])
   useEffect(() => {
     window.api.getSiteStatus().then(setSites).catch(() => undefined)
     return window.api.onSiteStatus(setSites)
@@ -43,6 +53,39 @@ export default function TitleBar() {
           {down} 연결 안 됨
         </span>
       )}
+      {update.state === 'ready' && (
+        <button
+          className="update-btn"
+          onDoubleClick={(e) => e.stopPropagation()}
+          title={`새 버전 ${update.version}이 준비됐어요. 누르면 설치하고 앱을 다시 켜요. (그냥 앱을 꺼도 그때 설치돼요)`}
+          onClick={() => {
+            window.api
+              .listServers()
+              .then((list) => setRunning(list.filter((s) => s.state !== 'stopped').length))
+              .catch(() => setRunning(0))
+              .finally(() => setAskUpdate(true))
+          }}
+        >
+          <Download size={14} />
+          업데이트
+        </button>
+      )}
+      {askUpdate &&
+        createPortal(
+          <div onDoubleClick={(e) => e.stopPropagation()}>
+            <Confirm
+              title={`새 버전 ${update.state === 'ready' ? update.version : ''}으로 업데이트할까요?`}
+              body={running ? `켜져 있는 서버 ${running}개는 월드를 저장하고 꺼요. 업데이트가 끝나면 앱이 다시 켜져요.` : '설치가 끝나면 앱이 다시 켜져요. 몇 초면 돼요.'}
+              confirmText={running ? '서버 끄고 업데이트' : '업데이트'}
+              onCancel={() => setAskUpdate(false)}
+              onConfirm={() => {
+                setAskUpdate(false)
+                window.api.installUpdate().catch((e) => toast(cleanError(e), 'error'))
+              }}
+            />
+          </div>,
+          document.body
+        )}
       <TaskButton />
       <button className="task-btn app-settings-btn" onClick={() => setShowSettings(true)} title="앱 설정" onDoubleClick={(e) => e.stopPropagation()}>
         <Settings size={16} />

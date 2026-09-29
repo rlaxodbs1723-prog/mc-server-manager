@@ -59,6 +59,9 @@ export interface ServerInfo {
 
 // 목록에 보여 줄 때 붙는 현재 상태
 // Modrinth·CurseForge가 지금 응답하는지
+// 자동 업데이트 상태 (설치 파일로 설치한 앱에서만)
+export type UpdateState = { state: 'none' } | { state: 'downloading'; version: string; percent: number } | { state: 'ready'; version: string }
+
 export interface SiteStatus {
   modrinth: boolean
   curseforge: boolean
@@ -354,6 +357,9 @@ export interface Api {
   onWindowMaximized: (fn: (maximized: boolean) => void) => () => void
   // 켜진 서버가 있을 때 창을 닫으려 하면 메인이 확인을 요청한다
   onConfirmQuit: (fn: (info: { creating: number; jobs: string[] }) => void) => () => void
+  getUpdate: () => Promise<UpdateState>
+  onUpdate: (fn: (s: UpdateState) => void) => () => void
+  installUpdate: () => Promise<void> // 켜진 서버를 끄고 새 버전을 설치한 뒤 다시 켠다
   getSiteStatus: () => Promise<SiteStatus>
   onSiteStatus: (fn: (s: SiteStatus) => void) => () => void
   // 서버를 켜기 전 점검 (빠진 필수 모드, 메모리 부족, 서버에 맞지 않는 모드)

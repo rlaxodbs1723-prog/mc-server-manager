@@ -1,4 +1,5 @@
 import './datapath' // 맨 먼저: 데이터 폴더 위치 고정
+import { getUpdateState, initUpdater, installUpdateNow } from './updater'
 import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, Notification, screen, shell, Tray } from 'electron'
 import fs from 'fs'
 import { join, resolve, sep } from 'path'
@@ -504,6 +505,19 @@ ipcMain.handle('getSiteStatus', () => getSiteStatus())
 ipcMain.handle('preflight', (_event, folderPath: string) => runPreflight(checkServerFolder(folderPath)))
 ipcMain.handle('isMaximized', (event) => BrowserWindow.fromWebContents(event.sender)?.isMaximized() ?? false)
 
+ipcMain.handle('getUpdate', () => getUpdateState())
+// 업데이트: 월드를 저장하며 서버를 끄고, 공유기 포트를 닫은 뒤 새 버전을 설치하고 다시 켠다
+ipcMain.handle('installUpdate', async () => {
+  if (working()) throw new Error('서버 만들기·백업 같은 작업이 끝난 뒤에 업데이트할 수 있어요.')
+  quitting = true
+  cancelAutoRestarts()
+  stopAllSamplers()
+  flushPlayerLog()
+  await stopAll()
+  await closeAllPorts()
+  installUpdateNow()
+})
+
 // 확인 창에서 "끄고 닫기"를 누르면: stop으로 월드를 저장하게 하고, 공유기 포트를 닫은 뒤 앱을 끝낸다
 ipcMain.handle('quitApp', async () => {
   quitting = true
@@ -532,6 +546,7 @@ app.whenReady().then(() => {
   cleanModpackTemp() // 지난번에 만들다 만 서버 폴더 정리
   createWindow()
   void autoStartServers() // "앱을 켜면 이 서버도 켜기"를 켠 서버 (하나씩 차례로)
+  initUpdater() // 새 버전 확인 (설치한 앱에서만)
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
