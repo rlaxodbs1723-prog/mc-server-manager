@@ -5,18 +5,13 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { encodeCfKey, readCfKey } from '../build-tools/cfkey.mjs'
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const full = process.argv.includes('--full')
 
-// .env의 CurseForge 키 (있으면 CurseForge 검색도 확인한다). \$는 글자 $
-let cfKey
-try {
-  const line = fs.readFileSync(path.join(root, '.env'), 'utf8').split(/\r?\n/).find((l) => l.startsWith('MAIN_VITE_CURSEFORGE_KEY='))
-  cfKey = line?.slice(line.indexOf('=') + 1).trim().split('\\$').join('$') || undefined
-} catch {
-  /* 없음 */
-}
+// .env의 CurseForge 키 (있으면 CurseForge 검색도 확인한다). 앱을 빌드할 때와 똑같이 섞어서 넣는다
+const cfKey = encodeCfKey(readCfKey(root))
 
 const out = path.join(os.tmpdir(), 'mcsm-test-build', 'test.cjs')
 await build({
@@ -27,7 +22,7 @@ await build({
   target: 'node20',
   outfile: out,
   alias: { electron: path.join(root, 'tests', 'electron-stub', 'index.js') },
-  define: { 'import.meta.env.MAIN_VITE_CURSEFORGE_KEY': cfKey ? JSON.stringify(cfKey) : 'undefined' },
+  define: { __CF_KEY_ENC__: JSON.stringify(cfKey) },
   logLevel: 'warning'
 })
 

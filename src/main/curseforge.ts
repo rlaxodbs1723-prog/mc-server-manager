@@ -1,5 +1,5 @@
 // CurseForge 맵(Worlds) 검색·다운로드. API 키가 있어야 한다.
-// 키는 빌드할 때 넣은 것(MAIN_VITE_CURSEFORGE_KEY)을 먼저 쓰고, 없으면 사용자가 넣은 키(userData/curseforge-key.txt)를 쓴다.
+// 키는 빌드할 때 넣은 것(.env의 CURSEFORGE_KEY, 섞어서 넣는다)을 먼저 쓰고, 없으면 사용자가 넣은 키(userData/curseforge-key.txt)를 쓴다.
 import { app } from 'electron'
 import fs from 'fs'
 import path from 'path'
@@ -13,8 +13,19 @@ const GAME_MINECRAFT = 432
 const CLASS_WORLDS = 17
 const keyFile = (): string => path.join(app.getPath('userData'), 'curseforge-key.txt')
 
+// 빌드할 때 섞어서 넣은 키를 푼다 (섞는 쪽: build-tools/cfkey.mjs. MASK가 같아야 한다)
+declare const __CF_KEY_ENC__: string
+const MASK = 'mc-server-manager/cf'
+let builtCache: string | null | undefined
+function builtKey(): string | null {
+  if (builtCache !== undefined) return builtCache
+  const enc = typeof __CF_KEY_ENC__ === 'string' ? __CF_KEY_ENC__ : ''
+  builtCache = enc ? Buffer.from([...Buffer.from(enc, 'base64').reverse()].map((b, i) => b ^ MASK.charCodeAt(i % MASK.length))).toString('utf8') : null
+  return builtCache
+}
+
 function apiKey(): string | null {
-  const built = import.meta.env.MAIN_VITE_CURSEFORGE_KEY as string | undefined
+  const built = builtKey()
   if (built) return built
   try {
     return fs.readFileSync(keyFile(), 'utf8').trim() || null
@@ -25,7 +36,7 @@ function apiKey(): string | null {
 
 export const hasCurseForgeKey = (): boolean => !!apiKey()
 // 키가 어디서 왔는지 (앱 설정 창에 보여 주려고)
-export const curseForgeKeySource = (): 'built' | 'user' | null => (import.meta.env.MAIN_VITE_CURSEFORGE_KEY ? 'built' : apiKey() ? 'user' : null)
+export const curseForgeKeySource = (): 'built' | 'user' | null => (builtKey() ? 'built' : apiKey() ? 'user' : null)
 export function removeCurseForgeKey(): void {
   fs.rmSync(keyFile(), { force: true })
 }
@@ -43,7 +54,9 @@ async function call<T>(url: string, key = apiKey(), body?: unknown): Promise<T> 
       signal: ctrl.signal
     })
     )
-    if (res.status === 401 || res.status === 403) throw new Error('CurseForge API 키가 맞지 않아요.')
+    // 앱에 들어 있는 키가 막혔으면 사용자가 할 수 있는 게 없으니 잠시 못 쓴다고만 알린다 (Modrinth는 그대로 된다)
+    if (res.status === 401 || res.status === 403)
+      throw new Error(key === builtKey() ? 'CurseForge를 지금 쓸 수 없어요. Modrinth에서 찾아 주세요. (앱을 업데이트하면 다시 될 수 있어요)' : 'CurseForge API 키가 맞지 않아요.')
     if (!res.ok) throw new Error(`CurseForge에서 오류가 났어요 (${res.status}).`)
     return (await res.json()) as T
   } catch (e) {
@@ -121,7 +134,12 @@ interface CfFile {
   fileDate: string
   downloadUrl: string | null
   gameVersions: string[]
+  hashes?: { value: string; algo: number }[] // algo 1 = SHA-1, 2 = MD5
 }
+
+// CurseForge가 알려 주는 SHA-1 (받은 파일이 깨지거나 바뀌지 않았는지 확인한다). 없으면 undefined
+export const cfSha1 = (f: { hashes?: { value: string; algo: number }[] }): string | undefined =>
+  f.hashes?.find((h) => h.algo === 1 && /^[0-9a-f]{40}$/i.test(h.value))?.value
 
 export async function mapFiles(modId: number): Promise<MapFile[]> {
   const res = await call<{ data: CfFile[] }>(`/mods/${Math.floor(modId)}/files?pageSize=30`)
@@ -145,7 +163,7 @@ export async function downloadMap(modId: number, fileId: number, onBytes?: (done
   if (!/^https:\/\/[^/]*(forgecdn\.net|curseforge\.com)\//.test(f.downloadUrl)) throw new Error('알 수 없는 다운로드 주소예요.')
   const dest = path.join(tempRoot(), `map-${f.id}.zip`)
   fs.mkdirSync(tempRoot(), { recursive: true })
-  await downloadFile({ url: f.downloadUrl, dest, onBytes })
+  await downloadFile({ url: f.downloadUrl, dest, onBytes, sha1: cfSha1(f) })
   return dest
 }
 
@@ -156,6 +174,7 @@ export interface PackFile {
   fileName: string
   downloadUrl: string | null // 제작자가 다른 앱에서 받는 것을 막았으면 null
   size: number
+  sha1?: string
   clientOnly: boolean // 파일에 "Client"만 표시돼 있으면 서버에는 필요 없다
 }
 
@@ -171,6 +190,7 @@ export async function packFiles(fileIds: number[]): Promise<PackFile[]> {
         fileName: f.fileName,
         downloadUrl: f.downloadUrl,
         size: f.fileLength,
+        sha1: cfSha1(f),
         clientOnly: env.includes('client') && !env.includes('server')
       })
     }
@@ -262,7 +282,7 @@ export async function downloadPackFile(modId: number, fileId: number, dest: stri
   const f = res.data
   if (!f.downloadUrl) throw new Error('이 모드팩은 제작자가 다른 앱에서 받는 것을 막아 두었어요.')
   if (!/^https:\/\/[^/]*(forgecdn\.net|curseforge\.com)\//.test(f.downloadUrl)) throw new Error('알 수 없는 다운로드 주소예요.')
-  await downloadFile({ url: f.downloadUrl, dest })
+  await downloadFile({ url: f.downloadUrl, dest, sha1: cfSha1(f) })
 }
 
 // ---------- 모드·플러그인·데이터팩 (모드 탭 등에서 쓰는 공통 기능) ----------
@@ -295,6 +315,7 @@ export interface CfFileFull {
   downloadUrl: string | null
   gameVersions: string[]
   releaseType: number // 1 정식, 2 베타, 3 알파
+  hashes?: { value: string; algo: number }[]
   dependencies: { modId: number; relationType: number }[] // 3 = 꼭 필요
 }
 

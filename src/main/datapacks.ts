@@ -127,7 +127,7 @@ async function installCf(folderPath: string, projectId: string): Promise<string>
   const fileName = path.basename(file.fileName)
   const dir = path.join(worldDir(folderPath), ON)
   fs.mkdirSync(dir, { recursive: true })
-  await downloadFile({ url: cf.checkCfUrl(file.downloadUrl), dest: path.join(dir, fileName) })
+  await downloadFile({ url: cf.checkCfUrl(file.downloadUrl), dest: path.join(dir, fileName), sha1: cf.cfSha1(file) })
   const track = readTrack(folderPath)
   track[fileName] = { projectId, versionId: cf.CF_PREFIX + file.id, title, iconUrl: info?.icon ?? null, versionNumber: file.displayName || file.fileName }
   writeTrack(folderPath, track)
@@ -230,7 +230,7 @@ export async function setVersion(folderPath: string, name: string, versionId: st
   if (cf.isCf(t.projectId)) {
     if (!cf.isCf(versionId)) throw new Error('다른 데이터팩의 버전이에요.')
     const f = await cf.getFile(cf.cfNum(t.projectId), cf.cfNum(versionId))
-    v = { id: versionId, versionNumber: f.displayName || f.fileName, file: { fileName: f.fileName, url: cf.checkCfUrl(f.downloadUrl), sha1: null } }
+    v = { id: versionId, versionNumber: f.displayName || f.fileName, file: { fileName: f.fileName, url: cf.checkCfUrl(f.downloadUrl), sha1: cf.cfSha1(f) ?? null } }
   } else {
     const mv = await modrinth.getVersion(versionId)
     if (mv.projectId !== t.projectId) throw new Error('다른 데이터팩의 버전이에요.')

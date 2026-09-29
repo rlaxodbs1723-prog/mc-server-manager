@@ -15,6 +15,7 @@ import { downloadFile } from './download'
 import * as modrinth from './modrinth'
 import { extractZip } from './worldzip'
 import { mergedSearch } from './merge'
+import { readProperties, writeProperties } from './properties'
 
 const packRoot = (): string => path.join(app.getPath('userData'), 'modpack-temp')
 const packDir = (id: string): string => path.join(packRoot(), id.replace(/[^\w-]/g, ''))
@@ -235,7 +236,7 @@ async function planCurseForge(dir: string): Promise<Plan> {
     loaderVersion: kind === 'neoforge' && /^1\.20\.1-/.test(ver) ? ver.replace(/^1\.20\.1-/, '') : ver,
     files: server
       .filter((f) => f.downloadUrl && /^https:\/\/[^/]*forgecdn\.net\//.test(f.downloadUrl))
-      .map((f) => ({ path: `mods/${path.basename(f.fileName)}`, url: f.downloadUrl!, size: f.size })),
+      .map((f) => ({ path: `mods/${path.basename(f.fileName)}`, url: f.downloadUrl!, size: f.size, sha1: f.sha1 })),
     overrides: [`pack/${m.overrides || 'overrides'}`],
     skipped: files.length - server.length,
     manual: blocked.map((f) => names.get(f.modId) ?? f.fileName)
@@ -243,6 +244,34 @@ async function planCurseForge(dir: string): Promise<Plan> {
 }
 
 // ---------- 설치: 로더를 깐 서버 폴더에 계획대로 받고 복사한다 ----------
+// 모드팩이 건드리면 안 되는 서버 폴더 맨 위의 파일·폴더.
+// 모드팩(설정 파일 묶음)이 이것들을 덮어쓰면 EULA에 몰래 동의하거나, 관리자(OP)를 넣거나, 서버 실행 파일을 바꿀 수 있다
+const PROTECTED = new Set([
+  'eula.txt', // 사용자가 직접 동의해야 한다
+  'ops.json', // 관리자 권한
+  'whitelist.json',
+  'banned-players.json',
+  'banned-ips.json',
+  'usercache.json',
+  'server-manager.json', // 앱의 서버 정보 (메모리·자바 옵션 등)
+  'user_jvm_args.txt', // Forge·NeoForge 자바 옵션
+  'run.bat',
+  'run.sh',
+  'libraries', // 로더 파일 (앱이 설치한 것)
+  'versions',
+  'crash-reports',
+  'logs'
+])
+// server.properties에서 모드팩이 바꾸면 안 되는 값 (보안·접속 관련)
+const PROTECTED_PROPS = /^(enable-rcon|rcon\..*|enable-query|query\..*|server-port|server-ip|online-mode|white-list|enforce-whitelist|enable-jmx-monitoring|management-server.*|broadcast-rcon-to-ops)$/
+
+// 모드팩 안의 경로(서버 폴더 기준)가 건드리면 안 되는 것인지
+function isProtected(rel: string): boolean {
+  const parts = rel.split(/[\\/]/)
+  const top = parts[0].toLowerCase()
+  return PROTECTED.has(top) || top.startsWith('.server-manager') || (parts.length === 1 && /\.jar$/i.test(top)) // 맨 위의 jar = 서버 실행 파일
+}
+
 function inside(root: string, rel: string): string {
   const target = path.resolve(root, rel)
   if (!target.startsWith(path.resolve(root) + path.sep)) throw new Error(`모드팩에 잘못된 경로가 있어요: ${rel}`)
@@ -261,7 +290,8 @@ export async function installModpack(folderPath: string, packId: string, report:
   const total = plan.files.reduce((n, f) => n + (f.size ?? 0), 0)
   let done = 0
   let count = 0
-  const queue = [...plan.files]
+  // 파일 목록에도 지켜야 할 파일이 끼어 있으면 받지 않는다
+  const queue = plan.files.filter((f) => !isProtected(f.path))
   const worker = async (): Promise<void> => {
     for (let f = queue.shift(); f; f = queue.shift()) {
       throwIfCancelled()
@@ -276,7 +306,22 @@ export async function installModpack(folderPath: string, packId: string, report:
   report({ message: '모드팩 설정 파일을 복사하고 있어요', phase: 'install' })
   for (const sub of plan.overrides) {
     const src = inside(dir, sub)
-    if (fs.existsSync(src)) await fs.promises.cp(src, folderPath, { recursive: true, force: true })
+    if (!fs.existsSync(src)) continue
+    await fs.promises.cp(src, folderPath, {
+      recursive: true,
+      force: true,
+      // 지켜야 할 파일은 건너뛰고, server.properties는 아래에서 안전한 값만 합친다
+      filter: (p) => {
+        const rel = path.relative(src, p)
+        return !rel || (rel.toLowerCase() !== 'server.properties' && !isProtected(rel))
+      }
+    })
+    const props = path.join(src, 'server.properties')
+    if (fs.existsSync(props)) {
+      const theirs = readProperties(src) // 모드팩 쪽 server.properties
+      const safe = Object.fromEntries(Object.entries(theirs).filter(([k]) => /^[a-z0-9.-]{1,64}$/.test(k) && !PROTECTED_PROPS.test(k)))
+      if (Object.keys(safe).length) writeProperties(folderPath, safe)
+    }
   }
   // 모드팩에 섞여 온 클라이언트 전용 모드와 서버에서 튕기는 모드를 찾아 둔다 (끌지는 서버 화면에서 사용자에게 묻는다)
   const modsDir = path.join(folderPath, 'mods')

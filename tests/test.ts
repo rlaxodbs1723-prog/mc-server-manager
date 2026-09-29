@@ -8,7 +8,7 @@ import { readYamlValue, writeYamlValue } from '../src/main/yamlvalue'
 import { readProperties, writeProperties } from '../src/main/properties'
 import { parseJavaArgs, picksGc, createServer, startServerAt, readServerInfo, patchServerInfo, saveSettings, getSettings, duplicateServer, resetWorld, changeVersion, renameServer, listServers, setServerOrder } from '../src/main/servers'
 import { getLoaderVersions } from '../src/main/loaders'
-import { acceptEula, getLog, getState, onServerEvent, sendCommand, stopServer } from '../src/main/runner'
+import { acceptEula, getLog, getState, isEulaAccepted, onServerEvent, sendCommand, stopServer } from '../src/main/runner'
 import { getStats } from '../src/main/stats'
 import { getManageInfo, runAction } from '../src/main/manage'
 import { listGameRules, setGameRule } from '../src/main/gamerules'
@@ -17,7 +17,7 @@ import { getInvite } from '../src/main/invite'
 import { getPlayerHistory } from '../src/main/playerlog'
 import { getHardcore, setHardcore } from '../src/main/hardcore'
 import { importWorld, listSaves, prepareMap } from '../src/main/worldimport'
-import { browseModpacks, modpackVersions, prepareFromCurseForge, prepareFromModrinth } from '../src/main/modpack'
+import { browseModpacks, modpackVersions, prepareFromCurseForge, prepareFromModrinth, prepareFromUpload } from '../src/main/modpack'
 import { runPreflight } from '../src/main/preflight'
 import { listDir, readConfigFile, writeConfigFile } from '../src/main/configfiles'
 import * as datapacks from '../src/main/datapacks'
@@ -487,6 +487,35 @@ async function afterStopped(folder: string): Promise<void> {
 // ---------- 모드팩으로 만들기 ----------
 async function modpackServers(): Promise<void> {
   console.log('\n[모드팩으로 서버 만들기]')
+  await check('몰래 파일을 심은 모드팩: EULA·OP·실행 파일·앱 설정·RCON은 못 바꾸고, 일반 설정은 들어간다', async () => {
+    const loader = (await getLoaderVersions('fabric', MC)).find((v) => v.stable)!
+    const pack = path.join(os.tmpdir(), 'mcsm-test-evil.mrpack')
+    await new Promise<void>((resolve, reject) => {
+      const zip = new yazl.ZipFile()
+      const add = (name: string, text: string): void => zip.addBuffer(Buffer.from(text), name)
+      add('modrinth.index.json', JSON.stringify({ formatVersion: 1, game: 'minecraft', name: '나쁜 모드팩', versionId: '1', files: [], dependencies: { minecraft: MC, 'fabric-loader': loader.version } }))
+      add('overrides/eula.txt', 'eula=true\n')
+      add('overrides/ops.json', JSON.stringify([{ uuid: '069a79f4-44e9-4726-a5be-fca90e38aaf5', name: 'Hacker', level: 4, bypassesPlayerLimit: true }]))
+      add('overrides/server.jar', 'fake')
+      add('overrides/server-manager.json', '{"memoryMb": 99999}')
+      add('overrides/server.properties', 'enable-rcon=true\nrcon.password=hacked\nserver-port=25565\nmotd=pack motd\n')
+      add('overrides/config/pack-setting.txt', 'ok')
+      zip.outputStream.pipe(fs.createWriteStream(pack)).on('close', () => resolve()).on('error', reject)
+      zip.end()
+    })
+    const info = await prepareFromUpload(pack)
+    const s = await createServer({ name: '자동 테스트 나쁜 모드팩', software: info.software, mcVersion: info.mcVersion, loaderVersion: info.loaderVersion, modpackId: info.packId, properties: { 'server-port': '25596' } }, () => undefined)
+    const f = s.folderPath
+    expect(!isEulaAccepted(f), 'EULA에 몰래 동의됐어요')
+    const ops = path.join(f, 'ops.json')
+    expect(!fs.existsSync(ops) || !fs.readFileSync(ops, 'utf8').includes('Hacker'), 'OP가 몰래 들어갔어요')
+    expect(fs.readFileSync(path.join(f, 'server.jar')).length > 1000, '서버 실행 파일이 바뀌었어요')
+    expect(readServerInfo(f).memoryMb !== 99999 && readServerInfo(f).name === '자동 테스트 나쁜 모드팩', '앱 설정 파일이 바뀌었어요')
+    const p = readProperties(f)
+    expect(p['enable-rcon'] !== 'true' && p['rcon.password'] !== 'hacked' && p['server-port'] === '25596', `보안 설정이 바뀌었어요: rcon=${p['enable-rcon']} port=${p['server-port']}`)
+    expect(p.motd === 'pack motd', '일반 설정(motd)은 들어가야 해요')
+    expect(fs.existsSync(path.join(f, 'config', 'pack-setting.txt')), '모드 설정 파일은 들어가야 해요')
+  })
   await check('Modrinth 모드팩 찾기 → 버전 → 풀기 → 서버 만들기 → 켜기', async () => {
     const r = await browseModpacks({ site: 'modrinth', query: '', sort: 'downloads', gameVersion: MC, loaders: ['fabric'], offset: 0 })
     expect(r.hits.length > 0, '모드팩 검색 결과가 없어요')

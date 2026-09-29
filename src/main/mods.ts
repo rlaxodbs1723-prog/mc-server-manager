@@ -331,7 +331,7 @@ async function installOneCf(ctx: Ctx, projectId: string, parentId: string | null
   const title = info?.name ?? projectId
   if (!file) throw new Error(`"${title}"은(는) 이 서버(${ctx.mcVersion})에 맞는 파일이 없거나, 다른 앱에서 받을 수 없게 막혀 있어요.`)
   const fileName = safeFileName(file.fileName)
-  await downloadFile({ url: cf.checkCfUrl(file.downloadUrl), dest: path.join(ctx.dir, fileName) })
+  await downloadFile({ url: cf.checkCfUrl(file.downloadUrl), dest: path.join(ctx.dir, fileName), sha1: cf.cfSha1(file) })
   ctx.track.push({
     projectId,
     versionId: cf.CF_PREFIX + file.id,
@@ -583,7 +583,7 @@ async function swapVersion(ctx: Ctx, t: Track, v: modrinth.Version): Promise<voi
 }
 
 async function swapCfFile(ctx: Ctx, t: Track, file: cf.CfFileFull): Promise<void> {
-  await swapFile(ctx, t, { versionId: cf.CF_PREFIX + file.id, versionNumber: file.displayName || file.fileName, fileName: file.fileName, url: cf.checkCfUrl(file.downloadUrl) })
+  await swapFile(ctx, t, { versionId: cf.CF_PREFIX + file.id, versionNumber: file.displayName || file.fileName, fileName: file.fileName, url: cf.checkCfUrl(file.downloadUrl), sha1: cf.cfSha1(file) })
   for (const dep of file.dependencies) {
     if (dep.relationType !== 3) continue
     await installOne(ctx, cf.CF_PREFIX + dep.modId, null, t.projectId, 1).catch((e) => ctx.result.failed.push((e as Error).message))
