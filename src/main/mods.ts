@@ -885,7 +885,7 @@ export async function exportClientPack(folderPath: string, format: 'mrpack' | 'z
     game: 'minecraft',
     versionId: '1.0.0',
     name: `${server.name} (플레이어용)`,
-    summary: 'CraftPanel이 만든 플레이어용 모드팩',
+    summary: 'MC Server Manager가 만든 플레이어용 모드팩',
     files,
     dependencies: { minecraft: server.mcVersion, [loaderKey]: server.loaderVersion }
   }

@@ -12,7 +12,7 @@ const STALL_TIMEOUT_MS = 45_000 // 받는 도중 이만큼 아무 데이터도 �
 
 // 앱이 보내는 모든 요청에 붙인다. (Modrinth 등은 식별 가능한 User-Agent를 요구한다)
 // 앱 이름 + 버전 + 저장소 주소: CurseForge API 신청서에 적은 저장소와 같아서, 저쪽에서 어떤 앱인지 바로 알 수 있다
-export const HEADERS = { 'User-Agent': `CraftPanel/${app.getVersion()} (github.com/rlaxodbs1723-prog/mc-server-manager)` }
+export const HEADERS = { 'User-Agent': `MC-Server-Manager/${app.getVersion()} (github.com/rlaxodbs1723-prog/mc-server-manager)` }
 
 // 응답 헤더가 오기까지만 제한한다. (본문 전체에 걸면 큰 파일 다운로드가 중간에 끊긴다)
 export async function fetchWithTimeout(url: string): Promise<Response> {
