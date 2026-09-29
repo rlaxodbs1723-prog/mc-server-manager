@@ -559,7 +559,7 @@ async function modpackServers(): Promise<void> {
       acceptEula(info.folderPath)
       await mods.installBaseMods(info.folderPath, true)
       // 켜기 전 확인에서 서버에 안 맞는 모드가 있으면 앱처럼 끈다
-      if ((await runPreflight(info.folderPath)).askOff) await mods.applyOffSuggestions(info.folderPath, mods.offSuggestions(info.folderPath).map((s) => s.fileName))
+      expect(!(await runPreflight(info.folderPath)).askOff, '모드팩 서버인데 모드를 끌지 물어봐요 (모드팩은 그대로 둬야 해요)')
       console.log(`      (${hit.title}: 모드 ${pack.modCount}개, 게임 화면 전용이라 뺀 것 ${pack.skipped}개)`)
       await startAndWait(info.folderPath)
       await stopAndWait(info.folderPath)
@@ -579,7 +579,7 @@ async function modpackServers(): Promise<void> {
         const info = await createServer({ name: '자동 테스트 CF 모드팩', software: pack.software, mcVersion: pack.mcVersion, loaderVersion: pack.loaderVersion, modpackId: pack.packId, properties: { 'server-port': '25595' } }, () => undefined)
         acceptEula(info.folderPath)
         await mods.installBaseMods(info.folderPath, true)
-        if ((await runPreflight(info.folderPath)).askOff) await mods.applyOffSuggestions(info.folderPath, mods.offSuggestions(info.folderPath).map((s) => s.fileName))
+        expect(!(await runPreflight(info.folderPath)).askOff, '모드팩 서버인데 모드를 끌지 물어봐요 (모드팩은 그대로 둬야 해요)')
         console.log(`      (${hit.title}: 모드 ${pack.modCount}개)`)
         await startAndWait(info.folderPath)
         await stopAndWait(info.folderPath)

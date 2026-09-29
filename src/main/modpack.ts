@@ -9,8 +9,7 @@ import path from 'path'
 import type { ModpackBrowseHit, ModpackBrowseOptions, ModpackInfo, ModpackOrigin, ModpackVersion, Progress, Software } from '../shared-types'
 import { throwIfCancelled } from './cancel'
 import * as curseforge from './curseforge'
-import { checkJars } from './clientjar'
-import { suggestOff } from './mods'
+import { keepAsIs } from './mods'
 import { downloadFile } from './download'
 import * as modrinth from './modrinth'
 import { extractZip } from './worldzip'
@@ -323,14 +322,10 @@ export async function installModpack(folderPath: string, packId: string, report:
       if (Object.keys(safe).length) writeProperties(folderPath, safe)
     }
   }
-  // 모드팩에 섞여 온 클라이언트 전용 모드와 서버에서 튕기는 모드를 찾아 둔다 (끌지는 서버 화면에서 사용자에게 묻는다)
+  // 모드팩의 모드는 제작자가 고른 그대로 둔다. 서버에 안 맞아 보여도 끌지 묻지 않는다
+  // (게임하는 사람 전용이라고 표시된 파일은 위에서 이미 받지 않았다)
   const modsDir = path.join(folderPath, 'mods')
-  if (fs.existsSync(modsDir)) {
-    report({ message: '서버에 필요 없는 모드를 골라내고 있어요', phase: 'install' })
-    const jars = fs.readdirSync(modsDir).filter((f) => /\.jar$/i.test(f)).map((f) => path.join(modsDir, f))
-    const off = await checkJars(jars)
-    suggestOff(folderPath, [...off].map(([jar, why]) => [path.basename(jar), why]))
-  }
+  if (fs.existsSync(modsDir)) await keepAsIs(folderPath, modsDir, fs.readdirSync(modsDir).filter((f) => /\.jar$/i.test(f)))
   fs.rmSync(dir, { recursive: true, force: true })
   return plan.origin && { ...plan.origin, installedAt: new Date().toISOString() }
 }

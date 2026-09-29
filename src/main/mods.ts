@@ -79,6 +79,19 @@ function readKeep(folderPath: string): string[] {
   }
 }
 
+// 이 파일들은 끌지 묻지 않는다 (모드팩으로 만든 서버: 모드팩 제작자가 고른 모드를 그대로 둔다).
+// 업데이트로 파일 이름이 바뀌어도 다시 묻지 않게 모드 ID도 적어 둔다
+// dir: 모드 폴더 (서버를 만드는 중이라 서버 정보 파일이 아직 없을 수 있어서 직접 받는다)
+export async function keepAsIs(folderPath: string, dir: string, fileNames: string[]): Promise<void> {
+  if (!fileNames.length) return
+  const ids: string[] = []
+  for (const f of fileNames) {
+    const id = fs.existsSync(path.join(dir, f)) ? (await localInfo(path.join(dir, f)).catch(() => ({ id: null }))).id : null
+    if (id) ids.push(`id:${id}`)
+  }
+  fs.writeFileSync(path.join(folderPath, KEEP_FILE), JSON.stringify([...new Set([...readKeep(folderPath), ...fileNames, ...ids])]))
+}
+
 // 서버 켜기 전: 켜진 모드 중 아직 묻지 않은 것을 jar 안만 보고 검사한다. 끌지 물어볼 것이 있으면 true
 export async function scanForOff(folderPath: string): Promise<boolean> {
   const { dir } = load(folderPath)
