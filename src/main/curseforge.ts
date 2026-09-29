@@ -315,6 +315,7 @@ export interface CfFileFull {
   downloadUrl: string | null
   gameVersions: string[]
   releaseType: number // 1 정식, 2 베타, 3 알파
+  serverPackFileId?: number | null // 모드팩: 제작자가 올린 서버 팩 파일
   hashes?: { value: string; algo: number }[]
   dependencies: { modId: number; relationType: number }[] // 3 = 꼭 필요
 }

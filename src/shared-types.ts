@@ -580,6 +580,7 @@ export interface ModpackInfo {
   modCount: number // 서버에 받을 파일 수
   skipped: number // 게임하는 사람 전용이라 뺀 파일 수
   manual: string[] // 제작자가 다른 앱에서 받는 것을 막아서 직접 넣어야 하는 모드
+  serverPack?: boolean // 제작자가 만든 서버 팩(서버용 묶음)으로 만든다
 }
 
 export type ModpackSort = 'relevance' | 'downloads' | 'follows' | 'newest' | 'updated'

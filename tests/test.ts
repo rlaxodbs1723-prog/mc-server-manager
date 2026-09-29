@@ -24,7 +24,7 @@ import * as datapacks from '../src/main/datapacks'
 import type { CrashAnalysis } from '../src/shared-types'
 import yazl from 'yazl'
 import * as mods from '../src/main/mods'
-import { hasCurseForgeKey, mapFiles, searchMaps } from '../src/main/curseforge'
+import { getFile, hasCurseForgeKey, mapFiles, searchMaps } from '../src/main/curseforge'
 import { createBackup, deleteBackup, getBackupSettings, listBackups, restoreBackup, setBackupSettings } from '../src/main/backup'
 import { analyzeCrash } from '../src/main/crash'
 
@@ -517,6 +517,56 @@ async function afterStopped(folder: string): Promise<void> {
 // ---------- 모드팩으로 만들기 ----------
 async function modpackServers(): Promise<void> {
   console.log('\n[모드팩으로 서버 만들기]')
+  await check('서버 팩 zip 끌어다 놓기: 버전·로더 알아내기 → 서버 만들기 → 켜기 (실행 파일·EULA는 무시)', async () => {
+    // 복제해 둔 Fabric 1.21.1 서버의 모드로 서버 팩 모양 zip을 만든다 (버전 정보 파일 없음 → 모드를 보고 알아내야 한다)
+    const copy = listServers().find((s) => s.name === '자동 테스트 복제')!
+    const mods = fs.readdirSync(path.join(copy.folderPath, 'mods')).filter((f) => f.endsWith('.jar'))
+    const zipFile = path.join(os.tmpdir(), '테스트 서버팩.zip')
+    await new Promise<void>((resolve, reject) => {
+      const zip = new yazl.ZipFile()
+      for (const m of mods) zip.addFile(path.join(copy.folderPath, 'mods', m), `Test Pack Server/mods/${m}`)
+      zip.addBuffer(Buffer.from('ok'), 'Test Pack Server/config/pack.txt')
+      zip.addBuffer(Buffer.from('eula=true'), 'Test Pack Server/eula.txt')
+      zip.addBuffer(Buffer.from('fake'), 'Test Pack Server/server.jar')
+      zip.addBuffer(Buffer.from('java -jar server.jar'), 'Test Pack Server/run.bat')
+      zip.outputStream.pipe(fs.createWriteStream(zipFile)).on('close', () => resolve()).on('error', reject)
+      zip.end()
+    })
+    const info = await prepareFromUpload(zipFile)
+    expect(info.serverPack && info.software === 'fabric' && info.mcVersion === MC, `알아낸 정보가 틀려요: ${info.software} ${info.mcVersion}`)
+    expect(info.modCount === mods.length, `모드 수가 달라요: ${info.modCount}/${mods.length}`)
+    const s = await createServer({ name: '자동 테스트 서버팩', software: info.software, mcVersion: info.mcVersion, loaderVersion: info.loaderVersion, modpackId: info.packId, properties: { 'server-port': '25594' } }, () => undefined)
+    expect(!isEulaAccepted(s.folderPath), 'EULA에 몰래 동의됐어요')
+    expect(fs.existsSync(path.join(s.folderPath, 'config', 'pack.txt')), '설정 파일이 안 들어왔어요')
+    expect(!fs.existsSync(path.join(s.folderPath, 'run.bat')), '실행 스크립트가 들어왔어요')
+    acceptEula(s.folderPath)
+    expect(!(await runPreflight(s.folderPath)).askOff, '서버 팩인데 모드를 끌지 물어봐요')
+    await startAndWait(s.folderPath)
+    expect(getLog(s.folderPath).some((l) => /lithium/i.test(l)), '서버 팩의 모드가 안 읽혔어요')
+    await stopAndWait(s.folderPath)
+  })
+  if (hasCurseForgeKey())
+    await check('CurseForge 모드팩에 서버 팩이 있으면 서버 팩으로 만들기 → 켜기', async () => {
+      const r = await browseModpacks({ site: 'curseforge', query: '', sort: 'downloads', gameVersion: MC, loaders: [], offset: 0 })
+      for (const hit of r.hits.slice(0, 20)) {
+        const modId = Number(hit.projectId.replace(/^cf:/, ''))
+        const v = (await modpackVersions(hit.projectId, 'curseforge')).find((x) => x.gameVersions.includes(MC))
+        if (!v) continue
+        const f = await getFile(modId, Number(v.id))
+        if (!f.serverPackFileId) continue
+        const pack = await prepareFromCurseForge(modId, Number(v.id))
+        if (!pack.serverPack) continue // 서버 팩을 받을 수 없게 막혀 있음 → 원래 방식 (위 테스트에서 확인)
+        if (pack.modCount > 150) continue
+        console.log(`      (${hit.title}: 서버 팩, 모드 ${pack.modCount}개, ${pack.software})`)
+        const info = await createServer({ name: '자동 테스트 CF 서버팩', software: pack.software, mcVersion: pack.mcVersion, loaderVersion: pack.loaderVersion, modpackId: pack.packId, properties: { 'server-port': '25593' } }, () => undefined)
+        acceptEula(info.folderPath)
+        await mods.installBaseMods(info.folderPath, true)
+        await startAndWait(info.folderPath)
+        await stopAndWait(info.folderPath)
+        return
+      }
+      throw new Error('서버 팩이 있는 CurseForge 모드팩을 못 찾았어요')
+    })
   await check('몰래 파일을 심은 모드팩: EULA·OP·실행 파일·앱 설정·RCON은 못 바꾸고, 일반 설정은 들어간다', async () => {
     const loader = (await getLoaderVersions('fabric', MC)).find((v) => v.stable)!
     const pack = path.join(os.tmpdir(), 'mcsm-test-evil.mrpack')

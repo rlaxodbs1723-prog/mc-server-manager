@@ -178,10 +178,11 @@ export default function ModpackDialog({ existingNames, onClose }: { existingName
                 </b>
               </div>
               <div>
-                <span>서버에 받을 파일</span>
+                <span>{info.serverPack ? '서버 팩의 모드' : '서버에 받을 파일'}</span>
                 <b>{info.modCount}개</b>
               </div>
             </div>
+            {info.serverPack && <p className="hint">제작자가 서버용으로 따로 묶어 둔 서버 팩으로 만들어요. 서버에 필요한 모드와 설정이 이미 맞춰져 있어요.</p>}
             {info.skipped > 0 && <p className="hint">게임하는 사람 컴퓨터에만 필요한 {info.skipped}개(미니맵·셰이더 등)는 빼고 받아요.</p>}
             {info.manual.length > 0 && (
               <p className="warn-text">
@@ -387,7 +388,7 @@ function Browser({ onBack, onOpen, uploading, onPickFile, onDropFile }: BrowserP
         >
           {uploading ? <span className="spinner" /> : <Upload size={24} />}
           <b>{uploading ? '모드팩을 읽는 중…' : '모드팩 가져오기'}</b>
-          <span className="hint">.mrpack이나 CurseForge 모드팩 .zip을 고르거나 끌어다 놓으세요</span>
+          <span className="hint">.mrpack, CurseForge 모드팩 .zip, 서버 팩 .zip을 고르거나 끌어다 놓으세요</span>
         </button>
       </aside>
     </div>
