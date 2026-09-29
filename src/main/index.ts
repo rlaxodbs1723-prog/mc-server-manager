@@ -520,7 +520,16 @@ ipcMain.handle('quitApp', async () => {
   app.quit()
 })
 
+// 앱은 하나만 켠다. 두 개가 켜지면 같은 서버를 둘이서 켜고 끄려고 한다.
+// 이미 켜져 있으면 새로 켠 쪽은 바로 끄고, 켜져 있던 창을 앞으로 가져온다 (트레이에 숨어 있어도)
+if (!app.requestSingleInstanceLock()) {
+  app.exit(0)
+} else {
+  app.on('second-instance', () => showWindow())
+}
+
 app.whenReady().then(() => {
+  if (!app.hasSingleInstanceLock()) return
   app.setAppUserModelId('com.craftpanel.app') // 윈도우 알림에 앱 이름이 제대로 나오게
   applyLoginItem() // 윈도우 시작 시 실행 설정을 맞춘다 (앱 위치가 바뀌었을 수 있어서)
   cleanupUnfinished()
