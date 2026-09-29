@@ -127,7 +127,7 @@ export function isEulaAccepted(folderPath: string): boolean {
 }
 
 export function acceptEula(folderPath: string): void {
-  const text = `# 마인크래프트 서버 매니저에서 사용자가 EULA(https://aka.ms/MinecraftEULA)에 동의함\n# ${new Date().toISOString()}\neula=true\n`
+  const text = `# CraftPanel에서 사용자가 EULA(https://aka.ms/MinecraftEULA)에 동의함\n# ${new Date().toISOString()}\neula=true\n`
   fs.writeFileSync(path.join(folderPath, 'eula.txt'), text)
 }
 

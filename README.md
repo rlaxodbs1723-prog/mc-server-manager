@@ -1,4 +1,4 @@
-# MC Server Manager
+# CraftPanel
 
 A free Windows desktop app that lets Minecraft players create and run their own server in a few clicks — no command line, no config-file hunting.
 

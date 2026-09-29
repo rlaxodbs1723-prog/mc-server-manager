@@ -28,7 +28,7 @@ export default function TitleBar() {
         <span className="logo">
           <Box size={13} strokeWidth={2.5} />
         </span>
-        서버 매니저
+        CraftPanel
       </div>
       {down && (
         <span className="site-down" title="이 사이트가 지금 응답하지 않아요. 앱 문제가 아니라 사이트 문제라서 잠시 뒤에 알아서 다시 돼요. 그동안 검색·설치가 안 되거나 아이콘이 안 보일 수 있어요.">

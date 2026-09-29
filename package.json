@@ -36,5 +36,6 @@
   },
   "allowScripts": {
     "electron@44.4.5": true
-  }
+  },
+  "productName": "CraftPanel"
 }

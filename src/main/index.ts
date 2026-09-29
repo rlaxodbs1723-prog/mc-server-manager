@@ -1,3 +1,4 @@
+import './datapath' // 맨 먼저: 데이터 폴더 위치 고정
 import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, Notification, screen, shell, Tray } from 'electron'
 import fs from 'fs'
 import { join, resolve, sep } from 'path'
@@ -110,7 +111,7 @@ function requestQuit(): void {
 function ensureTray(): void {
   if (tray) return
   tray = new Tray(nativeImage.createFromPath(trayIconPath()))
-  tray.setToolTip('서버 매니저')
+  tray.setToolTip('CraftPanel')
   tray.on('click', showWindow)
   tray.on('double-click', showWindow)
   tray.setContextMenu(
@@ -138,7 +139,7 @@ function createWindow(): void {
     frame: false,
     show: false,
     backgroundColor: '#101013', // 화면이 뜨기 전 번쩍이는 흰 화면 방지
-    title: '마인크래프트 서버 매니저',
+    title: 'CraftPanel',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -518,7 +519,7 @@ ipcMain.handle('quitApp', async () => {
 })
 
 app.whenReady().then(() => {
-  app.setAppUserModelId('mc-server-manager') // 윈도우 알림에 앱 이름이 제대로 나오게
+  app.setAppUserModelId('com.craftpanel.app') // 윈도우 알림에 앱 이름이 제대로 나오게
   applyLoginItem() // 윈도우 시작 시 실행 설정을 맞춘다 (앱 위치가 바뀌었을 수 있어서)
   cleanupUnfinished()
   cleanWorldTemp()
