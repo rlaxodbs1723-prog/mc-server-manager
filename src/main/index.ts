@@ -87,7 +87,8 @@ function onSomeDisplay(x: number, y: number): boolean {
 // 서버가 켜져 있을 때 창을 닫으면 끄지 않고 작업 표시줄 오른쪽(트레이)으로 숨긴다
 let tray: Tray | null = null
 let trayHinted = false
-const trayIconPath = (): string => (app.isPackaged ? join(process.resourcesPath, 'tray.png') : join(__dirname, '../../resources/tray.png'))
+// 앱 아이콘 (build-tools/icon.svg에서 만든다: node build-tools/make-icon.mjs)
+const resourcePath = (name: string): string => (app.isPackaged ? join(process.resourcesPath, name) : join(__dirname, '../../resources', name))
 
 function showWindow(): void {
   if (!mainWin) return
@@ -110,7 +111,7 @@ function requestQuit(): void {
 
 function ensureTray(): void {
   if (tray) return
-  tray = new Tray(nativeImage.createFromPath(trayIconPath()))
+  tray = new Tray(nativeImage.createFromPath(resourcePath('icon.png')).resize({ width: 16, height: 16, quality: 'best' }))
   tray.setToolTip('CraftPanel')
   tray.on('click', showWindow)
   tray.on('double-click', showWindow)
@@ -140,6 +141,7 @@ function createWindow(): void {
     show: false,
     backgroundColor: '#101013', // 화면이 뜨기 전 번쩍이는 흰 화면 방지
     title: 'CraftPanel',
+    icon: resourcePath('icon.ico'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -180,7 +182,7 @@ function createWindow(): void {
       new Notification({
         title: anyRunning() ? '서버는 계속 돌아가고 있어요' : working() && !alwaysTray ? '작업이 끝날 때까지 뒤에서 계속해요' : '앱이 트레이에서 계속 켜져 있어요',
         body: '작업 표시줄 오른쪽 아이콘을 누르면 다시 열 수 있어요.',
-        icon: trayIconPath()
+        icon: resourcePath('icon.png')
       }).show()
     }
   })
