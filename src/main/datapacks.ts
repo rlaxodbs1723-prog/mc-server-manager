@@ -9,7 +9,7 @@ import type { InstalledDatapack, ModSearchHit, ModVersionItem, SearchSite } from
 import { downloadFile } from './download'
 import * as modrinth from './modrinth'
 import * as cf from './curseforge'
-import { mergedSearch, sameNameOtherSite } from './merge'
+import { mergedSearch, preferCurseForge, sameNameOtherSite } from './merge'
 import { readProperties } from './properties'
 import { getState, sendCommand } from './runner'
 import { readServerInfo } from './servers'
@@ -103,7 +103,8 @@ export function list(folderPath: string): InstalledDatapack[] {
 }
 
 export async function search(folderPath: string, query: string, page = 0, site: SearchSite = 'all'): Promise<{ total: number; more: boolean; hits: ModSearchHit[] }> {
-  const { mcVersion } = readServerInfo(folderPath)
+  const server = readServerInfo(folderPath)
+  const { mcVersion } = server
   const track = Object.values(readTrack(folderPath))
   const installed = new Set(track.map((t) => t.projectId))
   const dupOf = sameNameOtherSite(track)
@@ -111,7 +112,8 @@ export async function search(folderPath: string, query: string, page = 0, site: 
     page,
     () => modrinth.search({ query, projectType: 'datapack', mcVersion, loaders: ['datapack'], offset: page * 20, limit: 20 }),
     () => cf.searchProjects({ classId: cf.CF_CLASS.datapack, query, gameVersion: mcVersion, offset: page * 20 }),
-    site
+    site,
+    (mr, c) => preferCurseForge(server, mr.projectId, c.projectId, () => modrinth.getCompatibleVersions(mr.projectId, mcVersion, ['datapack']), () => cf.projectFiles(cf.cfNum(c.projectId), mcVersion))
   )
   return { ...res, hits: res.hits.map((h) => ({ ...h, installed: installed.has(h.projectId), sameNameInstalled: !installed.has(h.projectId) && dupOf(h) })) }
 }

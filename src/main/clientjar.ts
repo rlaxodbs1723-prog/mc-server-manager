@@ -12,7 +12,7 @@ import * as modrinth from './modrinth'
 
 export type OffReason = 'client' | 'clientMixin'
 
-const META = ['fabric.mod.json', 'quilt.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml', 'META-INF/MANIFEST.MF']
+const META = ['fabric.mod.json', 'quilt.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml', 'META-INF/MANIFEST.MF', 'mcmod.info']
 
 // jar 안에서 원하는 파일들만 읽는다 (이름 -> 내용). jar 안에 든 jar는 Buffer로 넘긴다
 export function readEntries(jar: string | Buffer, want: (name: string) => boolean): Promise<Map<string, Buffer>> {
@@ -202,7 +202,8 @@ function modIdOf(meta: Map<string, string>): string | null {
     // 읽을 수 없으면 아래 toml로
   }
   const t = (meta.get('META-INF/neoforge.mods.toml') ?? '') + (meta.get('META-INF/mods.toml') ?? '')
-  return t.match(/\[\[mods\]\][^[]*?modId\s*=\s*"([^"]+)"/)?.[1] ?? null
+  // 옛 Forge(1.12 이하)는 mcmod.info
+  return t.match(/\[\[mods\]\][^[]*?modId\s*=\s*"([^"]+)"/)?.[1] ?? /"modid"\s*:\s*"([^"]+)"/i.exec(meta.get('mcmod.info') ?? '')?.[1]?.toLowerCase() ?? null
 }
 
 export async function localInfo(jar: string): Promise<LocalInfo> {

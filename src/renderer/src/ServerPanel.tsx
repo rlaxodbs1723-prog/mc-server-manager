@@ -24,7 +24,7 @@ const LOG_LIMIT = 1500
 // 켜기 전 점검 결과를 비교하는 열쇠 (메모리는 숫자가 매번 달라서 종류만 본다)
 function preflightKey(r: PreflightResult): string {
   const mem = !r.memory ? '' : r.memory.startsWith('서버에') ? 'total' : 'free'
-  return JSON.stringify([r.missing.map((m) => [m.mod, [...m.needs].sort()]).sort(), mem])
+  return JSON.stringify([r.missing.map((m) => [m.mod, [...m.needs].sort()]).sort(), r.duplicates.map((d) => [...d.files].sort()).sort(), mem])
 }
 
 // 옆 목록의 우클릭 메뉴에서 고른 동작 (n이 바뀔 때마다 한 번 실행)
@@ -202,7 +202,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
       resumeStart.current = true
       return checkOffSuggestions()
     }
-    if (result && (result.missing.length || result.memory) && readStored(`preflightOk:${folderPath}`, '') !== preflightKey(result)) return setPreflight(result)
+    if (result && (result.missing.length || result.duplicates.length || result.memory) && readStored(`preflightOk:${folderPath}`, '') !== preflightKey(result)) return setPreflight(result)
     await launch()
   }
 

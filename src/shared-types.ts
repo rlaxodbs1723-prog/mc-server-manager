@@ -66,6 +66,7 @@ export interface SiteStatus {
 
 export interface PreflightResult {
   missing: { mod: string; needs: string[] }[] // 켜진 모드가 필요로 하는데 없는 모드 ID
+  duplicates: { mod: string; files: string[] }[] // 같은 모드가 두 개 이상 켜져 있음 (서버가 켜지지 않는다)
   memory: string | null // 메모리가 모자랄 때 설명
   askOff: boolean // 서버에 맞지 않아 보이는 모드가 새로 있어서 끌지 물어봐야 함
 }

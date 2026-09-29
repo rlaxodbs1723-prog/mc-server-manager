@@ -25,7 +25,9 @@ export async function mergedSearch<T extends { title: string; author?: string }>
   page: number,
   fromModrinth: () => Promise<{ total: number; hits: T[] }>,
   fromCurseForge: () => Promise<{ total: number; hits: T[] }>,
-  site: SearchSite = 'all'
+  site: SearchSite = 'all',
+  // 같은 모드가 양쪽에 다 있을 때 CurseForge 쪽을 보여 줄지 (없으면 Modrinth 쪽. 서버에 필요한지 정보가 있어서)
+  preferCf?: (mr: T, cf: T) => Promise<boolean>
 ): Promise<{ total: number; more: boolean; hits: (T & { source: 'modrinth' | 'curseforge' })[] }> {
   const useCf = hasCurseForgeKey() && site !== 'modrinth'
   const useMr = site !== 'curseforge'
@@ -38,12 +40,39 @@ export async function mergedSearch<T extends { title: string; author?: string }>
   const m = mr.status === 'fulfilled' ? mr.value : { total: 0, hits: [] as T[] }
   const c = cr.status === 'fulfilled' ? cr.value : { total: 0, hits: [] as T[] }
   const cOnly = c.hits.filter((h) => !m.hits.some((x) => sameMod(x, h)))
+  // 양쪽에 다 있는 모드는 어느 쪽을 보여 줄지 고른다 (예: 한쪽에만 새 버전이 올라와 있으면 그쪽)
+  const pick = await Promise.all(
+    m.hits.map(async (x) => {
+      const twin = c.hits.find((h) => sameMod(x, h))
+      if (!twin || !preferCf) return null
+      return (await preferCf(x, twin).catch(() => false)) ? twin : null
+    })
+  )
   const hits: (T & { source: 'modrinth' | 'curseforge' })[] = []
   for (let i = 0; i < Math.max(m.hits.length, cOnly.length); i++) {
-    if (m.hits[i]) hits.push({ ...m.hits[i], source: 'modrinth' })
+    if (pick[i]) hits.push({ ...pick[i]!, source: 'curseforge' })
+    else if (m.hits[i]) hits.push({ ...m.hits[i], source: 'modrinth' })
     if (cOnly[i]) hits.push({ ...cOnly[i], source: 'curseforge' })
   }
   // 어느 한쪽이라도 다음 페이지가 남아 있으면 더 불러온다
   const next = (page + 1) * PAGE
   return { total: m.total + c.total, more: next < m.total || next < c.total, hits }
+}
+
+// 같은 모드가 두 사이트에 다 있을 때 CurseForge 쪽을 쓸지.
+// CurseForge 모드팩으로 만든 서버면 CurseForge (게임도 CurseForge에서 받았을 가능성이 높아서 버전이 맞는다).
+// 아니면 이 서버 버전에 맞는 파일이 더 새로 올라온 쪽 (한쪽에만 새 버전이 올라오는 모드가 있다. 예: 1.12.2 CreativeCore)
+export async function preferCurseForge(
+  server: { modpack?: { source?: string } },
+  _mrId: string,
+  _cfId: string,
+  mrFiles: () => Promise<{ datePublished: string }[]>,
+  cfFiles: () => Promise<{ fileDate: string }[]>
+): Promise<boolean> {
+  const [m, c] = await Promise.all([mrFiles().catch(() => []), cfFiles().catch(() => [])])
+  if (!c.length) return false // CurseForge에 맞는 파일이 없거나 받을 수 없게 막혀 있다
+  if (!m.length || server.modpack?.source === 'curseforge') return true
+  const newest = (xs: string[]): number => Math.max(...xs.map((d) => Date.parse(d) || 0))
+  const DAY = 86_400_000
+  return newest(c.map((f) => f.fileDate)) > newest(m.map((v) => v.datePublished)) + 3 * DAY // 조금 차이는 같은 버전을 두 곳에 올린 것
 }

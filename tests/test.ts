@@ -4,6 +4,7 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { sameMod } from '../src/shared-types'
+import { preferCurseForge } from '../src/main/merge'
 import { readYamlValue, writeYamlValue } from '../src/main/yamlvalue'
 import { readProperties, writeProperties } from '../src/main/properties'
 import { parseJavaArgs, picksGc, createServer, startServerAt, readServerInfo, patchServerInfo, saveSettings, getSettings, duplicateServer, resetWorld, changeVersion, renameServer, listServers, setServerOrder, deleteServer, cleanupUnfinished } from '../src/main/servers'
@@ -104,6 +105,15 @@ async function quick(): Promise<void> {
   await check('같은 모드 판단: 이름+제작자가 같아야 같은 모드', () => {
     expect(sameMod({ title: 'Cloth Config API', author: 'shedaniel' }, { title: 'Cloth Config API (Fabric/Forge)', author: 'shedaniel' }), '로더 표시만 다른 같은 모드를 다르다고 했어요')
     expect(!sameMod({ title: 'Cloth Config API', author: 'shedaniel' }, { title: 'Cloth Config API', author: 'someone' }), '제작자가 다른데 같다고 했어요')
+  })
+  await check('같은 모드가 두 사이트에 있을 때: 더 새 버전 쪽 / CurseForge 모드팩 서버면 CurseForge', async () => {
+    const d = (days: number): string => new Date(Date.now() - days * 86_400_000).toISOString()
+    const mr = (days: number) => async () => [{ datePublished: d(days) }]
+    const cfF = (days: number) => async () => [{ fileDate: d(days) }]
+    expect(await preferCurseForge({}, '', '', mr(400), cfF(10)), 'CurseForge에만 새 버전이 있는데 Modrinth를 골랐어요 (1.12.2 CreativeCore)')
+    expect(!(await preferCurseForge({}, '', '', mr(10), cfF(11))), '비슷한데 CurseForge를 골랐어요')
+    expect(!(await preferCurseForge({}, '', '', mr(10), async () => [])), 'CurseForge에 맞는 파일이 없는데 골랐어요')
+    expect(await preferCurseForge({ modpack: { source: 'curseforge' } }, '', '', mr(1), cfF(100)), 'CurseForge 모드팩 서버인데 Modrinth를 골랐어요')
   })
   await check('튕김 분석: 메모리 부족을 알아본다', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcsm-crash-'))
@@ -279,6 +289,34 @@ async function real(): Promise<void> {
     expect(getState(folder) === 'stopped', '켜지는 중에 튕겼는데 다시 켜려고 해요')
     expect(getLog(folder).some((l) => l.startsWith('[앱] 튕긴 원인')), '꺼진 뒤 로그에 튕긴 원인 안내가 안 남았어요 (다른 서버를 보다 오면 사라져요)')
     fs.rmSync(jar, { force: true })
+  })
+  await check('옛 Forge 모드(mcmod.info)도 알아보고, 같은 모드 두 개를 잡고, 직접 넣은 모드를 또 설치하면 막기', async () => {
+    const modsDir = path.join(folder, 'mods')
+    // 1) mcmod.info만 있는 옛 모드가 주는 ID를 알아본다 (RLCraft의 CreativeCore)
+    const core = path.join(modsDir, 'test-oldcore.jar')
+    await new Promise<void>((resolve, reject) => {
+      const zip = new yazl.ZipFile()
+      zip.addBuffer(Buffer.from('[{"modid": "testoldcore", "name": "Test Old Core", "version": "1.0",}]'), 'mcmod.info') // 끝 쉼표: 옛 모드에 흔한 모양
+      zip.outputStream.pipe(fs.createWriteStream(core)).on('close', () => resolve()).on('error', reject)
+      zip.end()
+    })
+    const user = path.join(modsDir, 'test-needs-oldcore.jar')
+    await fakeFabricMod(user, { id: 'testneedsoldcore', name: 'Needs Old Core', depends: { testoldcore: '*' } })
+    const pf = await runPreflight(folder)
+    expect(!pf.missing.some((m) => m.needs.includes('testoldcore')), 'mcmod.info로 들어 있는 모드를 "없다"고 해요')
+    // 2) 같은 모드 두 개
+    fs.copyFileSync(core, path.join(modsDir, 'test-oldcore-copy.jar'))
+    expect((await runPreflight(folder)).duplicates.some((d) => d.files.length === 2), '같은 모드 두 개를 못 잡았어요')
+    for (const f of ['test-oldcore.jar', 'test-oldcore-copy.jar', 'test-needs-oldcore.jar']) fs.rmSync(path.join(modsDir, f), { force: true })
+    // 3) 폴더에 직접 넣은 Lithium이 있는데 또 설치하면 막는다
+    const lith = mods.list(folder).find((m) => /lithium/i.test(m.fileName))!
+    const jarBytes = fs.readFileSync(path.join(modsDir, lith.fileName))
+    await mods.remove(folder, lith.fileName) // 설치 기록에서 빼고
+    fs.writeFileSync(path.join(modsDir, 'my-lithium.jar'), jarBytes) // 사용자가 직접 넣은 것처럼
+    expect(await throws(() => mods.install(folder, LITHIUM)), '이미 넣어 둔 모드를 또 설치했어요')
+    expect(fs.readdirSync(modsDir).filter((f) => /lithium/i.test(f)).length === 1, 'Lithium 파일이 두 개가 됐어요')
+    fs.rmSync(path.join(modsDir, 'my-lithium.jar'), { force: true })
+    await mods.install(folder, LITHIUM) // 뒤 테스트를 위해 되돌린다
   })
   await check('서버 복제 (월드·모드 포함, session.lock 제외)', async () => {
     const copy = await duplicateServer(folder, '자동 테스트 복제')

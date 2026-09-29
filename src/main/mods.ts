@@ -11,7 +11,7 @@ import { checkJars, localInfo, type OffReason } from './clientjar'
 import { downloadFile } from './download'
 import * as modrinth from './modrinth'
 import * as cf from './curseforge'
-import { mergedSearch, sameNameOtherSite, squash } from './merge'
+import { mergedSearch, preferCurseForge, sameNameOtherSite, squash } from './merge'
 import { getState } from './runner'
 import { readServerInfo, patchServerInfo } from './servers'
 
@@ -259,7 +259,8 @@ export async function search(folderPath: string, query: string, page = 0, site: 
       })
       return spec.projectType === 'mod' ? { ...r, hits: await dropClientOnly(r.hits) } : r
     },
-    site
+    site,
+    (mr, c) => preferCurseForge(server, mr.projectId, c.projectId, () => modrinth.getCompatibleVersions(mr.projectId, server.mcVersion, spec.loaders), () => cf.projectFiles(cf.cfNum(c.projectId), server.mcVersion, cfLoaders(spec)))
   )
   return {
     ...res,
@@ -309,6 +310,7 @@ async function installOne(ctx: Ctx, projectId: string, pinnedVersionId: string |
 
   const fileName = safeFileName(version.file.fileName)
   await downloadFile({ url: version.file.url, dest: path.join(ctx.dir, fileName), sha1: version.file.sha1 ?? undefined })
+  if (await dropIfDuplicate(ctx, fileName, project.title, parentId)) return
   ctx.track.push({
     projectId,
     versionId: version.id,
@@ -337,6 +339,27 @@ async function installOne(ctx: Ctx, projectId: string, pinnedVersionId: string |
 }
 
 // CurseForge: 이 버전·로더에 맞는 최신 파일을 받고, 꼭 필요한 모드(relationType 3)도 같이 설치한다
+// 방금 받은 파일과 같은 모드(모드 ID가 같은 것)가 폴더에 이미 켜져 있으면 그 파일 이름.
+// 앱 밖에서 직접 넣어 둔 모드는 설치 기록에 없어서, 파일 안의 모드 ID로 확인한다 (같은 모드가 두 개면 서버가 켜지지 않는다)
+async function sameModIn(dir: string, fileName: string): Promise<string | null> {
+  const id = (await localInfo(path.join(dir, fileName)).catch(() => null))?.id
+  if (!id) return null
+  for (const f of fs.readdirSync(dir)) {
+    if (f === fileName || !/\.jar$/i.test(f)) continue
+    if ((await localInfo(path.join(dir, f)).catch(() => null))?.id === id) return f
+  }
+  return null
+}
+
+// 받은 파일이 이미 있는 모드와 같으면 지우고: 필요한 모드(의존성)로 받은 거면 이미 있으니 괜찮고, 직접 고른 거면 알린다
+async function dropIfDuplicate(ctx: Ctx, fileName: string, title: string, parentId: string | null): Promise<boolean> {
+  const dup = await sameModIn(ctx.dir, fileName)
+  if (!dup) return false
+  fs.rmSync(path.join(ctx.dir, fileName), { force: true })
+  if (parentId) return true
+  throw new Error(`"${title}"은(는) 이미 들어 있어요 (${dup}). 다른 버전으로 바꾸려면 그 파일을 먼저 지워 주세요.`)
+}
+
 async function installOneCf(ctx: Ctx, projectId: string, parentId: string | null, depth: number): Promise<void> {
   const modId = cf.cfNum(projectId)
   const info = (await cf.projectsInfo([modId])).get(modId)
@@ -345,6 +368,7 @@ async function installOneCf(ctx: Ctx, projectId: string, parentId: string | null
   if (!file) throw new Error(`"${title}"은(는) 이 서버(${ctx.mcVersion})에 맞는 파일이 없거나, 다른 앱에서 받을 수 없게 막혀 있어요.`)
   const fileName = safeFileName(file.fileName)
   await downloadFile({ url: cf.checkCfUrl(file.downloadUrl), dest: path.join(ctx.dir, fileName), sha1: cf.cfSha1(file) })
+  if (await dropIfDuplicate(ctx, fileName, title, parentId)) return
   ctx.track.push({
     projectId,
     versionId: cf.CF_PREFIX + file.id,

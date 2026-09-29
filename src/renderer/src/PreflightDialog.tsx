@@ -33,6 +33,15 @@ export default function PreflightDialog({ result, onStart, onCancel, onFind }: {
             </div>
           )
         })}
+        {result.duplicates.map((d) => (
+          <div className="preflight-item" key={d.files.join('|')}>
+            <AlertTriangle size={16} />
+            <div className="pf-text">
+              <b>"{d.mod}" 모드가 {d.files.length}개 들어 있어요</b>
+              <span className="hint">같은 모드가 두 개 이상 있으면 서버가 켜지지 않아요: {d.files.join(', ')}</span>
+            </div>
+          </div>
+        ))}
         {result.memory && (
           <div className="preflight-item">
             <AlertTriangle size={16} />

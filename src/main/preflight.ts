@@ -48,10 +48,16 @@ function fromToml(text: string): Omit<ModMeta, 'name'> & { name?: string } {
   return { name, provides, needs }
 }
 
+// 옛 Forge(1.12 이하) 모드의 정보 파일 mcmod.info: 모드 ID만 쓴다 (필요한 모드 목록은 틀린 경우가 많아서 보지 않는다).
+// JSON 모양이 제각각이라(주석·끝 쉼표 등) 글자에서 바로 찾는다
+function fromMcmod(text: string): Omit<ModMeta, 'name'> & { name?: string } {
+  return { name: /"name"\s*:\s*"([^"]+)"/.exec(text)?.[1], provides: [...text.matchAll(/"modid"\s*:\s*"([^"]+)"/gi)].map((m) => m[1].toLowerCase()), needs: [] }
+}
+
 // jar 하나(와 안에 든 jar들)의 정보
 async function readMod(jar: string | Buffer, depth = 0): Promise<ModMeta | null> {
   const files = await readEntries(jar, (n) =>
-    ['fabric.mod.json', 'quilt.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml'].includes(n) || (depth < 2 && /^META-INF\/(jars|jarjar)\/[^/]+\.jar$/i.test(n))
+    ['fabric.mod.json', 'quilt.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml', 'mcmod.info'].includes(n) || (depth < 2 && /^META-INF\/(jars|jarjar)\/[^/]+\.jar$/i.test(n))
   )
   let meta: (Omit<ModMeta, 'name'> & { name?: string }) | null = null
   try {
@@ -63,6 +69,12 @@ async function readMod(jar: string | Buffer, depth = 0): Promise<ModMeta | null>
     else if (t) meta = fromToml(t.toString('utf8'))
   } catch {
     meta = null // 주석이 들어 있는 등 읽을 수 없는 정보 파일
+  }
+  // mcmod.info가 있으면 그 ID도 이 jar가 주는 것으로 본다 (새 정보 파일과 같이 든 jar도 있다)
+  const mc = files.get('mcmod.info')
+  if (mc) {
+    const old = fromMcmod(mc.toString('utf8'))
+    meta = meta ? { ...meta, name: meta.name ?? old.name, provides: [...meta.provides, ...old.provides] } : old
   }
   if (!meta) return null
   const provides = [...meta.provides]
@@ -86,13 +98,14 @@ async function readModCached(file: string): Promise<ModMeta | null> {
   return meta
 }
 
-async function findMissing(folderPath: string): Promise<PreflightResult['missing']> {
+async function checkMods(folderPath: string): Promise<Pick<PreflightResult, 'missing' | 'duplicates'>> {
   const dir = path.join(folderPath, 'mods')
-  if (!fs.existsSync(dir)) return []
+  if (!fs.existsSync(dir)) return { missing: [], duplicates: [] }
   const files = fs.readdirSync(dir).filter((f) => /\.jar(\.disabled)?$/i.test(f))
   const on: ModMeta[] = []
   const have = new Set<string>()
   const off = new Set<string>() // 꺼 둔 모드가 주는 ID
+  const owners = new Map<string, { name: string; files: string[] }>() // 모드 ID → 그 ID를 직접 주는 켜진 파일들
   for (const f of files) {
     const m = await readModCached(path.join(dir, f)).catch(() => null)
     if (!m) continue
@@ -100,14 +113,18 @@ async function findMissing(folderPath: string): Promise<PreflightResult['missing
     else {
       on.push(m)
       m.provides.forEach((id) => have.add(id))
+      // 첫 ID(그 jar의 본래 모드)만 본다. 안에 든 jar가 주는 ID는 여러 모드가 같이 넣어 두는 게 정상이다
+      const own = m.provides[0]
+      if (own) owners.set(own, { name: owners.get(own)?.name ?? m.name, files: [...(owners.get(own)?.files ?? []), f] })
     }
   }
+  const duplicates = [...owners].filter(([id, o]) => o.files.length > 1 && !BUILT_IN.has(id)).map(([, o]) => ({ mod: o.name, files: o.files }))
   const out: PreflightResult['missing'] = []
   for (const m of on) {
     const needs = [...new Set(m.needs)].filter((id) => !BUILT_IN.has(id) && !have.has(id)).map((id) => (off.has(id) ? `${id} (꺼져 있음)` : id))
     if (needs.length) out.push({ mod: m.name, needs })
   }
-  return out
+  return { missing: out, duplicates }
 }
 
 // 자바는 준 메모리를 처음부터 다 쓰지 않아서, 정말 모자랄 때만 알린다
@@ -125,7 +142,7 @@ export async function runPreflight(folderPath: string): Promise<PreflightResult>
   const info = readServerInfo(folderPath)
   const modded = MODDED.includes(info.software ?? 'vanilla')
   return {
-    missing: modded ? await findMissing(folderPath).catch(() => []) : [],
+    ...(modded ? await checkMods(folderPath).catch(() => ({ missing: [], duplicates: [] })) : { missing: [], duplicates: [] }),
     memory: memoryWarning(info.memoryMb),
     askOff: modded ? await scanForOff(folderPath).catch(() => false) : false
   }

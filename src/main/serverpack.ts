@@ -80,8 +80,8 @@ async function fromMods(root: string): Promise<Partial<ServerPackInfo>> {
   const loaders = new Map<Software, number>()
   const versions = new Map<string, number>()
   for (const f of jarsIn(dir).slice(0, 80)) {
-    const e = await readEntries(path.join(dir, f), (n) => ['fabric.mod.json', 'quilt.mod.json', 'META-INF/neoforge.mods.toml', 'META-INF/mods.toml'].includes(n))
-    const kind: Software | null = e.has('quilt.mod.json') ? 'quilt' : e.has('fabric.mod.json') ? 'fabric' : e.has('META-INF/neoforge.mods.toml') ? 'neoforge' : e.has('META-INF/mods.toml') ? 'forge' : null
+    const e = await readEntries(path.join(dir, f), (n) => ['fabric.mod.json', 'quilt.mod.json', 'META-INF/neoforge.mods.toml', 'META-INF/mods.toml', 'mcmod.info'].includes(n))
+    const kind: Software | null = e.has('quilt.mod.json') ? 'quilt' : e.has('fabric.mod.json') ? 'fabric' : e.has('META-INF/neoforge.mods.toml') ? 'neoforge' : e.has('META-INF/mods.toml') || e.has('mcmod.info') ? 'forge' : null
     if (kind) loaders.set(kind, (loaders.get(kind) ?? 0) + 1)
     // 예: lithium-fabric-0.15.4+mc1.21.1.jar, jei-1.21.1-fabric-19.8.jar, fabric-api-0.116.17+1.21.1.jar
     for (const m of f.matchAll(/(?:mc|[+_-])(1\.\d{1,2}(?:\.\d{1,2})?)(?=[+_.-])/gi)) if (MC.test(m[1])) versions.set(m[1], (versions.get(m[1]) ?? 0) + 1)
