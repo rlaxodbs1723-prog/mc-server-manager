@@ -3,3 +3,4 @@ out
 dist
 .env
 .env.*
+.claude/
