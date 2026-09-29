@@ -442,6 +442,36 @@ async function afterStopped(folder: string): Promise<void> {
     const ups = await mods.checkUpdates(folder)
     expect(typeof ups === 'object', '업데이트 확인이 안 돼요 (앱이 설치한 것으로 인식 못 함)')
   })
+  if (hasCurseForgeKey()) {
+    await check('CurseForge 모드: 설치 → 예전 버전으로 → 업데이트 (파일 손상 확인 포함)', async () => {
+      const r = await mods.search(folder, 'jei', 0, 'curseforge')
+      const hit = r.hits.find((h) => /^just enough items/i.test(h.title)) ?? r.hits[0]
+      expect(hit, 'CurseForge 검색 결과가 없어요')
+      const res = await mods.install(folder, hit.projectId)
+      expect(res.failed.length === 0 && res.installed.length > 0, `설치 실패: ${res.failed.join(', ')}`)
+      const m = mods.list(folder).find((x) => x.title === hit.title)
+      expect(m, '설치된 목록에 없어요')
+      const vs = await mods.versionsOf(folder, m!.fileName)
+      const old = vs.find((v) => !v.current)
+      expect(old, '다른 버전이 없어요')
+      const sv = await mods.setVersion(folder, m!.fileName, old!.id)
+      expect(sv.failed.length === 0, `예전 버전으로 못 바꿨어요: ${sv.failed.join(', ')}`)
+      const ups = await mods.checkUpdates(folder)
+      const mine = mods.list(folder).find((x) => x.title === hit.title)!
+      expect(ups[mine.fileName], '업데이트를 못 찾았어요')
+      const up = await mods.updateMods(folder, [mine.fileName])
+      expect(up.failed.length === 0, `업데이트 실패: ${up.failed.join(', ')}`)
+      await mods.remove(folder, mods.list(folder).find((x) => x.title === hit.title)!.fileName)
+    })
+    await check('CurseForge 데이터팩 설치 (파일 손상 확인 포함)', async () => {
+      const r = await datapacks.search(folder, 'dungeon', 0, 'curseforge') // Terralith는 CurseForge 데이터팩 분류에 없다
+      const hit = r.hits.find((h) => h.projectId.startsWith('cf:'))
+      expect(hit, 'CurseForge 데이터팩 검색 결과가 없어요')
+      const before = datapacks.list(folder).length
+      await datapacks.install(folder, hit!.projectId)
+      expect(datapacks.list(folder).length === before + 1, '설치되지 않았어요')
+    })
+  }
   await check('플레이어용 모드팩(mrpack) 만들기', async () => {
     const out = await mods.exportClientPack(folder, 'mrpack', null)
     expect(out && fs.statSync(out).size > 0, '파일이 안 만들어졌어요')
@@ -538,14 +568,24 @@ async function modpackServers(): Promise<void> {
     throw new Error('알맞은 모드팩을 못 찾았어요')
   })
   if (hasCurseForgeKey())
-    await check('CurseForge 모드팩 찾기 → 버전 → 풀기', async () => {
+    await check('CurseForge 모드팩 찾기 → 버전 → 풀기 → 서버 만들기(파일 손상 확인 포함) → 켜기', async () => {
       const r = await browseModpacks({ site: 'curseforge', query: '', sort: 'downloads', gameVersion: MC, loaders: ['fabric'], offset: 0 })
       expect(r.hits.length > 0, '모드팩 검색 결과가 없어요')
-      const hit = r.hits[0]
-      const v = (await modpackVersions(hit.projectId, 'curseforge'))[0]
-      expect(v, '모드팩 버전이 없어요')
-      const pack = await prepareFromCurseForge(Number(hit.projectId.replace(/^cf:/, '')), Number(v.id))
-      expect(pack.modCount > 0 && pack.mcVersion, '모드팩을 못 풀었어요')
+      for (const hit of r.hits.slice(0, 8)) {
+        const v = (await modpackVersions(hit.projectId, 'curseforge')).find((x) => x.gameVersions.includes(MC))
+        if (!v) continue
+        const pack = await prepareFromCurseForge(Number(hit.projectId.replace(/^cf:/, '')), Number(v.id))
+        if (pack.software !== 'fabric' || pack.modCount === 0 || pack.modCount > 120 || pack.manual.length) continue // 빨리 끝나고, 직접 넣을 모드가 없는 것
+        const info = await createServer({ name: '자동 테스트 CF 모드팩', software: pack.software, mcVersion: pack.mcVersion, loaderVersion: pack.loaderVersion, modpackId: pack.packId, properties: { 'server-port': '25595' } }, () => undefined)
+        acceptEula(info.folderPath)
+        await mods.installBaseMods(info.folderPath, true)
+        if ((await runPreflight(info.folderPath)).askOff) await mods.applyOffSuggestions(info.folderPath, mods.offSuggestions(info.folderPath).map((s) => s.fileName))
+        console.log(`      (${hit.title}: 모드 ${pack.modCount}개)`)
+        await startAndWait(info.folderPath)
+        await stopAndWait(info.folderPath)
+        return
+      }
+      throw new Error('알맞은 CurseForge 모드팩을 못 찾았어요')
     })
 }
 
