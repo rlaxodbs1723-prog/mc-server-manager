@@ -27,12 +27,12 @@ import * as whitelist from './whitelist'
 import { getManageInfo, runAction } from './manage'
 import { getVersions } from './mojang'
 import { acceptEula, anyRunning, getLog, getState, onServerEvent, sendCommand, stopAll, stopServer } from './runner'
-import { changeVersion, cancelAutoRestarts, setServerOrder, duplicateServer, renameServer, createServer, getSettings, readServerInfo, listServers, cleanupUnfinished, resetWorld, saveSettings, serversRoot, startServerAt } from './servers'
+import { changeVersion, deleteServer, cancelAutoRestarts, setServerOrder, duplicateServer, renameServer, createServer, getSettings, readServerInfo, listServers, cleanupUnfinished, resetWorld, saveSettings, serversRoot, startServerAt } from './servers'
 import { assertFree, busyJobs, setOnJobDone, withLock } from './lock'
 import { getSiteStatus } from './sitestatus'
 import { runPreflight } from './preflight'
 import { autoStartServers, setStarter } from './automation'
-import { backupRoot, createBackup, deleteBackup, getBackupSettings, listBackups, openBackupFolder, restoreBackup, setBackupSettings } from './backup'
+import { createBackup, deleteBackup, getBackupSettings, listBackups, openBackupFolder, restoreBackup, setBackupSettings } from './backup'
 
 let quitting = false // 서버를 끄고 닫기로 확정됨
 let creating = 0 // 지금 만들고 있는 서버 수 (만드는 중에 닫으면 확인한다)
@@ -296,12 +296,7 @@ ipcMain.handle('duplicateServer', (_event, folderPath: string, name: string) => 
 ipcMain.handle('deleteServer', async (_event, folderPath: string) => {
   const target = checkServerFolder(folderPath)
   if (getState(target) !== 'stopped') throw new Error('서버를 끈 다음에 삭제할 수 있어요.')
-  await withLock(target, '서버 삭제', async () => {
-    await shell.trashItem(target)
-    // 백업도 같이 휴지통으로 (안 그러면 같은 이름으로 새로 만든 서버에 예전 백업이 보인다)
-    const backups = backupRoot(target)
-    if (fs.existsSync(backups)) await shell.trashItem(backups).catch(() => undefined)
-  })
+  await withLock(target, '서버 삭제', () => deleteServer(target))
 })
 
 ipcMain.handle('openEulaPage', () => shell.openExternal(EULA_URL))

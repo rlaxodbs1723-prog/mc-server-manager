@@ -6,7 +6,7 @@
 import { DEFAULT_AUTOMATION, type ServerAutomation } from '../shared-types'
 import { notify } from './notify'
 import os from 'os'
-import { emitEvent, getPlayers, getState, onServerEvent, sendQuiet, serverPort, stopServer } from './runner'
+import { appLog, getPlayers, getState, onServerEvent, sendQuiet, serverPort, stopServer } from './runner'
 import { listServers, readServerInfo } from './servers'
 
 const PLAYER_NAME = /^[A-Za-z0-9_]{3,16}$/
@@ -19,7 +19,6 @@ function automationOf(folderPath: string): ServerAutomation {
   }
 }
 
-const appLog = (folderPath: string, line: string): void => emitEvent({ type: 'log', folderPath, line: `[앱] ${line}` })
 
 // 서버를 켜는 방법은 index.ts가 넘겨준다 (기본 모드 확인 등 사용자가 켤 때와 똑같이 켜려고)
 let starter: ((folderPath: string) => Promise<void>) | null = null

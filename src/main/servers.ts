@@ -30,7 +30,7 @@ import { getServerIcon } from './icon'
 import { notify } from './notify'
 import { analyzeCrash } from './crash'
 import { readYamlValue, writeYamlValue } from './yamlvalue'
-import { emitEvent, getPlayers, getStartedAt, getState, serverPort, isEulaAccepted, onCrash, onServerEvent, startServer } from './runner'
+import { appLog, emitEvent, getPlayers, getStartedAt, getState, serverPort, isEulaAccepted, onCrash, onServerEvent, startServer } from './runner'
 
 const INFO_FILE = 'server-manager.json' // 서버 폴더마다 앱이 쓰는 정보 파일
 const CREATING_FILE = '.creating' // 만드는 중 표시. 다 만들면 지운다 (앱이 도중에 꺼지면 남는다)
@@ -536,7 +536,7 @@ onCrash((folderPath, { log, startedAt, wasRunning }) => {
   const reason = analysis.title
   notify(`${serverName(folderPath)} 서버가 튕겼어요`, reason + (wasRunning ? '' : ' (켜지는 중에 꺼졌어요)'))
   const lines = [`[앱] 튕긴 원인: ${analysis.title}`, ...analysis.cause.split('\n').map((l) => `[앱]   ${l}`)]
-  lines.forEach((line) => emitEvent({ type: 'log', folderPath, line }))
+  lines.forEach((line) => appLog(folderPath, line))
   let enabled = true
   try {
     enabled = readServerInfo(folderPath).autoRestart !== false
@@ -557,16 +557,25 @@ onCrash((folderPath, { log, startedAt, wasRunning }) => {
     analysis
   })
   if (!restarting) return
-  emitEvent({ type: 'log', folderPath, line: `[앱] ${RESTART_DELAY_MS / 1000}초 뒤에 서버를 다시 켜요…` })
+  appLog(folderPath, `${RESTART_DELAY_MS / 1000}초 뒤에 서버를 다시 켜요…`)
   const timer = setTimeout(() => {
     pendingRestarts.delete(timer)
     if (getState(folderPath) !== 'stopped') return // 그사이 사용자가 직접 켰다
     startServerAt(folderPath, () => undefined).catch((e) =>
-      emitEvent({ type: 'log', folderPath, line: `[앱] 다시 켜지 못했어요: ${e instanceof Error ? e.message : e}` })
+      appLog(folderPath, `다시 켜지 못했어요: ${e instanceof Error ? e.message : e}`)
     )
   }, RESTART_DELAY_MS)
   pendingRestarts.add(timer)
 })
+
+// ---------- 삭제 ----------
+// 휴지통으로 보낸다 (되살릴 수 있게). 백업도 같이 (안 그러면 같은 이름으로 새로 만든 서버에 예전 백업이 보인다)
+export async function deleteServer(folderPath: string): Promise<void> {
+  if (getState(folderPath) !== 'stopped') throw new Error('서버를 끈 다음에 삭제할 수 있어요.')
+  await shell.trashItem(folderPath)
+  const backups = backupRoot(folderPath)
+  if (fs.existsSync(backups)) await shell.trashItem(backups).catch(() => undefined)
+}
 
 // ---------- 이름 바꾸기 · 복제 ----------
 // 이름만 바꾸고 폴더는 그대로 둔다 (백업·실행 중인 서버가 폴더 경로로 묶여 있다)

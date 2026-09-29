@@ -6,7 +6,7 @@ import path from 'path'
 import { friendlyError, type BackupItem, type BackupSettings } from '../shared-types'
 import { readProperties } from './properties'
 import { notify } from './notify'
-import { emitEvent, getState, onServerEvent, quietQuery, sendCommand } from './runner'
+import { appLog, emitEvent, getState, onServerEvent, quietQuery, sendCommand } from './runner'
 
 const DEFAULT_KEEP = 10 // 자동 백업은 기본으로 최근 10개만 남긴다
 const DEFAULT_EVERY_MIN = 60 // 켜져 있는 동안 1시간마다
@@ -49,9 +49,9 @@ function schedule(folderPath: string): void {
     setInterval(() => {
       if (getState(folderPath) !== 'running') return
       createBackup(folderPath, true)
-        .then(() => emitEvent({ type: 'log', folderPath, line: '[앱] 정기 백업을 했어요.' }))
+        .then(() => appLog(folderPath, '정기 백업을 했어요.'))
         .catch((e) => {
-          emitEvent({ type: 'log', folderPath, line: `[앱] 정기 백업을 하지 못했어요: ${(e as Error).message}` })
+          appLog(folderPath, `정기 백업을 하지 못했어요: ${(e as Error).message}`)
           notify('정기 백업을 하지 못했어요', `${path.basename(folderPath)}: ${friendlyError((e as Error).message)}`)
         })
     }, everyMin * 60_000)

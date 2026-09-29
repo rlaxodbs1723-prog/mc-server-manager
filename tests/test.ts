@@ -6,9 +6,14 @@ import path from 'path'
 import { sameMod } from '../src/shared-types'
 import { readYamlValue, writeYamlValue } from '../src/main/yamlvalue'
 import { readProperties, writeProperties } from '../src/main/properties'
-import { parseJavaArgs, picksGc, createServer, startServerAt, readServerInfo, patchServerInfo, saveSettings, getSettings, duplicateServer, resetWorld, changeVersion, renameServer, listServers, setServerOrder } from '../src/main/servers'
+import { parseJavaArgs, picksGc, createServer, startServerAt, readServerInfo, patchServerInfo, saveSettings, getSettings, duplicateServer, resetWorld, changeVersion, renameServer, listServers, setServerOrder, deleteServer, cleanupUnfinished } from '../src/main/servers'
 import { getLoaderVersions } from '../src/main/loaders'
-import { acceptEula, getLog, getState, isEulaAccepted, onServerEvent, sendCommand, stopServer } from '../src/main/runner'
+import { acceptEula, emitEvent, getLog, getStartedAt, getState, isEulaAccepted, onServerEvent, sendCommand, stopServer } from '../src/main/runner'
+import { autoStartServers, setStarter } from '../src/main/automation'
+import { createEntry, renameEntry, trashEntries } from '../src/main/configfiles'
+import { disableDatapack } from '../src/main/crash'
+import { cancelTask, runCancellable } from '../src/main/cancel'
+import { getAppSettings, setAppSettings } from '../src/main/appsettings'
 import { getStats } from '../src/main/stats'
 import { getManageInfo, runAction } from '../src/main/manage'
 import { listGameRules, setGameRule } from '../src/main/gamerules'
@@ -16,7 +21,7 @@ import { addWhitelist, getWhitelist, removeWhitelist, setWhitelistEnabled } from
 import { getInvite } from '../src/main/invite'
 import { getPlayerHistory } from '../src/main/playerlog'
 import { getHardcore, setHardcore } from '../src/main/hardcore'
-import { importWorld, listSaves, prepareMap } from '../src/main/worldimport'
+import { importWorld, listSaves, openDroppedWorld, prepareMap } from '../src/main/worldimport'
 import { browseModpacks, modpackVersions, prepareFromCurseForge, prepareFromModrinth, prepareFromUpload } from '../src/main/modpack'
 import { runPreflight } from '../src/main/preflight'
 import { listDir, readConfigFile, writeConfigFile } from '../src/main/configfiles'
@@ -24,7 +29,7 @@ import * as datapacks from '../src/main/datapacks'
 import type { CrashAnalysis } from '../src/shared-types'
 import yazl from 'yazl'
 import * as mods from '../src/main/mods'
-import { getFile, hasCurseForgeKey, mapFiles, searchMaps } from '../src/main/curseforge'
+import { curseForgeKeySource, getFile, hasCurseForgeKey, mapFiles, removeCurseForgeKey, searchMaps, setCurseForgeKey } from '../src/main/curseforge'
 import { createBackup, deleteBackup, getBackupSettings, listBackups, restoreBackup, setBackupSettings } from '../src/main/backup'
 import { analyzeCrash } from '../src/main/crash'
 
@@ -272,6 +277,7 @@ async function real(): Promise<void> {
     expect(a?.deps.some((d) => d.id === 'nonexistentmodxyz' && d.missing), `원인 분석에 빠진 모드가 없어요: ${a?.title}`)
     await sleep(1000)
     expect(getState(folder) === 'stopped', '켜지는 중에 튕겼는데 다시 켜려고 해요')
+    expect(getLog(folder).some((l) => l.startsWith('[앱] 튕긴 원인')), '꺼진 뒤 로그에 튕긴 원인 안내가 안 남았어요 (다른 서버를 보다 오면 사라져요)')
     fs.rmSync(jar, { force: true })
   })
   await check('서버 복제 (월드·모드 포함, session.lock 제외)', async () => {
@@ -692,6 +698,184 @@ async function otherSoftware(): Promise<void> {
   }
 }
 
+// ---------- 나머지 기능: 파일 탐색기 · 삭제 · 취소 · 데이터팩 · 모드 ID · zip 월드 · 키 · 앱 설정 ----------
+// 폴더를 zip으로 (테스트용 월드 zip 만들기)
+function zipDir(dir: string, out: string, prefix: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const zip = new yazl.ZipFile()
+    const walk = (d: string, rel: string): void => {
+      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+        if (e.name === 'session.lock') continue
+        const p = path.join(d, e.name)
+        if (e.isDirectory()) walk(p, `${rel}/${e.name}`)
+        else zip.addFile(p, `${rel}/${e.name}`)
+      }
+    }
+    walk(dir, prefix)
+    zip.outputStream.pipe(fs.createWriteStream(out)).on('close', () => resolve()).on('error', reject)
+    zip.end()
+  })
+}
+async function throws(fn: () => unknown): Promise<boolean> {
+  try {
+    await fn()
+    return false
+  } catch {
+    return true
+  }
+}
+
+async function moreFeatures(): Promise<void> {
+  console.log('\n[나머지 기능]')
+  const copy = listServers().find((s) => s.name === '자동 테스트 복제')!.folderPath
+  await check('파일 탐색기: 새 폴더·새 파일·이름 바꾸기·휴지통, 서버 밖 경로는 막기', async () => {
+    const dir = createEntry(copy, 'config', '테스트폴더', 'dir')
+    const file = createEntry(copy, dir, 'memo.txt', 'file')
+    expect(fs.existsSync(path.join(copy, file)), '새 파일이 없어요')
+    expect(await throws(() => createEntry(copy, dir, 'run.exe', 'file')), '글자 파일이 아닌데 만들어졌어요')
+    expect(await throws(() => createEntry(copy, dir, 'memo.txt', 'file')), '같은 이름을 또 만들었어요')
+    renameEntry(copy, file, 'memo2.txt')
+    expect(fs.existsSync(path.join(copy, dir, 'memo2.txt')) && !fs.existsSync(path.join(copy, file)), '이름이 안 바뀌었어요')
+    await trashEntries(copy, [dir])
+    expect(!fs.existsSync(path.join(copy, dir)), '휴지통으로 안 갔어요')
+    for (const bad of ['../', '../../x', 'C:/Windows'])
+      expect(await throws(() => listDir(copy, bad)), `서버 밖 경로(${bad})를 열었어요`)
+    expect(await throws(() => trashEntries(copy, [''])), '서버 폴더 자체를 지우려 했는데 막지 않았어요')
+    expect(await throws(() => renameEntry(copy, 'server.properties', '../x.properties')), '이름에 경로를 넣었는데 막지 않았어요')
+  })
+  await check('파일 탐색기: 켜져 있으면 이름 바꾸기·지우기는 막기', async () => {
+    await startAndWait(copy)
+    try {
+      expect(await throws(() => renameEntry(copy, 'server.properties', 'a.properties')), '켜진 서버에서 이름을 바꿨어요')
+      expect(await throws(() => trashEntries(copy, ['config'])), '켜진 서버에서 지웠어요')
+      expect(await throws(() => deleteServer(copy)), '켜진 서버를 지웠어요')
+    } finally {
+      await stopAndWait(copy)
+    }
+  })
+  await check('데이터팩: 파일 직접 넣기 → 알아보기 → 버전 바꾸기 → 튕김 원인 데이터팩 끄기', async () => {
+    const r = await datapacks.search(copy, 'terralith', 0, 'modrinth')
+    await datapacks.install(copy, r.hits[0].projectId)
+    const d = datapacks.list(copy)[0]
+    const outside = path.join(os.tmpdir(), 'mcsm-test-drop', d.name)
+    fs.mkdirSync(path.dirname(outside), { recursive: true })
+    const worldPacks = path.join(copy, 'world', 'datapacks')
+    fs.copyFileSync(path.join(worldPacks, d.name), outside)
+    await datapacks.remove(copy, d.name)
+    await datapacks.addFile(copy, outside)
+    await datapacks.identify(copy)
+    const back = datapacks.list(copy)[0]
+    expect(back && /terralith/i.test(back.title), `알아보지 못했어요: ${back?.title}`)
+    const vs = await datapacks.versionsOf(copy, back.name)
+    const other = vs.find((v) => !v.current)
+    expect(other, '다른 버전이 없어요')
+    await datapacks.setVersion(copy, back.name, other!.id)
+    const now = datapacks.list(copy)[0]
+    disableDatapack(copy, now.name) // 튕김 창의 "이 데이터팩 끄기"
+    expect(fs.existsSync(path.join(copy, 'world', 'datapacks-disabled', now.name)), '꺼 둔 곳으로 안 옮겨졌어요')
+    expect(await throws(() => disableDatapack(copy, '../server.properties')), '이상한 이름을 막지 않았어요')
+    // 되돌려 둔다 (Terralith는 지형 데이터팩이라, 빠진 채로 켜면 그 월드를 못 읽는다. 뒤 테스트가 이 서버를 쓴다)
+    fs.renameSync(path.join(copy, 'world', 'datapacks-disabled', now.name), path.join(worldPacks, now.name))
+  })
+  await check('모드 종류 알아내기 + 튕김 창의 "빠진 모드 설치"(모드 ID로)', async () => {
+    expect(mods.modKind(copy)?.folder === 'mods', '모드 폴더를 못 알아냈어요')
+    const title = await mods.installById(copy, 'fabric-language-kotlin')
+    expect(/kotlin/i.test(title), `설치한 이름이 이상해요: ${title}`)
+    expect(await throws(() => mods.installById(copy, '../bad')), '이상한 ID를 막지 않았어요')
+  })
+  await check('플레이어용 모드 묶음 (zip)', async () => {
+    const out = await mods.exportClientPack(copy, 'zip', null)
+    expect(out && fs.statSync(out).size > 0, 'zip이 안 만들어졌어요')
+  })
+  await check('월드 zip 끌어다 놓기 → 가져오기', async () => {
+    const zipFile = path.join(os.tmpdir(), '테스트 월드.zip')
+    await zipDir(path.join(copy, 'world'), zipFile, '내 월드')
+    const w = await openDroppedWorld(zipFile)
+    const vanilla = listServers().find((s) => s.name === '자동 테스트 vanilla')!.folderPath
+    await importWorld(vanilla, w.path, MC)
+    expect(fs.existsSync(path.join(vanilla, 'world', 'level.dat')), '월드가 안 들어왔어요')
+  })
+  await check('서버 만들기 취소 → 만들다 만 폴더 정리', async () => {
+    const before = listServers().length
+    const loader = (await getLoaderVersions('fabric', '1.20.1')).find((v) => v.stable)!
+    const job = runCancellable('test-create', () => createServer({ name: '자동 테스트 취소', software: 'fabric', mcVersion: '1.20.1', loaderVersion: loader.version }, () => undefined))
+    await sleep(800)
+    cancelTask('test-create')
+    expect(await throws(() => job), '취소했는데 끝까지 만들어졌어요')
+    cleanupUnfinished()
+    expect(listServers().length === before, '만들다 만 서버가 목록에 남았어요')
+    expect(!fs.readdirSync(path.join(process.env.TEST_HOME!, 'servers')).some((n) => n.includes('자동 테스트 취소')), '만들다 만 폴더가 남았어요')
+  })
+  await check('서버 삭제 (백업도 같이)', async () => {
+    const s = listServers().find((x) => x.name === '자동 테스트 나쁜 모드팩')!
+    await deleteServer(s.folderPath)
+    expect(!fs.existsSync(s.folderPath) && !listServers().some((x) => x.folderPath === s.folderPath), '안 지워졌어요')
+  })
+  if (hasCurseForgeKey())
+    await check('CurseForge 키: 앱에 넣은 키가 먼저, 틀린 키는 거절, 넣은 키 빼기', async () => {
+      expect(curseForgeKeySource() === 'built', '앱에 넣은 키를 못 찾았어요')
+      expect(await throws(() => setCurseForgeKey('abc')), '키 모양이 아닌데 받아들였어요')
+      expect(await throws(() => setCurseForgeKey('$2a$10$' + 'x'.repeat(53))), '틀린 키를 받아들였어요')
+      removeCurseForgeKey()
+      expect(hasCurseForgeKey(), '앱에 넣은 키까지 사라졌어요')
+    })
+  await check('앱 설정 저장 (이상한 값은 무시)', () => {
+    const s = setAppSettings({ closeBehavior: 'always-tray', notifications: false })
+    expect(s.closeBehavior === 'always-tray' && !s.notifications, '저장이 안 됐어요')
+    const t = setAppSettings({ closeBehavior: 'nonsense' as never })
+    expect(t.closeBehavior === 'always-tray', '이상한 값이 들어갔어요')
+    expect(getAppSettings().notifications === false, '다시 읽은 값이 달라요')
+  })
+}
+
+// ---------- 자동 동작 (앱 켤 때 켜기 · 환영 메시지 · 빈 서버 끄기 · 매일 다시 켜기) ----------
+async function automation(): Promise<void> {
+  console.log('\n[자동 동작] 몇 분씩 기다려야 해서 오래 걸려요')
+  const copy = listServers().find((s) => s.name === '자동 테스트 복제')!.folderPath
+  const quilt = listServers().find((s) => s.name === '자동 테스트 quilt')!.folderPath
+  setStarter((f) => startServerAt(f, () => undefined))
+  await check('앱을 켤 때 서버 켜기 (포트가 겹치는 서버는 건너뛰기)', async () => {
+    const port = readProperties(copy)['server-port']
+    saveSettings(copy, { automation: { autoStart: true } })
+    saveSettings(quilt, { automation: { autoStart: true }, properties: { 'server-port': port } }) // 같은 포트
+    await autoStartServers()
+    const on = [copy, quilt].filter((f) => getState(f) === 'running')
+    expect(on.length === 1, `켜진 서버가 ${on.length}개예요 (1개여야 해요)`)
+    const skipped = on[0] === copy ? quilt : copy
+    expect(getLog(skipped).some((l) => /같은 포트/.test(l)) || getState(skipped) === 'stopped', '겹친 서버를 건너뛴다는 기록이 없어요')
+    saveSettings(quilt, { automation: { autoStart: false }, properties: { 'server-port': '25591' } })
+    if (on[0] !== copy) {
+      await stopAndWait(quilt)
+      await startAndWait(copy)
+    }
+  })
+  await check('들어온 사람에게 환영 메시지 (그 사람에게만)', async () => {
+    saveSettings(copy, { automation: { welcome: '어서 와요 {name}' } })
+    const from = getLog(copy).length
+    emitEvent({ type: 'players', folderPath: copy, players: ['TestPlayer'] }) // 접속한 것처럼
+    await sleep(4000)
+    // 실제로는 없는 사람이라 서버가 "그런 사람 없음"이라고 답한다 = tellraw를 그 사람에게 보냈다는 뜻
+    expect(getLog(copy).slice(from).some((l) => /No player was found/i.test(l)), '환영 메시지를 보내지 않았어요')
+    emitEvent({ type: 'players', folderPath: copy, players: [] })
+  })
+  await check('아무도 없이 1분 지나면 서버 끄기', async () => {
+    saveSettings(copy, { automation: { emptyStopMin: 1, welcome: '' } })
+    await waitFor('빈 서버 끄기', () => getState(copy) === 'stopped', 3 * 60_000)
+    saveSettings(copy, { automation: { emptyStopMin: 0 } })
+  })
+  await check('매일 정한 시각에 다시 켜기 (1분 전 알림 → 끄고 → 켜기)', async () => {
+    await startAndWait(copy)
+    const first = getStartedAt(copy)
+    const at = new Date(Date.now() + 60_000)
+    const hhmm = `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`
+    saveSettings(copy, { automation: { dailyRestart: hhmm } })
+    await waitFor('알림', () => getLog(copy).some((l) => /매일 다시 켜기/.test(l)), 3 * 60_000)
+    await waitFor('다시 켜짐', () => getState(copy) === 'running' && getStartedAt(copy) !== first, 6 * 60_000)
+    saveSettings(copy, { automation: { dailyRestart: '', autoStart: false } })
+    await stopAndWait(copy)
+  })
+}
+
 async function paperServer(): Promise<void> {
   console.log(`\n[실제 서버: Paper ${MC}]`)
   let folder = ''
@@ -725,6 +909,8 @@ async function main(): Promise<void> {
     await paperServer()
     await modpackServers()
     await otherSoftware()
+    await moreFeatures()
+    await automation()
   }
   else console.log('\n(실제 서버 테스트는 npm run test:full)')
   console.log(`\n결과: ${passed}개 통과, ${failed.length}개 실패 (${Math.round((Date.now() - t) / 1000)}초)`)

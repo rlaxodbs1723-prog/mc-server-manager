@@ -24,6 +24,8 @@ const JOIN_LEFT = /\]: (?:System chat: )?([A-Za-z0-9_]{3,16}) (joined|left) the 
 const stripColors = (s: string): string => s.replace(/\x1b\[[0-9;]*m/g, '').replace(/§./g, '')
 
 const running = new Map<string, Running>() // 서버 폴더 -> 실행 정보
+// 꺼진 서버의 마지막 실행 로그 (앱이 켜져 있는 동안). 앱 안내 줄([앱] …)은 로그 파일에 없어서 여기에 남겨 둔다
+const lastLog = new Map<string, string[]>()
 const listeners = new Set<(e: ServerEvent) => void>()
 export const onServerEvent = (fn: (e: ServerEvent) => void): (() => boolean) => (listeners.add(fn), () => listeners.delete(fn))
 const emit = (e: ServerEvent): void => listeners.forEach((fn) => fn(e))
@@ -106,10 +108,12 @@ export const getStartedAt = (folderPath: string): number | null => running.get(f
 export const getPid = (folderPath: string): number | undefined => running.get(folderPath)?.proc.pid
 export const getPlayers = (folderPath: string): string[] => [...(running.get(folderPath)?.players ?? [])]
 
-// 켜져 있으면 이번 실행의 로그, 꺼져 있으면 logs/latest.log 뒷부분
+// 켜져 있으면 이번 실행의 로그, 꺼져 있으면 마지막 실행 로그(앱을 켠 뒤에 켰던 서버) 또는 logs/latest.log 뒷부분
 export function getLog(folderPath: string): string[] {
   const r = running.get(folderPath)
   if (r) return r.log
+  const last = lastLog.get(folderPath)
+  if (last) return last
   try {
     return fs.readFileSync(path.join(folderPath, 'logs', 'latest.log'), 'utf8').split(/\r?\n/).filter(Boolean).slice(-300)
   } catch {
@@ -164,6 +168,17 @@ export const onCrash = (fn: (folderPath: string, info: CrashInfo) => void): void
   crashHandler = fn
 }
 export const emitEvent = emit
+
+// 앱이 콘솔에 남기는 안내 줄 ([앱] …). 화면에 보내고, 다른 서버를 보다 돌아와도 보이게 로그에도 남긴다
+export function appLog(folderPath: string, line: string): void {
+  const text = line.startsWith('[앱]') ? line : `[앱] ${line}`
+  const log = running.get(folderPath)?.log ?? lastLog.get(folderPath)
+  if (log) {
+    log.push(text)
+    if (log.length > LOG_LIMIT) log.splice(0, log.length - LOG_LIMIT)
+  } else lastLog.set(folderPath, [text])
+  emit({ type: 'log', folderPath, line: text })
+}
 
 
 export interface StartOptions {
@@ -222,6 +237,7 @@ export async function startServer(folderPath: string, { java, args }: StartOptio
     // 켜지는 중에 꺼지면 (마인크래프트는 초기화에 실패해도 코드 0으로 끝날 때가 있다) 역시 튕긴 것
     const crashed = !requested && (code !== 0 || r?.state === 'starting')
     pushLog(folderPath, crashed ? `[앱] 서버가 비정상 종료됐어요. (코드 ${code})` : `[앱] 서버가 꺼졌어요. (코드 ${code})`)
+    if (r) lastLog.set(folderPath, r.log)
     running.delete(folderPath)
     setState(folderPath, 'stopped')
     emit({ type: 'players', folderPath, players: [] })
