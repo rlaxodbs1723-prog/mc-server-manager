@@ -176,7 +176,7 @@ button:disabled { cursor: default; }
   flex-shrink: 0;
 }
 .titlebar .brand { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--text-2); }
-.titlebar .brand .logo { width: 20px; height: 20px; border-radius: 6px; background: var(--primary); display: grid; place-items: center; color: #fff; }
+.titlebar .brand .logo { width: 20px; height: 20px; display: block; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08); border-radius: 5px; }
 .win-buttons { display: flex; height: 100%; }
 .win-buttons button { width: 46px; height: 100%; display: grid; place-items: center; color: var(--text-2); transition: background 0.12s; }
 .win-buttons button:hover { background: var(--surface-2); color: var(--text); }

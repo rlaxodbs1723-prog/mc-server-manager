@@ -1,4 +1,4 @@
-import { Box, Copy, Minus, Settings, Square, WifiOff, X } from 'lucide-react'
+import { Copy, Minus, Settings, Square, WifiOff, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import AppSettingsDialog from './AppSettingsDialog'
 import type { SiteStatus } from '../../shared-types'
@@ -25,9 +25,19 @@ export default function TitleBar() {
   return (
     <header className="titlebar" onDoubleClick={() => window.api.windowControl('maximize')}>
       <div className="brand">
-        <span className="logo">
-          <Box size={13} strokeWidth={2.5} />
-        </span>
+        {/* 앱 아이콘과 같은 그림 (build-tools/icon.svg) */}
+        <svg className="logo" viewBox="0 0 128 128" aria-hidden="true">
+          <rect width="128" height="128" rx="28" fill="#1b1d23" />
+          <rect x="22" y="26" width="84" height="22" rx="7" fill="#2d313a" />
+          <circle cx="36" cy="37" r="5" fill="#35d07f" />
+          <rect x="48" y="34" width="44" height="6" rx="3" fill="#5b6270" />
+          <rect x="22" y="53" width="84" height="22" rx="7" fill="#2d313a" />
+          <circle cx="36" cy="64" r="5" fill="#35d07f" />
+          <rect x="48" y="61" width="32" height="6" rx="3" fill="#5b6270" />
+          <rect x="22" y="80" width="84" height="22" rx="7" fill="#3182f6" />
+          <circle cx="36" cy="91" r="5" fill="#fff" />
+          <rect x="48" y="88" width="40" height="6" rx="3" fill="#cfe2ff" />
+        </svg>
         CraftPanel
       </div>
       {down && (
