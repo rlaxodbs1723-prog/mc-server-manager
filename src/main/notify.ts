@@ -4,7 +4,7 @@ import { app, BrowserWindow, Notification } from 'electron'
 import { join } from 'path'
 import { getAppSettings } from './appsettings'
 
-const iconPath = (): string => (app.isPackaged ? join(process.resourcesPath, 'tray.png') : join(__dirname, '../../resources/tray.png'))
+const iconPath = (): string => (app.isPackaged ? join(process.resourcesPath, 'icon.png') : join(__dirname, '../../resources/icon.png'))
 
 export function notify(title: string, body: string): void {
   if (!Notification.isSupported() || !getAppSettings().notifications) return
