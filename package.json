@@ -1,7 +1,7 @@
 {
   "name": "mc-server-manager",
   "version": "0.1.0",
-  "description": "마인크래프트 서버를 쉽게 만들고 관리하는 앱",
+  "description": "CraftPanel",
   "main": "out/main/index.js",
   "private": true,
   "scripts": {
