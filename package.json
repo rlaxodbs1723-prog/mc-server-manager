@@ -85,7 +85,8 @@
       "installerIcon": "resources/icon.ico",
       "uninstallerIcon": "resources/icon.ico",
       "artifactName": "CraftPanel-Setup-${version}.${ext}",
-      "deleteAppDataOnUninstall": false
+      "deleteAppDataOnUninstall": false,
+      "include": "build-tools/uninstall.nsh"
     },
     "publish": [
       {
