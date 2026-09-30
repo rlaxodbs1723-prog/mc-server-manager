@@ -935,6 +935,9 @@ async function paperServer(): Promise<void> {
   await check('Paper 켜기·끄기 (플러그인이 읽히는지)', async () => {
     await startAndWait(folder)
     expect(getLog(folder).some((l) => /LuckPerms/i.test(l)), '로그에 LuckPerms가 안 보여요')
+    // Paper는 "help" 명령을 바꿔 놓아서 게임 규칙 목록을 따로 받아야 한다
+    const rules = await listGameRules(folder)
+    expect(rules.length > 20, `Paper에서 게임 규칙을 못 읽었어요 (${rules.length}개)`)
     await stopAndWait(folder)
   })
 }

@@ -24,7 +24,9 @@ const OLD_USAGE = new RegExp(`${FROM_SERVER}Usage: /gamerule`)
 
 export async function listGameRules(folderPath: string): Promise<GameRule[]> {
   // 막 켜졌거나 모드가 많으면 서버가 바빠서 답이 몇 초 늦게 온다. 첫 답을 넉넉히 기다린다
-  const help = await quietQuery(folderPath, ['help gamerule'], (l) => HELP_ONE.test(l) || HELP_ALL.test(l) || OLD_USAGE.test(l), { firstMs: 8000, maxMs: 15000 })
+  // Paper·Spigot은 "help"를 자기 도움말로 바꿔 놓아서 규칙 목록이 안 나온다. "minecraft:help"는 바닐라 도움말 그대로다.
+  // 둘 다 보내고 알아듣는 답만 모은다 (바닐라·Fabric·Forge는 둘이 같은 답이라 겹쳐도 괜찮다. 옛 버전은 아래에서 따로 한다)
+  const help = await quietQuery(folderPath, ['minecraft:help gamerule', 'help gamerule'], (l) => HELP_ONE.test(l) || HELP_ALL.test(l) || OLD_USAGE.test(l), { firstMs: 8000, maxMs: 15000 })
   const names = new Set<string>()
   for (const line of help) {
     const one = HELP_ONE.exec(line)
