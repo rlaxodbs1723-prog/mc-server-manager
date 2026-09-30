@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MC Server Manager</title>
+<meta name="description" content="클릭 몇 번으로 나만의 마인크래프트 서버를 만들고 관리하는 무료 윈도우 앱. 모드·모드팩·백업·튕김 분석까지." />
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
+<meta property="og:title" content="MC Server Manager" />
+<meta property="og:description" content="클릭 몇 번으로 나만의 마인크래프트 서버를 만들고 관리하는 무료 윈도우 앱" />
+<meta property="og:image" content="icon.png" />
+<link rel="preconnect" href="https://cdn.jsdelivr.net" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+<style>
+  :root {
+    --bg: #101013; --surface: #1b1d23; --surface-2: #23262e; --line: #2d313a;
+    --text: #f2f3f5; --text-2: #b0b6c0; --text-3: #7d8591;
+    --primary: #3182f6; --primary-2: #1f6fe0; --green: #35d07f;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Pretendard Variable', Pretendard, system-ui, 'Malgun Gothic', sans-serif; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+
+  /* 위 막대 */
+  header.top { position: sticky; top: 0; z-index: 10; background: rgba(16, 16, 19, 0.8); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+  header.top .wrap { display: flex; align-items: center; gap: 10px; height: 60px; }
+  header.top img { width: 28px; height: 28px; }
+  header.top b { font-size: 16px; }
+  header.top nav { margin-left: auto; display: flex; gap: 20px; font-size: 14px; }
+  header.top nav a { text-decoration: none; color: var(--text-2); }
+  header.top nav a:hover { color: var(--text); }
+  @media (max-width: 560px) { header.top nav { display: none; } }
+
+  /* 첫 화면 */
+  .hero { padding: 88px 0 72px; text-align: center; }
+  .hero img.logo { width: 104px; height: 104px; filter: drop-shadow(0 16px 40px rgba(49, 130, 246, 0.25)); }
+  .hero h1 { font-size: clamp(32px, 6vw, 52px); line-height: 1.2; margin: 24px 0 14px; letter-spacing: -0.02em; }
+  .hero h1 em { font-style: normal; color: var(--primary); }
+  .hero p.lead { font-size: clamp(16px, 2.4vw, 19px); color: var(--text-2); max-width: 620px; margin: 0 auto 36px; }
+  .dl { display: inline-flex; align-items: center; gap: 10px; padding: 16px 30px; border-radius: 16px; background: var(--primary); color: #fff; font-size: 18px; font-weight: 700; text-decoration: none; transition: background 0.15s, transform 0.15s; }
+  .dl:hover { background: var(--primary-2); transform: translateY(-1px); }
+  .dl svg { width: 22px; height: 22px; }
+  .dl[aria-disabled='true'] { background: var(--surface-2); color: var(--text-3); pointer-events: none; }
+  .dl-meta { margin-top: 14px; font-size: 13.5px; color: var(--text-3); }
+  .dl-meta a { color: var(--text-2); }
+
+  /* 기능 */
+  section { padding: 64px 0; }
+  section h2 { font-size: clamp(24px, 4vw, 32px); margin: 0 0 8px; letter-spacing: -0.01em; }
+  section p.sub { color: var(--text-2); margin: 0 0 32px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
+  .card .ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: rgba(49, 130, 246, 0.14); color: var(--primary); margin-bottom: 14px; }
+  .card .ico svg { width: 20px; height: 20px; }
+  .card h3 { font-size: 17px; margin: 0 0 6px; }
+  .card p { font-size: 14.5px; color: var(--text-2); margin: 0; }
+
+  /* 설치 순서 */
+  .steps { counter-reset: s; display: grid; gap: 12px; }
+  .step { display: flex; gap: 16px; align-items: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 20px; }
+  .step::before { counter-increment: s; content: counter(s); flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--primary); color: #fff; font-weight: 700; display: grid; place-items: center; }
+  .step b { display: block; margin-bottom: 2px; }
+  .step span { color: var(--text-2); font-size: 14.5px; }
+
+  /* 자주 묻는 질문 */
+  details { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; margin-bottom: 10px; }
+  summary { cursor: pointer; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+  summary::after { content: '+'; color: var(--text-3); font-size: 20px; line-height: 1; }
+  details[open] summary::after { content: '−'; }
+  details p { color: var(--text-2); margin: 12px 0 0; font-size: 14.5px; }
+
+  footer { border-top: 1px solid var(--line); padding: 32px 0 48px; color: var(--text-3); font-size: 13px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+  footer a { color: var(--text-2); }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <img src="icon.svg" alt="" />
+    <b>MC Server Manager</b>
+    <nav>
+      <a href="#features">기능</a>
+      <a href="#install">설치 방법</a>
+      <a href="#faq">자주 묻는 질문</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="hero wrap">
+    <img class="logo" src="icon.svg" alt="MC Server Manager 아이콘" />
+    <h1>친구들과 놀 <em>마인크래프트 서버</em>,<br />클릭 몇 번이면 끝</h1>
+    <p class="lead">명령어도, 설정 파일도 몰라도 돼요. 서버 만들기부터 모드·모드팩 설치, 백업, 튕김 원인 찾기까지 한 앱에서 해요.</p>
+    <a class="dl" id="dl" href="https://github.com/rlaxodbs1723-prog/mc-server-manager/releases/latest" aria-disabled="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></svg>
+      <span id="dl-text">윈도우용 무료 다운로드</span>
+    </a>
+    <div class="dl-meta" id="dl-meta">Windows 10 · 11 (64비트) · 무료</div>
+  </div>
+
+  <section id="features">
+    <div class="wrap">
+      <h2>이런 걸 할 수 있어요</h2>
+      <p class="sub">복잡한 건 앱이 알아서 하고, 고를 것만 물어봐요.</p>
+      <div class="grid">
+        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2" /><rect x="3" y="13" width="18" height="7" rx="2" /></svg></div><h3>서버 만들기</h3><p>바닐라, Paper, Fabric, Forge, NeoForge, Quilt, Purpur. 버전만 고르면 자바까지 알아서 받아요.</p></div>
+        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7z" /></svg></div><h3>모드 · 모드팩</h3><p>Modrinth와 CurseForge를 한 번에 검색하고 설치해요. 필요한 모드도 같이 깔고, 서버 팩도 알아서 써요.</p></div>
+        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4" /><path d="M12 17h.01" /><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /></svg></div><h3>서버에 안 맞는 모드 찾기</h3><p>게임 화면 전용 모드나 빠진 모드, 같은 모드 두 개를 켜기 전에 미리 알려 줘요.</p></div>
+        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg></div><h3>튕김 원인 분석</h3><p>서버가 튕기면 긴 오류 대신 무엇 때문인지 알기 쉽게 알려 줘요.</p></div>
+        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></svg></div><h3>백업 · 되돌리기</h3><p>켜기 전 자동 백업, 정기 백업. 한 번 눌러 되돌리고, 되돌리기 전 월드도 따로 남겨 둬요.</p></div>
+        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.9" /><path d="M16 3.1a4 4 0 0 1 0 7.8" /></svg></div><h3>관리 · 자동화</h3><p>OP·밴·화이트리스트, 게임 규칙, 맵 가져오기. 매일 다시 켜기, 빈 서버 끄기, 환영 메시지도요.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="wrap">
+      <h2>설치 방법</h2>
+      <p class="sub">3분이면 첫 서버를 켤 수 있어요.</p>
+      <div class="steps">
+        <div class="step"><div><b>위에서 설치 파일을 받아 실행해요</b><span>"Windows의 PC 보호" 파란 창이 뜨면 <b style="display:inline">추가 정보 → 실행</b>을 눌러요. 개인이 만든 앱이라 뜨는 창이에요.</span></div></div>
+        <div class="step"><div><b>"새 서버 만들기"를 눌러요</b><span>서버 종류와 버전만 고르면 나머지는 앱이 받아요. 모드팩으로 만들 수도 있어요.</span></div></div>
+        <div class="step"><div><b>켜고, 친구에게 주소를 알려 줘요</b><span>앱이 공유기 포트를 열어 보고, 친구가 들어올 주소를 보여 줘요. 새 버전은 앱이 알아서 업데이트해요.</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <h2>자주 묻는 질문</h2>
+      <p class="sub">&nbsp;</p>
+      <details><summary>정말 무료예요?</summary><p>네. 광고도, 유료 기능도 없어요.</p></details>
+      <details><summary>컴퓨터 사양은 얼마나 필요해요?</summary><p>Windows 10·11 64비트, 메모리 8GB 이상을 추천해요. 모드가 많은 서버는 16GB가 편해요.</p></details>
+      <details><summary>"Windows의 PC 보호" 창이 떠요. 괜찮아요?</summary><p>괜찮아요. 코드 서명 인증서가 없는 개인 앱이라 뜨는 창이에요. 추가 정보 → 실행을 누르면 돼요. 앱의 코드는 깃허브에 모두 공개돼 있어요.</p></details>
+      <details><summary>친구가 들어오지 못해요.</summary><p>서버 이름 아래 접속 주소 옆의 확인 버튼(밖에서 접속되는지 확인)을 눌러 보세요. 공유기가 자동 포트 열기(UPnP)를 막아 두었으면 공유기 설정에서 서버 포트(기본 25565)를 직접 열어야 해요.</p></details>
+      <details><summary>만든 서버는 어디에 저장돼요?</summary><p>내 컴퓨터에 저장돼요 (%APPDATA%\mc-server-manager). 앱을 지워도 서버와 백업은 남아요.</p></details>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>MC Server Manager · <a href="https://github.com/rlaxodbs1723-prog/mc-server-manager">GitHub</a></span>
+    <span>마인크래프트 공식 제품이 아니에요. Mojang·Microsoft와 관련이 없어요.</span>
+  </div>
+</footer>
+
+<script>
+  // 최신 릴리스의 설치 파일로 바로 받게 한다 (없으면 릴리스 페이지로)
+  ;(async () => {
+    const btn = document.getElementById('dl')
+    const text = document.getElementById('dl-text')
+    const meta = document.getElementById('dl-meta')
+    try {
+      const res = await fetch('https://api.github.com/repos/rlaxodbs1723-prog/mc-server-manager/releases/latest')
+      if (res.status === 404) {
+        btn.setAttribute('aria-disabled', 'true')
+        text.textContent = '곧 공개돼요'
+        return
+      }
+      if (!res.ok) return
+      const r = await res.json()
+      const exe = (r.assets || []).find((a) => /\.exe$/i.test(a.name))
+      if (!exe) return
+      btn.href = exe.browser_download_url
+      const mb = Math.round(exe.size / 1048576)
+      const date = new Date(r.published_at).toLocaleDateString('ko-KR')
+      meta.innerHTML = `버전 ${r.tag_name.replace(/^v/, '')} · ${mb}MB · ${date} · Windows 10 · 11 (64비트) · <a href="${r.html_url}">바뀐 점</a>`
+    } catch {
+      // 못 불러오면 릴리스 페이지 링크 그대로
+    }
+  })()
+</script>
+</body>
+</html>
