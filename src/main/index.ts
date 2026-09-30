@@ -539,7 +539,9 @@ if (!app.requestSingleInstanceLock()) {
 
 app.whenReady().then(() => {
   if (!app.hasSingleInstanceLock()) return
-  app.setAppUserModelId('com.mcservermanager.app') // 윈도우 알림에 앱 이름이 제대로 나오게
+  // 윈도우 알림·작업 표시줄이 이 앱을 알아보는 이름. 개발용은 따로 둔다
+  // (같으면 작업 표시줄 고정 아이콘이나 알림을 눌렀을 때 개발용 Electron이 앱 없이 켜져 기본 화면이 뜬다)
+  app.setAppUserModelId(app.isPackaged ? 'com.mcservermanager.app' : 'com.mcservermanager.app.dev')
   applyLoginItem() // 윈도우 시작 시 실행 설정을 맞춘다 (앱 위치가 바뀌었을 수 있어서)
   cleanupUnfinished()
   cleanWorldTemp()
