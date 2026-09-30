@@ -47,6 +47,7 @@ function scan(file) {
 }
 
 walkDir('src')
-fs.mkdirSync('build-tools/i18n', { recursive: true })
-fs.writeFileSync('build-tools/i18n/source.json', JSON.stringify(Object.fromEntries(out), null, 1))
+const outFile = process.env.I18N_OUT || 'build-tools/i18n/source.json' // 테스트는 다른 곳에 써서 비교한다
+fs.mkdirSync(path.dirname(outFile), { recursive: true })
+fs.writeFileSync(outFile, JSON.stringify(Object.fromEntries(out), null, 1))
 console.log(out.size, 'strings')

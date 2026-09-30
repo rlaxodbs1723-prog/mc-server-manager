@@ -33,6 +33,11 @@ import * as mods from '../src/main/mods'
 import { curseForgeKeySource, getFile, hasCurseForgeKey, mapFiles, removeCurseForgeKey, searchMaps, setCurseForgeKey } from '../src/main/curseforge'
 import { createBackup, deleteBackup, getBackupSettings, listBackups, restoreBackup, setBackupSettings } from '../src/main/backup'
 import { analyzeCrash } from '../src/main/crash'
+import { execFileSync } from 'child_process'
+import { langFromLocale, translator } from '../src/i18n'
+import { tr as mainTr } from '../src/main/i18n'
+import enTable from '../src/i18n/en.json'
+import zhTable from '../src/i18n/zh.json'
 
 const full = process.argv.includes('--full')
 let passed = 0
@@ -120,6 +125,87 @@ async function quick(): Promise<void> {
     const a = analyzeCrash(dir, ['[Server thread/ERROR]: Encountered an unexpected exception', 'java.lang.OutOfMemoryError: Java heap space'], Date.now())
     expect(/메모리/.test(a.title + a.cause), `원인이 메모리가 아니에요: ${a.title}`)
     fs.rmSync(dir, { recursive: true, force: true })
+  })
+  await i18nChecks()
+}
+
+// ---------- 언어 (영어·중국어) ----------
+// 번역하지 않는 것: 정규식, EULA 파일 내용, 조사 고르기용 조각, 언어 고르는 칸 (어느 언어에서든 그대로 보여야 한다)
+const NO_TR = new Set(["(?:Mod|모드) '([^\\n]+?)' \\({0}\\)", '# CraftPanel에서 사용자가 EULA(https://aka.ms/MinecraftEULA)에 동의함 # {0} eula=true', '을/를', '이/가', '은/는', '으로/로', '한국어', '언어 · Language'])
+async function i18nChecks(): Promise<void> {
+  const tables = { en: enTable as Record<string, string>, zh: zhTable as Record<string, string> }
+  await check('언어: 코드의 한글 문장이 모두 번역돼 있다 (새로 넣고 번역 안 한 것 없음)', () => {
+    const tmp = path.join(os.tmpdir(), 'mcsm-i18n-source.json')
+    execFileSync(process.execPath, ['build-tools/i18n-extract.mjs'], { env: { ...process.env, I18N_OUT: tmp }, stdio: 'ignore' })
+    const keys = Object.keys(JSON.parse(fs.readFileSync(tmp, 'utf8'))).filter((k) => !NO_TR.has(k))
+    for (const [lang, table] of Object.entries(tables)) {
+      const missing = keys.filter((k) => !(k in table))
+      expect(!missing.length, `${lang} 번역이 없어요 (${missing.length}개): ${missing.slice(0, 5).join(' / ')}`)
+    }
+  })
+  await check('언어: 번역에 한글이 남지 않고 {0} 자리가 그대로 있다', () => {
+    for (const [lang, table] of Object.entries(tables)) {
+      for (const [ko, to] of Object.entries(table)) {
+        expect(!/[가-힣]/.test(to), `${lang} 번역에 한글이 남았어요: ${ko} → ${to}`)
+        const holes = (s: string) => (s.match(/\{\d\}/g) ?? []).sort().join()
+        if (/\{\d\}/.test(ko.replace(/[^{}\d]/g, '')) || /\{\d\}/.test(to)) expect(holes(ko) === holes(to), `${lang} {0} 자리가 달라요: ${ko} → ${to}`)
+      }
+    }
+  })
+  await check('언어: 값이 들어간 문장도 통째로 번역된다 (모든 틀)', () => {
+    for (const lang of ['en', 'zh'] as const) {
+      const tr = translator(lang)
+      for (const ko of Object.keys(tables[lang])) {
+        if (!/\{\d\}/.test(ko) || !/[가-힣]/.test(ko.replace(/\{\d\}/g, ''))) continue
+        const sample = ko.replace(/\{(\d)\}/g, (_, n) => `V${n}x`)
+        const out = tr(sample)
+        expect(!/[가-힣]/.test(out), `${lang}: "${sample}" → "${out}"`)
+      }
+    }
+  })
+  await check('언어: 조사를 붙인 모드·플러그인 문장, 여러 줄, 앞뒤 공백', () => {
+    const en = translator('en')
+    const zh = translator('zh')
+    expect(en('일부 필수 모드를 설치하지 못했어요: a / b') === "Couldn't install some required mods: a / b", en('일부 필수 모드를 설치하지 못했어요: a / b'))
+    expect(en('새 버전이 있는 플러그인이 3개 있어요') === '3 plugins have new versions', en('새 버전이 있는 플러그인이 3개 있어요'))
+    expect(!/[가-힣]/.test(zh('서버가 켜져 있어서 플러그인을 바꿀 수 없어요')), zh('서버가 켜져 있어서 플러그인을 바꿀 수 없어요'))
+    expect(en('  서버 켜기 ') === '  Start server ', '앞뒤 공백이 사라졌어요')
+    expect(en('원인: 모름\n위치: 1 2 3').includes('Cause:'), '여러 줄 글이 번역되지 않았어요')
+    expect(en('Hello world') === 'Hello world' && en('플레이어가 친 아무 채팅') === '플레이어가 친 아무 채팅', '모르는 글을 바꿨어요')
+    expect(translator('ko')('서버 켜기') === '서버 켜기', '한국어인데 바꿨어요')
+  })
+  await check('언어: 윈도우 언어로 처음 언어 정하기 + 설정 저장 (이상한 값은 무시)', () => {
+    expect(langFromLocale('ko-KR') === 'ko' && langFromLocale('zh-CN') === 'zh' && langFromLocale('zh-TW') === 'zh' && langFromLocale('en-US') === 'en' && langFromLocale('ja') === 'en', '윈도우 언어로 고른 값이 틀려요')
+    const before = getAppSettings().language
+    expect(setAppSettings({ language: 'en' }).language === 'en', '영어로 저장이 안 됐어요')
+    expect(mainTr('종료') === 'Quit', `트레이 메뉴가 영어가 아니에요: ${mainTr('종료')}`)
+    expect(setAppSettings({ language: 'fr' as never }).language === 'en', '이상한 언어가 들어갔어요')
+    expect(setAppSettings({ language: 'zh' }).language === 'zh' && mainTr('열기') === '打开', '중국어로 바뀌지 않았어요')
+    setAppSettings({ language: before })
+    expect(mainTr('종료') === (before === 'ko' ? '종료' : before === 'en' ? 'Quit' : '退出'), '원래 언어로 돌아가지 않았어요')
+  })
+  await check('언어: 앱을 지울 때 화면(세 언어)과 설치 프로그램 언어 설정', () => {
+    const nsh = fs.readFileSync('build-tools/uninstall.nsh')
+    expect(nsh[0] === 0xef && nsh[1] === 0xbb && nsh[2] === 0xbf, 'uninstall.nsh 가 BOM 있는 UTF-8이 아니에요 (한글이 깨져요)')
+    const s = nsh.toString('utf8')
+    for (const want of ['$LANGUAGE == 1042', '$LANGUAGE == 2052', 'All servers and backups', '创建的所有服务器和备份', '만든 서버와 백업 전부'])
+      expect(s.includes(want), `지우기 화면에 "${want}"이(가) 없어요`)
+    expect(!/runtime/.test(s.replace(/^;.*$/gm, '')), '자바(runtime) 폴더를 지우는 줄이 있어요')
+    const nsis = JSON.parse(fs.readFileSync('package.json', 'utf8')).build.nsis
+    expect(nsis.multiLanguageInstaller && ['en_US', 'ko_KR', 'zh_CN'].every((l) => nsis.installerLanguages.includes(l)), '설치 프로그램 언어 설정이 빠졌어요')
+  })
+  await check('언어: 다운로드 사이트의 모든 문구에 영어·중국어가 있다', () => {
+    const html = fs.readFileSync('docs/index.html', 'utf8')
+    const keys = [...html.matchAll(/data-i18n="([a-z0-9]+)"/g)].map((m) => m[1])
+    expect(keys.length >= 30, `번역할 곳이 너무 적어요 (${keys.length})`)
+    const script = html.slice(html.indexOf('const T = {'))
+    const en = script.slice(script.indexOf('en: {'), script.indexOf('zh: {'))
+    const zh = script.slice(script.indexOf('zh: {'), script.indexOf('const KO'))
+    for (const k of keys) {
+      expect(new RegExp(`\\b${k}: '`).test(en), `사이트 영어에 ${k}가 없어요`)
+      expect(new RegExp(`\\b${k}: '`).test(zh), `사이트 중국어에 ${k}가 없어요`)
+    }
+    expect(!/[가-힣]/.test(en) && !/[가-힣]/.test(zh), '사이트 영어·중국어에 한글이 남았어요')
   })
 }
 
