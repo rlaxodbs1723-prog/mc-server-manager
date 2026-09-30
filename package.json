@@ -41,11 +41,11 @@
   "allowScripts": {
     "electron@44.4.5": true
   },
-  "productName": "MC Server Manager",
+  "productName": "CraftPanel",
   "author": "Ora1ph",
   "build": {
     "appId": "com.mcservermanager.app",
-    "productName": "MC Server Manager",
+    "productName": "CraftPanel",
     "directories": {
       "output": "dist",
       "buildResources": "resources"
@@ -81,10 +81,10 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "MC Server Manager",
+      "shortcutName": "CraftPanel",
       "installerIcon": "resources/icon.ico",
       "uninstallerIcon": "resources/icon.ico",
-      "artifactName": "MC-Server-Manager-Setup-${version}.${ext}",
+      "artifactName": "CraftPanel-Setup-${version}.${ext}",
       "deleteAppDataOnUninstall": false
     },
     "publish": [

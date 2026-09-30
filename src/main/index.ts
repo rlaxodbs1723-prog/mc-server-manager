@@ -113,7 +113,7 @@ function requestQuit(): void {
 function ensureTray(): void {
   if (tray) return
   tray = new Tray(nativeImage.createFromPath(resourcePath('icon.png')).resize({ width: 16, height: 16, quality: 'best' }))
-  tray.setToolTip('MC Server Manager')
+  tray.setToolTip('CraftPanel')
   tray.on('click', showWindow)
   tray.on('double-click', showWindow)
   tray.setContextMenu(
@@ -141,7 +141,7 @@ function createWindow(): void {
     frame: false,
     show: false,
     backgroundColor: '#101013', // 화면이 뜨기 전 번쩍이는 흰 화면 방지
-    title: 'MC Server Manager',
+    title: 'CraftPanel',
     icon: resourcePath('icon.ico'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
