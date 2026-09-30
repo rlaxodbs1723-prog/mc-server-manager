@@ -19,7 +19,7 @@
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Pretendard Variable', Pretendard, system-ui, 'Malgun Gothic', sans-serif; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Pretendard Variable', Pretendard, system-ui, 'Malgun Gothic', 'Microsoft YaHei', sans-serif; line-height: 1.6; -webkit-font-smoothing: antialiased; }
   a { color: inherit; }
   .wrap { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
 
@@ -31,7 +31,10 @@
   header.top nav { margin-left: auto; display: flex; gap: 20px; font-size: 14px; }
   header.top nav a { text-decoration: none; color: var(--text-2); }
   header.top nav a:hover { color: var(--text); }
-  @media (max-width: 560px) { header.top nav { display: none; } }
+  @media (max-width: 560px) { header.top nav { display: none; } header.top .langs { margin-left: auto; } }
+  header.top .langs { display: flex; gap: 2px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 2px; }
+  header.top .langs button { font: inherit; font-size: 12px; background: none; border: 0; color: var(--text-3); padding: 4px 8px; border-radius: 6px; cursor: pointer; }
+  header.top .langs button.on { background: var(--surface-2); color: var(--text); }
 
   /* 첫 화면 */
   .hero { padding: 88px 0 72px; text-align: center; }
@@ -82,61 +85,62 @@
     <img src="icon.svg" alt="" />
     <b>CraftPanel</b>
     <nav>
-      <a href="#features">기능</a>
-      <a href="#install">설치 방법</a>
-      <a href="#faq">자주 묻는 질문</a>
+      <a href="#features" data-i18n="nav1">기능</a>
+      <a href="#install" data-i18n="nav2">설치 방법</a>
+      <a href="#faq" data-i18n="nav3">자주 묻는 질문</a>
     </nav>
+    <div class="langs" id="langs"><button data-l="ko">한국어</button><button data-l="en">EN</button><button data-l="zh">中文</button></div>
   </div>
 </header>
 
 <main>
   <div class="hero wrap">
-    <img class="logo" src="icon.svg" alt="CraftPanel 아이콘" />
-    <h1>친구들과 놀 <em>마인크래프트 서버</em>,<br />클릭 몇 번이면 끝</h1>
-    <p class="lead">명령어도, 설정 파일도 몰라도 돼요. 서버 만들기부터 모드·모드팩 설치, 백업, 튕김 원인 찾기까지 한 앱에서 해요.</p>
+    <img class="logo" src="icon.svg" alt="CraftPanel" />
+    <h1 data-i18n="h1">친구들과 놀 <em>마인크래프트 서버</em>,<br />클릭 몇 번이면 끝</h1>
+    <p class="lead" data-i18n="lead">명령어도, 설정 파일도 몰라도 돼요. 서버 만들기부터 모드·모드팩 설치, 백업, 튕김 원인 찾기까지 한 앱에서 해요.</p>
     <a class="dl" id="dl" href="https://github.com/rlaxodbs1723-prog/mc-server-manager/releases/latest" aria-disabled="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></svg>
-      <span id="dl-text">윈도우용 무료 다운로드</span>
+      <span id="dl-text" data-i18n="dl">윈도우용 무료 다운로드</span>
     </a>
-    <div class="dl-meta" id="dl-meta">Windows 10 · 11 (64비트) · 무료</div>
+    <div class="dl-meta" id="dl-meta" data-i18n="meta">Windows 10 · 11 (64비트) · 무료</div>
   </div>
 
   <section id="features">
     <div class="wrap">
-      <h2>이런 걸 할 수 있어요</h2>
-      <p class="sub">복잡한 건 앱이 알아서 하고, 고를 것만 물어봐요.</p>
+      <h2 data-i18n="fh">이런 걸 할 수 있어요</h2>
+      <p class="sub" data-i18n="fs">복잡한 건 앱이 알아서 하고, 고를 것만 물어봐요.</p>
       <div class="grid">
-        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2" /><rect x="3" y="13" width="18" height="7" rx="2" /></svg></div><h3>서버 만들기</h3><p>바닐라, Paper, Fabric, Forge, NeoForge, Quilt, Purpur. 버전만 고르면 자바까지 알아서 받아요.</p></div>
-        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7z" /></svg></div><h3>모드 · 모드팩</h3><p>Modrinth와 CurseForge를 한 번에 검색하고 설치해요. 필요한 모드도 같이 깔고, 서버 팩도 알아서 써요.</p></div>
-        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4" /><path d="M12 17h.01" /><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /></svg></div><h3>서버에 안 맞는 모드 찾기</h3><p>게임 화면 전용 모드나 빠진 모드, 같은 모드 두 개를 켜기 전에 미리 알려 줘요.</p></div>
-        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg></div><h3>튕김 원인 분석</h3><p>서버가 튕기면 긴 오류 대신 무엇 때문인지 알기 쉽게 알려 줘요.</p></div>
-        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></svg></div><h3>백업 · 되돌리기</h3><p>켜기 전 자동 백업, 정기 백업. 한 번 눌러 되돌리고, 되돌리기 전 월드도 따로 남겨 둬요.</p></div>
-        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.9" /><path d="M16 3.1a4 4 0 0 1 0 7.8" /></svg></div><h3>관리 · 자동화</h3><p>OP·밴·화이트리스트, 게임 규칙, 맵 가져오기. 매일 다시 켜기, 빈 서버 끄기, 환영 메시지도요.</p></div>
+        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2" /><rect x="3" y="13" width="18" height="7" rx="2" /></svg></div><h3 data-i18n="c1t">서버 만들기</h3><p data-i18n="c1p">바닐라, Paper, Fabric, Forge, NeoForge, Quilt, Purpur. 버전만 고르면 자바까지 알아서 받아요.</p></div>
+        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7z" /></svg></div><h3 data-i18n="c2t">모드 · 모드팩</h3><p data-i18n="c2p">Modrinth와 CurseForge를 한 번에 검색하고 설치해요. 필요한 모드도 같이 깔고, 서버 팩도 알아서 써요.</p></div>
+        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4" /><path d="M12 17h.01" /><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /></svg></div><h3 data-i18n="c3t">서버에 안 맞는 모드 찾기</h3><p data-i18n="c3p">게임 화면 전용 모드나 빠진 모드, 같은 모드 두 개를 켜기 전에 미리 알려 줘요.</p></div>
+        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg></div><h3 data-i18n="c4t">튕김 원인 분석</h3><p data-i18n="c4p">서버가 튕기면 긴 오류 대신 무엇 때문인지 알기 쉽게 알려 줘요.</p></div>
+        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></svg></div><h3 data-i18n="c5t">백업 · 되돌리기</h3><p data-i18n="c5p">켜기 전 자동 백업, 정기 백업. 한 번 눌러 되돌리고, 되돌리기 전 월드도 따로 남겨 둬요.</p></div>
+        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.9" /><path d="M16 3.1a4 4 0 0 1 0 7.8" /></svg></div><h3 data-i18n="c6t">관리 · 자동화</h3><p data-i18n="c6p">OP·밴·화이트리스트, 게임 규칙, 맵 가져오기. 매일 다시 켜기, 빈 서버 끄기, 환영 메시지도요.</p></div>
       </div>
     </div>
   </section>
 
   <section id="install">
     <div class="wrap">
-      <h2>설치 방법</h2>
-      <p class="sub">3분이면 첫 서버를 켤 수 있어요.</p>
+      <h2 data-i18n="ih">설치 방법</h2>
+      <p class="sub" data-i18n="is">3분이면 첫 서버를 켤 수 있어요.</p>
       <div class="steps">
-        <div class="step"><div><b>위에서 설치 파일을 받아 실행해요</b><span>"Windows의 PC 보호" 파란 창이 뜨면 <b style="display:inline">추가 정보 → 실행</b>을 눌러요. 개인이 만든 앱이라 뜨는 창이에요.</span></div></div>
-        <div class="step"><div><b>"새 서버 만들기"를 눌러요</b><span>서버 종류와 버전만 고르면 나머지는 앱이 받아요. 모드팩으로 만들 수도 있어요.</span></div></div>
-        <div class="step"><div><b>켜고, 친구에게 주소를 알려 줘요</b><span>앱이 공유기 포트를 열어 보고, 친구가 들어올 주소를 보여 줘요. 새 버전은 앱이 알아서 업데이트해요.</span></div></div>
+        <div class="step"><div data-i18n="s1"><b>위에서 설치 파일을 받아 실행해요</b><span>"Windows의 PC 보호" 파란 창이 뜨면 <b style="display:inline">추가 정보 → 실행</b>을 눌러요. 개인이 만든 앱이라 뜨는 창이에요.</span></div></div>
+        <div class="step"><div data-i18n="s2"><b>"새 서버 만들기"를 눌러요</b><span>서버 종류와 버전만 고르면 나머지는 앱이 받아요. 모드팩으로 만들 수도 있어요.</span></div></div>
+        <div class="step"><div data-i18n="s3"><b>켜고, 친구에게 주소를 알려 줘요</b><span>앱이 공유기 포트를 열어 보고, 친구가 들어올 주소를 보여 줘요. 새 버전은 앱이 알아서 업데이트해요.</span></div></div>
       </div>
     </div>
   </section>
 
   <section id="faq">
     <div class="wrap">
-      <h2>자주 묻는 질문</h2>
+      <h2 data-i18n="qh">자주 묻는 질문</h2>
       <p class="sub">&nbsp;</p>
-      <details><summary>정말 무료예요?</summary><p>네. 광고도, 유료 기능도 없어요.</p></details>
-      <details><summary>컴퓨터 사양은 얼마나 필요해요?</summary><p>Windows 10·11 64비트, 메모리 8GB 이상을 추천해요. 모드가 많은 서버는 16GB가 편해요.</p></details>
-      <details><summary>"Windows의 PC 보호" 창이 떠요. 괜찮아요?</summary><p>괜찮아요. 코드 서명 인증서가 없는 개인 앱이라 뜨는 창이에요. 추가 정보 → 실행을 누르면 돼요. 앱의 코드는 깃허브에 모두 공개돼 있어요.</p></details>
-      <details><summary>친구가 들어오지 못해요.</summary><p>서버 이름 아래 접속 주소 옆의 확인 버튼(밖에서 접속되는지 확인)을 눌러 보세요. 공유기가 자동 포트 열기(UPnP)를 막아 두었으면 공유기 설정에서 서버 포트(기본 25565)를 직접 열어야 해요.</p></details>
-      <details><summary>만든 서버는 어디에 저장돼요?</summary><p>내 컴퓨터에 저장돼요 (%APPDATA%\mc-server-manager). 앱을 지워도 서버와 백업은 남아요.</p></details>
+      <details data-i18n="q1"><summary>정말 무료예요?</summary><p>네. 광고도, 유료 기능도 없어요.</p></details>
+      <details data-i18n="q2"><summary>컴퓨터 사양은 얼마나 필요해요?</summary><p>Windows 10·11 64비트, 메모리 8GB 이상을 추천해요. 모드가 많은 서버는 16GB가 편해요.</p></details>
+      <details data-i18n="q3"><summary>"Windows의 PC 보호" 창이 떠요. 괜찮아요?</summary><p>괜찮아요. 코드 서명 인증서가 없는 개인 앱이라 뜨는 창이에요. 추가 정보 → 실행을 누르면 돼요. 앱의 코드는 깃허브에 모두 공개돼 있어요.</p></details>
+      <details data-i18n="q4"><summary>친구가 들어오지 못해요.</summary><p>서버 이름 아래 접속 주소 옆의 확인 버튼(밖에서 접속되는지 확인)을 눌러 보세요. 공유기가 자동 포트 열기(UPnP)를 막아 두었으면 공유기 설정에서 서버 포트(기본 25565)를 직접 열어야 해요.</p></details>
+      <details data-i18n="q5"><summary>만든 서버는 어디에 저장돼요?</summary><p>내 컴퓨터에 저장돼요 (%APPDATA%\mc-server-manager). 앱을 지워도 서버와 백업은 남아요.</p></details>
     </div>
   </section>
 </main>
@@ -144,31 +148,130 @@
 <footer>
   <div class="wrap">
     <span>CraftPanel · <a href="https://github.com/rlaxodbs1723-prog/mc-server-manager">GitHub</a></span>
-    <span>마인크래프트 공식 제품이 아니에요. Mojang·Microsoft와 관련이 없어요.</span>
+    <span data-i18n="foot">마인크래프트 공식 제품이 아니에요. Mojang·Microsoft와 관련이 없어요.</span>
   </div>
 </footer>
 
 <script>
-  // 최신 릴리스의 설치 파일로 바로 받게 한다 (없으면 릴리스 페이지로)
-  ;(async () => {
-    const btn = document.getElementById('dl')
+  // 언어: 한국어는 HTML 그대로, 영어·중국어는 아래 표로 바꾼다. 처음에는 브라우저 언어를 따른다
+  const T = {
+    en: {
+      nav1: 'Features', nav2: 'Install', nav3: 'FAQ',
+      h1: 'A <em>Minecraft server</em> for your players,<br />in just a few clicks',
+      lead: 'No commands or config files needed. Create servers, install mods and modpacks, back up, and find crash causes, all in one app.',
+      dl: 'Free download for Windows', meta: 'Windows 10 · 11 (64-bit) · Free',
+      fh: 'What you can do', fs: 'The app handles the hard parts and only asks what you need to choose.',
+      c1t: 'Create servers', c1p: 'Vanilla, Paper, Fabric, Forge, NeoForge, Quilt, Purpur. Pick a version and the app even downloads Java.',
+      c2t: 'Mods · Modpacks', c2p: 'Search and install from Modrinth and CurseForge at once. Required mods come along, and server packs are used automatically.',
+      c3t: 'Catch mods that break servers', c3p: 'Warns you before starting about client-only mods, missing mods, or the same mod installed twice.',
+      c4t: 'Crash analysis', c4p: 'When the server crashes, you get a plain explanation of why instead of a wall of errors.',
+      c5t: 'Backup · Restore', c5p: 'Automatic backups before start and on a schedule. Restore in one click, and the world before restoring is kept too.',
+      c6t: 'Management · Automation', c6p: 'OP, bans, whitelist, game rules, map import. Daily restarts, stopping empty servers, welcome messages, too.',
+      ih: 'How to install', is: 'Your first server can be running in 3 minutes.',
+      s1: '<b>Download and run the installer above</b><span>If a blue "Windows protected your PC" window appears, click <b style="display:inline">More info → Run anyway</b>. It appears because this is an app made by an individual.</span>',
+      s2: '<b>Click "New server"</b><span>Pick a server type and version and the app downloads the rest. You can also start from a modpack.</span>',
+      s3: '<b>Start it and share the address</b><span>The app tries to open your router port and shows the address players join with. New versions are updated by the app automatically.</span>',
+      qh: 'FAQ',
+      q1: '<summary>Is it really free?</summary><p>Yes. No ads and no paid features.</p>',
+      q2: '<summary>What PC do I need?</summary><p>Windows 10 or 11 (64-bit) with 8 GB of memory or more is recommended. 16 GB is comfortable for heavily modded servers.</p>',
+      q3: '<summary>A "Windows protected your PC" window appears. Is that OK?</summary><p>Yes. It appears because this personal app has no code signing certificate. Click More info → Run anyway. All of the app’s code is public on GitHub.</p>',
+      q4: '<summary>Players can’t join.</summary><p>Click the check button next to the connection address under the server name (check outside access). If your router blocks automatic port opening (UPnP), open the server port (default 25565) in your router settings.</p>',
+      q5: '<summary>Where are my servers stored?</summary><p>On your own computer (%APPDATA%\\mc-server-manager). Servers and backups stay even if you uninstall the app.</p>',
+      foot: 'Not an official Minecraft product. Not associated with Mojang or Microsoft.',
+      soon: 'Coming soon', version: 'Version', bits: '(64-bit)', changes: 'What’s new'
+    },
+    zh: {
+      nav1: '功能', nav2: '安装方法', nav3: '常见问题',
+      h1: '和玩家们一起玩的<em>Minecraft 服务器</em>，<br />点几下就搞定',
+      lead: '不懂命令和配置文件也没关系。从创建服务器到安装模组和整合包、备份、查找崩溃原因，一个应用全搞定。',
+      dl: 'Windows 免费下载', meta: 'Windows 10 · 11（64 位）· 免费',
+      fh: '可以做这些事', fs: '复杂的事交给应用，只问你需要选择的。',
+      c1t: '创建服务器', c1p: '原版、Paper、Fabric、Forge、NeoForge、Quilt、Purpur。选好版本，连 Java 都会自动下载。',
+      c2t: '模组 · 整合包', c2p: '同时搜索并安装 Modrinth 和 CurseForge 的内容。必需的模组一起安装，服务端包也会自动使用。',
+      c3t: '找出不适合服务器的模组', c3p: '启动前提前提醒仅客户端模组、缺失的模组，以及重复安装的同一模组。',
+      c4t: '崩溃原因分析', c4p: '服务器崩溃时，不给你一长串错误，而是用简单的话说明原因。',
+      c5t: '备份 · 恢复', c5p: '启动前自动备份、定时备份。一键恢复，恢复前的世界也会另外保留。',
+      c6t: '管理 · 自动化', c6p: 'OP、封禁、白名单、游戏规则、导入地图。每日重启、无人时关闭服务器、欢迎消息也都有。',
+      ih: '安装方法', is: '3 分钟就能启动第一个服务器。',
+      s1: '<b>下载并运行上方的安装程序</b><span>如果弹出蓝色的"Windows 已保护你的电脑"窗口，请点击 <b style="display:inline">更多信息 → 仍要运行</b>。这是个人开发的应用才会出现的窗口。</span>',
+      s2: '<b>点击"新建服务器"</b><span>只需选择服务器类型和版本，其余由应用下载。也可以从整合包创建。</span>',
+      s3: '<b>启动后把地址告诉玩家</b><span>应用会尝试打开路由器端口，并显示玩家进入用的地址。新版本由应用自动更新。</span>',
+      qh: '常见问题',
+      q1: '<summary>真的免费吗？</summary><p>是的。没有广告，也没有付费功能。</p>',
+      q2: '<summary>需要什么配置的电脑？</summary><p>推荐 Windows 10·11 64 位、8GB 以上内存。模组很多的服务器建议 16GB。</p>',
+      q3: '<summary>弹出"Windows 已保护你的电脑"窗口，没问题吗？</summary><p>没问题。这是没有代码签名证书的个人应用才会出现的窗口。点击 更多信息 → 仍要运行 即可。应用的代码全部公开在 GitHub 上。</p>',
+      q4: '<summary>玩家进不来。</summary><p>点击服务器名称下方连接地址旁的检查按钮（检查外部能否连接）。如果路由器禁止自动开放端口（UPnP），需要在路由器设置中手动开放服务器端口（默认 25565）。</p>',
+      q5: '<summary>创建的服务器保存在哪里？</summary><p>保存在你自己的电脑上（%APPDATA%\\mc-server-manager）。卸载应用后服务器和备份仍会保留。</p>',
+      foot: '非 Minecraft 官方产品，与 Mojang、Microsoft 无关。',
+      soon: '即将发布', version: '版本', bits: '（64 位）', changes: '更新内容'
+    }
+  }
+  const KO = { soon: '곧 공개돼요', version: '버전', bits: '(64비트)', changes: '바뀐 점' }
+  const original = {}
+  document.querySelectorAll('[data-i18n]').forEach((el) => (original[el.dataset.i18n] = el.innerHTML))
+  let lang = 'ko'
+  let release = null
+  const word = (k) => (lang === 'ko' ? KO[k] : T[lang][k])
+  const btn = document.getElementById('dl')
+
+  function showRelease() {
     const text = document.getElementById('dl-text')
     const meta = document.getElementById('dl-meta')
+    if (release === 'none') {
+      btn.setAttribute('aria-disabled', 'true')
+      text.textContent = word('soon')
+      return
+    }
+    if (!release) return
+    const { r, exe } = release
+    const mb = Math.round(exe.size / 1048576)
+    const date = new Date(r.published_at).toLocaleDateString(lang === 'zh' ? 'zh-CN' : lang === 'en' ? 'en-US' : 'ko-KR')
+    meta.innerHTML = `${word('version')} ${r.tag_name.replace(/^v/, '')} · ${mb}MB · ${date} · Windows 10 · 11 ${word('bits')} · <a href="${r.html_url}">${word('changes')}</a>`
+  }
+
+  function setLang(l) {
+    lang = T[l] ? l : 'ko'
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang
+    document.querySelectorAll('[data-i18n]').forEach((el) => {
+      const k = el.dataset.i18n
+      const html = lang === 'ko' ? original[k] : T[lang][k]
+      if (html == null) return
+      const open = el.open
+      el.innerHTML = html
+      if (el.tagName === 'DETAILS') el.open = open
+    })
+    document.querySelectorAll('#langs button').forEach((b) => b.classList.toggle('on', b.dataset.l === lang))
+    showRelease()
+    try {
+      localStorage.setItem('lang', lang)
+    } catch {}
+  }
+  document.getElementById('langs').addEventListener('click', (e) => {
+    const b = e.target.closest('button')
+    if (b) setLang(b.dataset.l)
+  })
+  let saved = null
+  try {
+    saved = localStorage.getItem('lang')
+  } catch {}
+  const nav = (navigator.language || '').toLowerCase()
+  setLang(saved || (nav.startsWith('ko') ? 'ko' : nav.startsWith('zh') ? 'zh' : 'en'))
+
+  // 최신 릴리스의 설치 파일로 바로 받게 한다 (없으면 릴리스 페이지로)
+  ;(async () => {
     try {
       const res = await fetch('https://api.github.com/repos/rlaxodbs1723-prog/mc-server-manager/releases/latest')
       if (res.status === 404) {
-        btn.setAttribute('aria-disabled', 'true')
-        text.textContent = '곧 공개돼요'
-        return
+        release = 'none'
+        return showRelease()
       }
       if (!res.ok) return
       const r = await res.json()
       const exe = (r.assets || []).find((a) => /\.exe$/i.test(a.name))
       if (!exe) return
       btn.href = exe.browser_download_url
-      const mb = Math.round(exe.size / 1048576)
-      const date = new Date(r.published_at).toLocaleDateString('ko-KR')
-      meta.innerHTML = `버전 ${r.tag_name.replace(/^v/, '')} · ${mb}MB · ${date} · Windows 10 · 11 (64비트) · <a href="${r.html_url}">바뀐 점</a>`
+      release = { r, exe }
+      showRelease()
     } catch {
       // 못 불러오면 릴리스 페이지 링크 그대로
     }

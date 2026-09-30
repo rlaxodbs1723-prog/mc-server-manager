@@ -1,6 +1,6 @@
 {
   "name": "mc-server-manager",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "CraftPanel",
   "main": "out/main/index.js",
   "private": true,
@@ -86,7 +86,14 @@
       "uninstallerIcon": "resources/icon.ico",
       "artifactName": "CraftPanel-Setup-${version}.${ext}",
       "deleteAppDataOnUninstall": false,
-      "include": "build-tools/uninstall.nsh"
+      "include": "build-tools/uninstall.nsh",
+      "multiLanguageInstaller": true,
+      "installerLanguages": [
+        "en_US",
+        "ko_KR",
+        "zh_CN"
+      ],
+      "displayLanguageSelector": false
     },
     "publish": [
       {
