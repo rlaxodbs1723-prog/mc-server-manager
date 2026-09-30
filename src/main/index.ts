@@ -184,7 +184,9 @@ function createWindow(): void {
         title: anyRunning() ? '서버는 계속 돌아가고 있어요' : working() && !alwaysTray ? '작업이 끝날 때까지 뒤에서 계속해요' : '앱이 트레이에서 계속 켜져 있어요',
         body: '작업 표시줄 오른쪽 아이콘을 누르면 다시 열 수 있어요.',
         icon: resourcePath('icon.png')
-      }).show()
+      })
+        .on('click', showWindow) // 알림을 누르면 창을 다시 연다 (다른 알림과 똑같이)
+        .show()
     }
   })
 
