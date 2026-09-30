@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import type { AppInfo, AppSettings } from '../../shared-types'
 import { Loading, Modal, useToast } from './ui'
 import { cleanError } from './util'
+import { LANGS } from '../../i18n'
 
 // 앱 전체 설정 (서버마다가 아닌 것). 바꾸면 바로 저장된다
 export default function AppSettingsDialog({ onClose }: { onClose: () => void }) {
@@ -61,6 +62,25 @@ export default function AppSettingsDialog({ onClose }: { onClose: () => void }) 
         <Loading />
       ) : (
         <div className="app-settings">
+          <section>
+            <div className="label">언어 · Language</div>
+            <div className="seg" data-notr>
+              {LANGS.map((l) => (
+                <button
+                  key={l.id}
+                  className={s.language === l.id ? 'active' : ''}
+                  onClick={() => {
+                    if (s.language === l.id) return
+                    // 화면 글자를 처음부터 다시 그리도록 새로 불러온다
+                    window.api.setAppSettings({ language: l.id }).then(() => location.reload(), (e) => toast(cleanError(e), 'error'))
+                  }}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+          </section>
+
           <section>
             <div className="label">시작</div>
             <label className="reset-row">

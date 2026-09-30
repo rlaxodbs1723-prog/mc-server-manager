@@ -12,6 +12,7 @@ import { getState } from './runner'
 import { downloadMap } from './curseforge'
 import { getVersions } from './mojang'
 import { tempRoot, unpackWorld } from './worldzip'
+import { tr } from './i18n'
 
 // 화면이 아무 경로나 보내지 못하게, 목록이나 폴더 고르기로 보여 준 월드만 가져올 수 있다
 const offered = new Set<string>()
@@ -58,9 +59,9 @@ export function listSaves(): SaveWorld[] {
 // 맵 zip 파일을 골라 풀고, 풀린 월드를 돌려준다
 export async function pickWorldZip(win: BrowserWindow | null): Promise<SaveWorld | null> {
   const opts = {
-    title: '가져올 맵 zip 파일을 골라 주세요',
+    title: tr('가져올 맵 zip 파일을 골라 주세요'),
     properties: ['openFile' as const],
-    filters: [{ name: '맵 압축 파일', extensions: ['zip'] }]
+    filters: [{ name: tr('맵 압축 파일'), extensions: ['zip'] }]
   }
   const res = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts)
   if (res.canceled || !res.filePaths[0]) return null

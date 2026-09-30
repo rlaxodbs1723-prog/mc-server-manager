@@ -1,3 +1,4 @@
+import { getLang, t } from './i18n-dom'
 import { Search, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLeaveAnimation } from './leave'
@@ -37,8 +38,11 @@ export default function GameRulesDialog({ folderPath, onClose }: { folderPath: s
   const items = useMemo(
     () =>
       (rules ?? [])
-        .map((r) => ({ ...r, ...labelOf(r.name, lang) }))
-        .sort((a, b) => a.label.localeCompare(b.label, 'ko')),
+        .map((r) => {
+          const l = labelOf(r.name, lang)
+          return { ...r, ...l, label: t(l.label), desc: t(l.desc) } // 검색·정렬도 보이는 언어로
+        })
+        .sort((a, b) => a.label.localeCompare(b.label, getLang())),
     [rules, lang]
   )
   const q = query.trim().toLowerCase()

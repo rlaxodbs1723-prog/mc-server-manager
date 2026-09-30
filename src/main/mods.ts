@@ -14,6 +14,7 @@ import * as cf from './curseforge'
 import { mergedSearch, preferCurseForge, sameNameOtherSite, squash } from './merge'
 import { getState } from './runner'
 import { readServerInfo, patchServerInfo } from './servers'
+import { tr } from './i18n'
 
 const TRACK_FILE = '.server-manager-mods.json'
 const CLIENT_ONLY_FILE = '.server-manager-clientonly.json' // 서버에 안 맞아서 앱이 꺼 둔 파일 이름과 이유
@@ -876,8 +877,8 @@ export async function exportClientPack(folderPath: string, format: 'mrpack' | 'z
   const base = `${server.name.replace(/[<>:"/\\|?*]/g, '')} (플레이어용)`
   const opts =
     format === 'zip'
-      ? { title: '플레이어용 모드 묶음 저장', defaultPath: path.join(app.getPath('desktop'), `${base} mods.zip`), filters: [{ name: 'zip', extensions: ['zip'] }] }
-      : { title: '플레이어용 모드팩 저장', defaultPath: path.join(app.getPath('desktop'), `${base}.mrpack`), filters: [{ name: 'Modrinth 모드팩', extensions: ['mrpack'] }] }
+      ? { title: tr('플레이어용 모드 묶음 저장'), defaultPath: path.join(app.getPath('desktop'), `${base} mods.zip`), filters: [{ name: 'zip', extensions: ['zip'] }] }
+      : { title: tr('플레이어용 모드팩 저장'), defaultPath: path.join(app.getPath('desktop'), `${base}.mrpack`), filters: [{ name: tr('Modrinth 모드팩'), extensions: ['mrpack'] }] }
   const res = win ? await dialog.showSaveDialog(win, opts) : await dialog.showSaveDialog(opts)
   if (res.canceled || !res.filePath) return null
 

@@ -9,6 +9,7 @@
     "noUnusedParameters": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "resolveJsonModule": true,
     "types": ["node"]
   },
   "include": ["src", "electron.vite.config.ts"]

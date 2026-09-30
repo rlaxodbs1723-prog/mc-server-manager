@@ -52,7 +52,7 @@ export default function CreateServer({ existingNames }: Props) {
                 <Package size={22} />
               </span>
               <div>
-                <div className="t">모드팩으로 만들기</div>
+                <div className="t">Modpack</div>
               </div>
             </button>
           </div>

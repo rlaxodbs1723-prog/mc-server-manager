@@ -3,6 +3,7 @@
 import { dialog, nativeImage, type BrowserWindow } from 'electron'
 import fs from 'fs'
 import path from 'path'
+import { tr } from './i18n'
 
 const FILE = 'server-icon.png'
 
@@ -24,7 +25,7 @@ export function setServerIconFrom(folderPath: string, source: string): string {
 }
 
 export async function pickServerIcon(folderPath: string, win: BrowserWindow | null): Promise<string | null> {
-  const opts = { title: '서버 아이콘으로 쓸 그림을 골라 주세요', properties: ['openFile' as const], filters: [{ name: '그림', extensions: ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'] }] }
+  const opts = { title: tr('서버 아이콘으로 쓸 그림을 골라 주세요'), properties: ['openFile' as const], filters: [{ name: tr('그림'), extensions: ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'] }] }
   const res = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts)
   if (res.canceled || !res.filePaths[0]) return null
   return setServerIconFrom(folderPath, res.filePaths[0])

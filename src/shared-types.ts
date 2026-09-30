@@ -157,6 +157,7 @@ export interface AppSettings {
   startHidden: boolean // 그때 창 없이 트레이로 시작
   closeBehavior: 'tray-if-running' | 'always-tray' // 창을 닫으면: 켜진 서버가 있을 때만 트레이로 / 늘 트레이로
   notifications: boolean // 윈도우 알림
+  language: 'ko' | 'en' | 'zh' // 앱 언어 (처음에는 윈도우 언어를 따른다)
 }
 export interface AppInfo {
   settings: AppSettings

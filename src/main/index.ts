@@ -34,6 +34,7 @@ import { getSiteStatus } from './sitestatus'
 import { runPreflight } from './preflight'
 import { autoStartServers, setStarter } from './automation'
 import { createBackup, deleteBackup, getBackupSettings, listBackups, openBackupFolder, restoreBackup, setBackupSettings } from './backup'
+import { tr } from './i18n'
 
 let quitting = false // 서버를 끄고 닫기로 확정됨
 let creating = 0 // 지금 만들고 있는 서버 수 (만드는 중에 닫으면 확인한다)
@@ -118,9 +119,9 @@ function ensureTray(): void {
   tray.on('double-click', showWindow)
   tray.setContextMenu(
     Menu.buildFromTemplate([
-      { label: '열기', click: showWindow },
+      { label: tr('열기'), click: showWindow },
       { type: 'separator' },
-      { label: '종료', click: requestQuit }
+      { label: tr('종료'), click: requestQuit }
     ])
   )
 }
@@ -181,8 +182,8 @@ function createWindow(): void {
     if (!trayHinted && Notification.isSupported() && getAppSettings().notifications) {
       trayHinted = true
       new Notification({
-        title: anyRunning() ? '서버는 계속 돌아가고 있어요' : working() && !alwaysTray ? '작업이 끝날 때까지 뒤에서 계속해요' : '앱이 트레이에서 계속 켜져 있어요',
-        body: '작업 표시줄 오른쪽 아이콘을 누르면 다시 열 수 있어요.',
+        title: tr(anyRunning() ? '서버는 계속 돌아가고 있어요' : working() && !alwaysTray ? '작업이 끝날 때까지 뒤에서 계속해요' : '앱이 트레이에서 계속 켜져 있어요'),
+        body: tr('작업 표시줄 오른쪽 아이콘을 누르면 다시 열 수 있어요.'),
         icon: resourcePath('icon.png')
       })
         .on('click', showWindow) // 알림을 누르면 창을 다시 연다 (다른 알림과 똑같이)
@@ -278,7 +279,7 @@ ipcMain.handle('prepareModpack', (_event, versionId: string) => prepareFromModri
 ipcMain.handle('prepareModpackFile', (_event, file: string) => prepareFromUpload(String(file)))
 ipcMain.handle('pickModpackFile', async (event) => {
   const win = BrowserWindow.fromWebContents(event.sender)
-  const opts = { title: '모드팩 파일을 골라 주세요', properties: ['openFile' as const], filters: [{ name: '모드팩', extensions: ['mrpack', 'zip'] }] }
+  const opts = { title: tr('모드팩 파일을 골라 주세요'), properties: ['openFile' as const], filters: [{ name: tr('모드팩'), extensions: ['mrpack', 'zip'] }] }
   const res = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts)
   return res.canceled || !res.filePaths[0] ? null : prepareFromUpload(res.filePaths[0])
 })
@@ -399,7 +400,17 @@ ipcMain.handle('getAppInfo', () => ({
   curseForgeKey: curseForgeKeySource(),
   dataFolder: app.getPath('userData')
 }))
-ipcMain.handle('setAppSettings', (_event, patch) => setAppSettings(patch ?? {}))
+ipcMain.handle('setAppSettings', (_event, patch) => {
+  const before = getAppSettings().language
+  const next = setAppSettings(patch ?? {})
+  if (next.language !== before && tray) {
+    // 트레이 메뉴 글자를 새 언어로
+    tray.destroy()
+    tray = null
+    ensureTray()
+  }
+  return next
+})
 ipcMain.handle('openDataFolder', () => shell.openPath(app.getPath('userData')).then(() => undefined))
 ipcMain.handle('listDir', (_event, folderPath: string, rel: string) => listDir(checkServerFolder(folderPath), String(rel ?? '')))
 ipcMain.handle('renameEntry', (_event, folderPath: string, rel: string, newName: string) => renameEntry(checkServerFolder(folderPath), String(rel), String(newName)))

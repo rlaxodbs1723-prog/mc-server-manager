@@ -3,12 +3,14 @@ import { app } from 'electron'
 import fs from 'fs'
 import path from 'path'
 import type { AppSettings } from '../shared-types'
+import { langFromLocale } from '../i18n'
 
 const DEFAULTS: AppSettings = {
   launchAtLogin: false,
   startHidden: true,
   closeBehavior: 'tray-if-running',
-  notifications: true
+  notifications: true,
+  language: 'ko'
 }
 
 const file = (): string => path.join(app.getPath('userData'), 'app-settings.json')
@@ -17,9 +19,9 @@ let cache: AppSettings | null = null
 export function getAppSettings(): AppSettings {
   if (cache) return cache
   try {
-    cache = { ...DEFAULTS, ...JSON.parse(fs.readFileSync(file(), 'utf8')) }
+    cache = { ...DEFAULTS, language: langFromLocale(app.getLocale()), ...JSON.parse(fs.readFileSync(file(), 'utf8')) }
   } catch {
-    cache = { ...DEFAULTS }
+    cache = { ...DEFAULTS, language: langFromLocale(app.getLocale()) }
   }
   return cache!
 }
@@ -30,7 +32,8 @@ export function setAppSettings(patch: Partial<AppSettings>): AppSettings {
     launchAtLogin: patch.launchAtLogin != null ? !!patch.launchAtLogin : cur.launchAtLogin,
     startHidden: patch.startHidden != null ? !!patch.startHidden : cur.startHidden,
     closeBehavior: patch.closeBehavior === 'always-tray' || patch.closeBehavior === 'tray-if-running' ? patch.closeBehavior : cur.closeBehavior,
-    notifications: patch.notifications != null ? !!patch.notifications : cur.notifications
+    notifications: patch.notifications != null ? !!patch.notifications : cur.notifications,
+    language: patch.language === 'ko' || patch.language === 'en' || patch.language === 'zh' ? patch.language : cur.language
   }
   fs.writeFileSync(file(), JSON.stringify(next, null, 2))
   cache = next
