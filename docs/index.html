@@ -49,25 +49,38 @@
   header.top .langs button.on { background: var(--surface-2); color: var(--text); }
 
   /* 첫 화면 */
-  .hero { padding: 88px 0 72px; text-align: center; }
+  .hero-bg { position: relative; overflow: hidden; }
+  .hero-bg::before { content: ''; position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(700px 420px at 50% 0%, rgba(49, 130, 246, 0.22), transparent 70%),
+      radial-gradient(600px 400px at 85% 70%, rgba(53, 208, 127, 0.12), transparent 70%),
+      linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px) 0 0 / 40px 40px,
+      linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px) 0 0 / 40px 40px;
+    -webkit-mask-image: linear-gradient(#000 40%, transparent); mask-image: linear-gradient(#000 40%, transparent); }
+  .hero { position: relative; padding: 88px 20px 40px; text-align: center; }
   .hero img.logo { width: 104px; height: 104px; filter: drop-shadow(0 16px 40px rgba(49, 130, 246, 0.25)); }
   .hero h1 { font-size: clamp(32px, 6vw, 52px); line-height: 1.2; margin: 24px 0 14px; letter-spacing: -0.02em; }
-  .hero h1 em { font-style: normal; color: var(--primary); }
+  .hero h1 em { font-style: normal; background: linear-gradient(90deg, #4f9bff, var(--green)); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .hero p.lead { font-size: clamp(16px, 2.4vw, 19px); color: var(--text-2); max-width: 620px; margin: 0 auto 36px; }
-  .dl { display: inline-flex; align-items: center; gap: 10px; padding: 16px 30px; border-radius: 16px; background: var(--primary); color: #fff; font-size: 18px; font-weight: 700; text-decoration: none; transition: background 0.15s, transform 0.15s; }
-  .dl:hover { background: var(--primary-2); transform: translateY(-1px); }
+  .dl { display: inline-flex; align-items: center; gap: 10px; padding: 16px 30px; border-radius: 16px; background: var(--primary); color: #fff; font-size: 18px; font-weight: 700; text-decoration: none; box-shadow: 0 10px 30px rgba(49, 130, 246, 0.35); transition: background 0.15s, transform 0.15s, box-shadow 0.15s; }
+  .dl:hover { background: var(--primary-2); transform: translateY(-2px); box-shadow: 0 14px 36px rgba(49, 130, 246, 0.45); }
   .dl svg { width: 22px; height: 22px; }
   .dl[aria-disabled='true'] { background: var(--surface-2); color: var(--text-3); pointer-events: none; }
   .dl-meta { margin-top: 14px; font-size: 13.5px; color: var(--text-3); }
   .dl-meta a { color: var(--text-2); }
+  .shot { position: relative; max-width: 960px; margin: 56px auto 0; padding: 0 20px; }
+  .shot img { display: block; width: 100%; height: auto; border-radius: 14px; border: 1px solid var(--line);
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.03), 0 0 80px rgba(49, 130, 246, 0.18); }
 
   /* 기능 */
   section { padding: 64px 0; }
   section h2 { font-size: clamp(24px, 4vw, 32px); margin: 0 0 8px; letter-spacing: -0.01em; }
   section p.sub { color: var(--text-2); margin: 0 0 32px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px; transition: transform 0.2s, border-color 0.2s, background 0.2s; }
+  .card:hover { transform: translateY(-3px); border-color: #3b414d; background: var(--surface-2); }
   .card .ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: rgba(49, 130, 246, 0.14); color: var(--primary); margin-bottom: 14px; }
+  .card:nth-child(even) .ico { background: rgba(53, 208, 127, 0.14); color: var(--green); }
   .card .ico svg { width: 20px; height: 20px; }
   .card h3 { font-size: 17px; margin: 0 0 6px; }
   .card p { font-size: 14.5px; color: var(--text-2); margin: 0; }
@@ -85,6 +98,21 @@
   summary::after { content: '+'; color: var(--text-3); font-size: 20px; line-height: 1; }
   details[open] summary::after { content: '−'; }
   details p { color: var(--text-2); margin: 12px 0 0; font-size: 14.5px; }
+
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } .card, .dl { transition: none; } html { scroll-behavior: auto; } }
+
+  /* 휴대폰 */
+  @media (max-width: 560px) {
+    .hero { padding: 56px 16px 24px; }
+    .hero img.logo { width: 80px; height: 80px; }
+    .dl { width: 100%; justify-content: center; }
+    .shot { margin-top: 36px; padding: 0 16px; }
+    .wrap { padding: 0 16px; }
+    section { padding: 48px 0; }
+    .step { padding: 16px; }
+  }
 
   footer { border-top: 1px solid var(--line); padding: 32px 0 48px; color: var(--text-3); font-size: 13px; }
   footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
@@ -106,7 +134,8 @@
 </header>
 
 <main>
-  <div class="hero wrap">
+  <div class="hero-bg">
+  <div class="hero">
     <img class="logo" src="icon.svg" alt="CraftPanel" />
     <h1 data-i18n="h1">친구들과 놀 <em>마인크래프트 서버</em>,<br />클릭 몇 번이면 끝</h1>
     <p class="lead" data-i18n="lead">명령어도, 설정 파일도 몰라도 돼요. 서버 만들기부터 모드·모드팩 설치, 백업, 튕김 원인 찾기까지 한 앱에서 해요.</p>
@@ -116,18 +145,20 @@
     </a>
     <div class="dl-meta" id="dl-meta" data-i18n="meta">Windows 10 · 11 (64비트) · 무료</div>
   </div>
+  <div class="shot reveal"><img src="screenshot.webp" width="1359" height="823" alt="CraftPanel" /></div>
+  </div>
 
   <section id="features">
     <div class="wrap">
       <h2 data-i18n="fh">이런 걸 할 수 있어요</h2>
       <p class="sub" data-i18n="fs">복잡한 건 앱이 알아서 하고, 고를 것만 물어봐요.</p>
       <div class="grid">
-        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2" /><rect x="3" y="13" width="18" height="7" rx="2" /></svg></div><h3 data-i18n="c1t">서버 만들기</h3><p data-i18n="c1p">바닐라, Paper, Fabric, Forge, NeoForge, Quilt, Purpur. 버전만 고르면 자바까지 알아서 받아요.</p></div>
-        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7z" /></svg></div><h3 data-i18n="c2t">모드 · 모드팩</h3><p data-i18n="c2p">Modrinth와 CurseForge를 한 번에 검색하고 설치해요. 필요한 모드도 같이 깔고, 서버 팩도 알아서 써요.</p></div>
-        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4" /><path d="M12 17h.01" /><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /></svg></div><h3 data-i18n="c3t">서버에 안 맞는 모드 찾기</h3><p data-i18n="c3p">게임 화면 전용 모드나 빠진 모드, 같은 모드 두 개를 켜기 전에 미리 알려 줘요.</p></div>
-        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg></div><h3 data-i18n="c4t">튕김 원인 분석</h3><p data-i18n="c4p">서버가 튕기면 긴 오류 대신 무엇 때문인지 알기 쉽게 알려 줘요.</p></div>
-        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></svg></div><h3 data-i18n="c5t">백업 · 되돌리기</h3><p data-i18n="c5p">켜기 전 자동 백업, 정기 백업. 한 번 눌러 되돌리고, 되돌리기 전 월드도 따로 남겨 둬요.</p></div>
-        <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.9" /><path d="M16 3.1a4 4 0 0 1 0 7.8" /></svg></div><h3 data-i18n="c6t">관리 · 자동화</h3><p data-i18n="c6p">OP·밴·화이트리스트, 게임 규칙, 맵 가져오기. 매일 다시 켜기, 빈 서버 끄기, 환영 메시지도요.</p></div>
+        <div class="card reveal"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2" /><rect x="3" y="13" width="18" height="7" rx="2" /></svg></div><h3 data-i18n="c1t">서버 만들기</h3><p data-i18n="c1p">바닐라, Paper, Fabric, Forge, NeoForge, Quilt, Purpur. 버전만 고르면 자바까지 알아서 받아요.</p></div>
+        <div class="card reveal"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7z" /></svg></div><h3 data-i18n="c2t">모드 · 모드팩</h3><p data-i18n="c2p">Modrinth와 CurseForge를 한 번에 검색하고 설치해요. 필요한 모드도 같이 깔고, 서버 팩도 알아서 써요.</p></div>
+        <div class="card reveal"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4" /><path d="M12 17h.01" /><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /></svg></div><h3 data-i18n="c3t">서버에 안 맞는 모드 찾기</h3><p data-i18n="c3p">게임 화면 전용 모드나 빠진 모드, 같은 모드 두 개를 켜기 전에 미리 알려 줘요.</p></div>
+        <div class="card reveal"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg></div><h3 data-i18n="c4t">튕김 원인 분석</h3><p data-i18n="c4p">서버가 튕기면 긴 오류 대신 무엇 때문인지 알기 쉽게 알려 줘요.</p></div>
+        <div class="card reveal"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></svg></div><h3 data-i18n="c5t">백업 · 되돌리기</h3><p data-i18n="c5p">켜기 전 자동 백업, 정기 백업. 한 번 눌러 되돌리고, 되돌리기 전 월드도 따로 남겨 둬요.</p></div>
+        <div class="card reveal"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.9" /><path d="M16 3.1a4 4 0 0 1 0 7.8" /></svg></div><h3 data-i18n="c6t">관리 · 자동화</h3><p data-i18n="c6p">OP·밴·화이트리스트, 게임 규칙, 맵 가져오기. 매일 다시 켜기, 빈 서버 끄기, 환영 메시지도요.</p></div>
       </div>
     </div>
   </section>
@@ -137,9 +168,9 @@
       <h2 data-i18n="ih">설치 방법</h2>
       <p class="sub" data-i18n="is">3분이면 첫 서버를 켤 수 있어요.</p>
       <div class="steps">
-        <div class="step"><div data-i18n="s1"><b>위에서 설치 파일을 받아 실행해요</b><span>"Windows의 PC 보호" 파란 창이 뜨면 <b style="display:inline">추가 정보 → 실행</b>을 눌러요. 개인이 만든 앱이라 뜨는 창이에요.</span></div></div>
-        <div class="step"><div data-i18n="s2"><b>"새 서버 만들기"를 눌러요</b><span>서버 종류와 버전만 고르면 나머지는 앱이 받아요. 모드팩으로 만들 수도 있어요.</span></div></div>
-        <div class="step"><div data-i18n="s3"><b>켜고, 친구에게 주소를 알려 줘요</b><span>앱이 공유기 포트를 열어 보고, 친구가 들어올 주소를 보여 줘요. 새 버전은 앱이 알아서 업데이트해요.</span></div></div>
+        <div class="step reveal"><div data-i18n="s1"><b>위에서 설치 파일을 받아 실행해요</b><span>"Windows의 PC 보호" 파란 창이 뜨면 <b style="display:inline">추가 정보 → 실행</b>을 눌러요. 개인이 만든 앱이라 뜨는 창이에요.</span></div></div>
+        <div class="step reveal"><div data-i18n="s2"><b>"새 서버 만들기"를 눌러요</b><span>서버 종류와 버전만 고르면 나머지는 앱이 받아요. 모드팩으로 만들 수도 있어요.</span></div></div>
+        <div class="step reveal"><div data-i18n="s3"><b>켜고, 친구에게 주소를 알려 줘요</b><span>앱이 공유기 포트를 열어 보고, 친구가 들어올 주소를 보여 줘요. 새 버전은 앱이 알아서 업데이트해요.</span></div></div>
       </div>
     </div>
   </section>
@@ -267,6 +298,9 @@
     saved = localStorage.getItem('lang')
   } catch {}
   const nav = (navigator.language || '').toLowerCase()
+  // 스크롤해서 보이면 나타나기
+  const io = 'IntersectionObserver' in window ? new IntersectionObserver((list) => list.forEach((e) => e.isIntersecting && (e.target.classList.add('in'), io.unobserve(e.target))), { rootMargin: '0px 0px -40px 0px' }) : null
+  document.querySelectorAll('.reveal').forEach((el) => (io ? io.observe(el) : el.classList.add('in')))
   setLang(saved || (nav.startsWith('ko') ? 'ko' : nav.startsWith('zh') ? 'zh' : 'en'))
 
   // 최신 릴리스의 설치 파일로 바로 받게 한다 (없으면 릴리스 페이지로)
