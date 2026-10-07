@@ -1,311 +1,311 @@
-1100	Higher lets you see farther but is harder on the computer. 8–12 is usually right.	越大看得越远，但电脑负担越重。通常 8~12 比较合适。
-1101	chunks	区块
-1102	Simulation distance	模拟距离
-1103	The range around players where animals and crops move.	玩家周围动物和作物会活动的范围。
-1104	Spawn protection radius	出生点保护范围
-1105	Only admins can break blocks around the spawn. 0 turns it off.	只有管理员能破坏出生点周围的方块。0 为关闭。
-1106	blocks	格
-1107	World size limit	世界大小限制
-1108	Distance (radius) to the world border. Smaller keeps the map small so it uses less space.	到世界边界的距离（半径）。设小后地图变小，占用空间增长更慢。
-1109	Build height limit	建筑高度限制
-1110	Connection	连接
-1111	Max players	最大人数
-1112	players	人
-1113	Only allowed people can join. Click to manage the list.	只允许名单上的人进入。点击可管理名单。
-1114	Enforce whitelist	立即执行白名单
-1115	When on, people removed from the list are kicked immediately even if they're online.	开启后，从名单中移除的人即使在线也会被立即踢出。
-1116	Online mode (premium check)	正版验证
-1117	When off, non-premium accounts can join too, but it's risky because people can join using others' nicknames.	关闭后非正版账户也能进入，但别人可能冒用昵称进入，很危险。
-1118	Block VPN/proxy connections	阻止 VPN/代理连接
-1119	Blocks joining when the connection address differs from the auth server's.	连接地址与正版验证服务器不同时禁止进入。
-1120	Pause when empty	无人时暂停
-1121	When everyone leaves for 1 minute, world time stops to ease the load on the computer.	所有人离开 1 分钟后世界时间停止，减轻电脑负担。
-1122	Show info in server list	在服务器列表中显示信息
-1123	When off, the player count and description are hidden in the server list and it looks like "Can't connect". Joining still works.	关闭后服务器列表中不显示人数和描述，看起来像"无法连接"。仍可正常进入。
-1124	Accept transfers from other servers	允许从其他服务器转入
-1125	Accepts other servers sending players to this server (/transfer).	接受其他服务器把玩家转到本服务器（/transfer）。
-1126	Log player IPs	记录连接 IP
-1127	Records the IP addresses of people who join in the log.	在日志中记录连接者的 IP 地址。
-1128	Server port (connection address)	服务器端口（连接地址）
-1129	The port players connect to. Change it only when running several servers at once.	玩家连接的端口。只有同时运行多个服务器时才需更改。
-1130	Server IP binding	固定服务器 IP
-1131	If this PC has several networks, listen on only one. Leave empty if unsure.	电脑有多个网络时只在其中一个上接收。不清楚的话留空。
-1132	Empty = all	留空为全部
-1133	Chat	聊天
-1134	Enforce secure chat	要求聊天签名
-1135	Only accepts chat signed by premium accounts. When off, modded clients without signatures can chat too.	只接收带正版账户签名的聊天。关闭后无签名的模组客户端也能聊天。
-1136	Show app command results in admin chat	在管理员聊天中显示应用命令结果
-1137	Also shows results of commands sent from the Console/Manage tabs in admin (OP) chat.	从控制台/管理页发送的命令结果也会显示在管理员（OP）聊天中。
-1138	Chat spam limit	聊天刷屏标准
-1139	People who chat too much within this time are kicked.	在此时间内聊天过多会被踢出。
-1140	s	秒
-1141	Command spam limit	命令刷屏标准
-1142	People who send too many commands within this time are kicked.	在此时间内输入命令过多会被踢出。
-1143	Resource pack	资源包
-1144	Resource pack URL	资源包地址
-1145	Download URL of the resource pack (.zip) sent to people who join. Leave empty to not send one.	发送给进入者的资源包（.zip）下载地址。留空则不发送。
-1146	Require resource pack	强制资源包
-1147	When on, people who decline the resource pack can't join.	开启后拒绝资源包的人无法进入。
-1148	Prompt text	提示文字
-1149	Text shown when asking whether to download the resource pack.	询问是否下载资源包时显示的文字。
-1150	Please download the server textures	请下载服务器专用材质
-1151	File checksum (SHA-1)	文件校验值（SHA-1）
-1152	If filled in, the downloaded file is verified. Leave empty if unsure.	填写后会校验下载的文件。不清楚的话留空。
-1153	Performance	性能
-1154	Entity view distance	生物可见距离
-1155	How far away distant mobs and items are shown. Lower is lighter.	远处的生物和物品在多远处显示。调低会更流畅。
-1156	Network compression threshold	网络压缩阈值
-1157	Data larger than this size (bytes) is compressed. 256 is enough.	大于此大小（字节）的数据会被压缩。256 就够了。
-1158	bytes	字节
-1159	Watchdog timeout	卡死检测时间
-1160	If the server freezes this long (ms) it's force-stopped. Increase it if a heavy mod server keeps shutting down. -1 turns it off.	服务器卡住这么久（毫秒）会被强制关闭。重型模组服务器频繁关闭时请调高。-1 为关闭。
-1161	Sync chunk writes	安全保存世界
-1162	When on, the world is less likely to be damaged by sudden shutdowns, at a small speed cost.	开启后稍慢一些，但突然关闭时世界更不容易损坏。
-1163	Region file compression	世界文件压缩方式
-1164	Usually use deflate. lz4 is faster but larger.	一般用 deflate。lz4 更快但占用更大。
-1165	deflate (default)	deflate（默认）
-1166	lz4 (fast)	lz4（快速）
-1167	No compression	不压缩
-1168	Use native transport	使用快速网络
-1169	Uses the OS's fast networking when possible.	尽可能使用操作系统的快速网络功能。
-1170	Advanced	高级
-1171	Remote console (RCON)	远程控制台（RCON）
-1172	Lets other programs send commands to this server. Turn on only when needed.	允许其他程序向此服务器发送命令。仅在需要时开启。
-1173	RCON port (for remote console)	RCON 端口（远程控制台用）
-1174	RCON password	RCON 密码
-1175	If RCON is on, be sure to set a strong password.	开启 RCON 的话，务必设置一个复杂的密码。
-1176	Server query	服务器信息查询（Query）
-1177	Lets sites like server lists query the player count.	允许服务器列表网站等查询在线人数。
-1178	Query port (for server info)	Query 端口（服务器信息查询用）
-1179	Separate from the server port. Used only when server query is on.	与服务器端口不同。仅在开启信息查询时使用。
-1180	Function permission level	函数权限等级
-1181	The range of commands data pack functions can use.	数据包函数可使用的命令范围。
-1182	Max chained neighbor updates	连锁方块更新上限
-1183	Number of block changes redstone etc. can trigger at once.	红石等一次可引发的方块变化数量。
-1184	Packet rate limit	数据包限制
-1185	Data a single player can send per second. 0 means no limit.	每人每秒可发送的数据量。0 为不限制。
-1186	Show RCON command results in admin chat	在管理员聊天中显示 RCON 命令结果
-1187	Also shows results of commands sent via remote console in admin (OP) chat.	通过远程控制台发送的命令结果也会显示在管理员（OP）聊天中。
-1188	Show code of conduct	显示行为准则
-1189	Shows the rules written in the server folder's codeofconduct folder to people who join and asks them to agree.	向进入者显示服务器文件夹中 codeofconduct 文件夹里写的规则并请其同意。
-1190	Bug report link	问题反馈地址
-1191	The address opened when a player reports a server problem from the game menu.	玩家在游戏菜单中反馈服务器问题时打开的地址。
-1192	Management API	管理 API
-1193	Opens a channel other programs can use to manage this server. Turn on only when needed.	开启让其他程序管理此服务器的通道。仅在需要时开启。
-1194	Management API port	管理 API 端口
-1195	JMX monitoring	JMX 监控
-1196	Lets Java monitoring tools view the server status.	允许用 Java 监控工具查看服务器状态。
-1197	Still loading version info	仍在加载版本信息
-1198	The server port ({1}) overlaps with server {0}. Change the server port or turn off "Start this server when the app opens".	与服务器 {0} 的服务器端口（{1}）冲突。请更改服务器端口或关闭"打开应用时启动此服务器"。
-1199	Changed to {0}	已改为{0}
-1200	Loading settings	正在加载设置
-1201	Server memory	服务器内存
-1202	This computer has	这台电脑有
-1203	. 4–6 GB is enough for many mods, 2 GB for Vanilla.	。模组多的话 4~6GB，原版 2GB 就够了。
-1204	⚠ Only	⚠ 电脑只剩
-1205	 will be left on the computer.	。
-1206	Java optimization is on, so the server grabs all of this as soon as it starts.	已开启 Java 优化，服务器一启动就会占用全部这些内存。
-1207	If you also play games on the same computer, it may stutter.	如果在同一台电脑上玩游戏可能会卡顿。
-1208	Java optimization (Aikar's flags)	Java 优化（Aikar's flags）
-1209	Java settings tuned for servers. Reduces lag caused by memory cleanup. When on, the set memory is taken all at once, so you need spare memory. Applies next start.	专为服务器调整的 Java 设置，可减少内存回收造成的卡顿。开启后一开始就占用全部设定内存，电脑需要有空余内存。下次启动时生效。
-1210	Extra Java options	额外 Java 选项
-1211	More options passed to Java. Leave empty if unsure. e.g. -XX:+UseZGC -Dfile.encoding=UTF-8	传给 Java 的额外选项。不清楚的话留空。例如：-XX:+UseZGC -Dfile.encoding=UTF-8
-1212	A different garbage collector (GC) was chosen, so Java optimization is applied without its G1-only options.	选择了其他内存回收方式（GC），Java 优化将去掉 G1 专用选项后应用。
-1213	Auto-restart on crash	崩溃后自动重启
-1214	Restarts 5 seconds after the server suddenly stops. Stops trying after more than 3 crashes within 10 minutes.	服务器突然关闭时 5 秒后重启。10 分钟内崩溃超过 3 次则停止。
-1215	New world settings	新世界设置
-1216	Set hardcore, seed, and world type and create a new world.	设置极限模式、种子和世界类型并新建世界。
-1217	Set up	设置
-1218	{0} · {1} players	{0} · {1} 人
-1219	More settings appear after starting the server once.	启动一次服务器后会出现更多设置项。
-1220	Changed settings apply after restarting the server	修改的设置在重启服务器后生效
-1221	You have unsaved changes	有修改过的设置
-1222	Save	保存
-1223	Switch to a lower version?	切换到更低版本？
-1224	{0} → {1}. The world may be damaged. The world is backed up automatically before the change.	{0} → {1}。世界可能会损坏。更改前会自动备份世界。
-1225	There are unsaved settings	有未保存的设置
-1226	Save and close?	保存并关闭？
-1227	Save and close	保存并关闭
-1228	Just close	直接关闭
-1229	Password	密码
-1230	Changed the server icon. It shows after restarting the server	已更换服务器图标。重启服务器后显示
-1231	Click to choose or drag an image here	点击选择或拖入图片
-1232	Server icon	服务器图标
-1233	The picture shown in players' multiplayer list. Drag an image in or click to choose. It's resized to 64×64 automatically.	显示在玩家多人游戏列表中的图片。拖入或点击选择图片，会自动调整为 64×64。
-1234	Hardcore	极限模式
-1235	You can't respawn after dying and become a spectator. Difficulty is fixed at Hard.	死亡后无法复活，会变为旁观模式。难度固定为困难。
-1236	10 min	10 分钟
-1237	30 min	30 分钟
-1238	1 hour	1 小时
-1239	3 hours	3 小时
-1240	Can't start due to a port conflict	端口冲突，无法启动
-1241	Starts with the app:	随应用一起启动的
-1242	server uses the same server port (	服务器使用与本服务器相同的服务器端口（
-1243	) as this one. Only one server can run on a port. Change this server's port and start again (e.g.	）。同一端口只能运行一个服务器。请更改本服务器的端口后重新启动（例如：
-1244	Go change server port	去更改服务器端口
-1245	Start this server when the app opens	打开应用时启动此服务器
-1246	Combined with "Launch app when Windows starts" in app settings, turning on the PC opens the server. With several servers on, they start one by one in list order, skipping any with port conflicts or not enough memory.	与应用设置中的"Windows 启动时打开应用"一起使用，开机即可开服。开启多个服务器时按列表顺序逐个启动，端口冲突或内存不足的会跳过。
-1247	Daily restart	每日重启
-1248	Prevents slowdown from running a long time. Announces in-game 1 minute before, saves, then restarts.	防止长时间运行变慢。提前 1 分钟在游戏中通知，保存后重启。
-1249	Stop when empty	无人时关闭
-1250	When everyone leaves and this time passes, the server stops so the computer can rest.	所有人离开并经过此时间后关闭服务器，让电脑休息。
-1251	Welcome message	欢迎消息
-1252	Only shown to the person who joined.	只有进入的人能看到。
-1253	is replaced with their nickname. Leave empty to not send.	会替换为该玩家的昵称。留空则不发送。
-1254	Welcome, {name}!	欢迎 {name}！
-1255	These settings exist only on Paper/Purpur servers. They apply after restarting the server.	仅 Paper·Purpur 服务器才有的设置。重启服务器后生效。
-1256	After starting the server once,	启动一次服务器后，
-1257	more settings appear.	个设置项会出现。
-1258	Watch only	只能观看
-1259	Flat	超平坦
-1260	Large biomes	巨型生物群系
-1261	Amplified (tall mountains)	放大化（高山）
-1262	Basics	基本信息
-1263	Gameplay	游戏方式
-1264	Couldn't load the version list. Check your internet connection. ({0})	无法加载版本列表。请检查网络连接。（{0}）
-1265	Couldn't load {0} info. ({1})	无法加载 {0} 信息。（{1}）
-1266	{0} server	{0} 服务器
-1267	e.g. Survival server	例如：生存服务器
-1268	A server with the same name already exists. Use a different name.	已有同名服务器。请使用其他名称。
-1269	Minecraft version	Minecraft 版本
-1270	Loading…	正在加载…
-1271	Search versions (e.g. 1.20)	搜索版本（例如 1.20）
-1272	{0} build	{0} 构建
-1273	{0} version	{0} 版本
-1274	No supported versions	没有支持的版本
-1275	Search versions	搜索版本
-1276	Recommended	推荐
-1277	Also show snapshots (versions in development)	也显示快照（开发中的版本）
-1278	doesn't support Minecraft	尚不支持 Minecraft
-1279	yet. Please choose another version.	。请选择其他版本。
-1280	How do you want to play?	想怎么玩？
-1281	You can't respawn after dying (difficulty is Hard)	死亡后无法复活（难度为困难）
-1282	What kind of world to start with?	从什么样的世界开始？
-1283	World type	世界类型
-1284	Generate structures	生成结构
-1285	Structures like villages and temples appear	会生成村庄、神殿等结构
-1286	Seed	种子
-1287	Random if left empty	留空则随机
-1288	Who can join?	谁可以进入？
-1289	When off, non-premium accounts can join too, but it's risky	关闭后非正版账户也能进入，但有风险
-1290	Only allowed people can join. Manage the list in server settings	只允许名单上的人进入。名单在服务器设置中管理
-1291	Previous	上一步
-1292	Next	下一步
-1293	Unavailable without a CurseForge API key	没有 CurseForge API 密钥，无法使用
-1294	Only {0} GB of memory is left on the computer. Lower the server memory or close other programs.	电脑内存只剩 {0}GB。请减少服务器内存或关闭其他程序。
-1295	The CPU is almost fully used. Happens with many mods or a large view distance.	CPU 几乎被占满。模组多或视距大时会出现。
-1296	The server has slowed down ({0} TPS). It's lagging.	服务器变慢了（{0} TPS），正在卡顿。
-1297	Memory	内存
-1298	Amount actually in RAM. {0} / {1} GB left on the computer	实际占用的内存量。电脑整体剩余 {0} / {1}GB
-1299	Server speed	服务器速度
-1300	Server speed isn't available for this version	此版本无法获取服务器速度
-1301	20 is normal. Lower means more lag	20 为正常。越低越卡
-1302	Estimating time remaining	正在计算剩余时间
-1303	Almost done	快完成了
-1304	About {0} s left	约剩 {0} 秒
-1305	About {0} min {1} s left	约剩 {0} 分 {1} 秒
-1306	Installation cancelled	已取消安装
-1307	Stopped creating server {0}	已中止创建服务器 {0}
-1308	Tasks	任务列表
-1309	Tasks	任务
-1310	Clear finished	清除已完成
-1311	No tasks in progress	没有进行中的任务
-1312	Tasks like creating servers, updates, and backups appear here.	创建服务器、更新、备份等任务会显示在这里。
-1313	Failed	失败
-1314	Couldn't create	创建失败
-1315	Couldn't stop it. Restart the app and try again	无法中止。请重启应用后再试
-1316	Stopping…	正在中止…
-1317	Stop	中止
-1318	Open server	打开服务器
-1319	This site isn't responding right now. It's a site issue, not the app, and will recover on its own shortly. Meanwhile search/install may not work and icons may not show.	该网站暂时没有响应。这是网站的问题而不是应用的问题，稍后会自动恢复。在此期间可能无法搜索、安装或显示图标。
-1320	offline	无法连接
-1321	New version {0} is ready. Click to install and restart the app. (It also installs when you just close the app)	新版本 {0} 已就绪。点击即可安装并重启应用。（直接关闭应用时也会安装）
-1322	Update to version {0}?	更新到新版本 {0}？
-1323	{0} running server(s) will save their worlds and stop. The app reopens when the update is done.	正在运行的 {0} 个服务器会保存世界并关闭。更新完成后应用会重新打开。
-1324	The app reopens after installing. It only takes a few seconds.	安装完成后应用会重新打开，只需几秒钟。
-1325	Stop servers and update	关闭服务器并更新
-1326	Minimize	最小化
-1327	Restore down	向下还原
-1328	Maximize	最大化
-1329	Loading	正在加载
-1330	Starting	正在启动
-1331	Stopping	正在关闭
-1333	Preparing the server program	正在准备服务端程序
-1334	Loading {0} mods	正在加载 {0} 个模组
-1335	Loading mods	正在加载模组
-1336	Loading game data	正在加载游戏数据
-1337	Starting the server	正在启动服务器
-1338	Loading the world	正在加载世界
-1339	Preparing spawn area ({0}%)	正在准备出生区域（{0}%）
-1340	Starting the server	正在启动服务器
-1341	Couldn't load the version list. ({0})	无法加载版本列表。（{0}）
-1342	· can be changed after stopping the server	· 关闭服务器后可以更改
-1343
-1344	 isn't supported on	 不支持
-1345	⚠ Switching to a lower version may damage the world. It's backed up automatically before the change.	⚠ 切换到更低版本可能损坏世界。更改前会自动备份世界。
-1346	The world is backed up automatically before the change. A world that has been opened on the new version won't open in older versions.	更改前会自动备份世界。在新版本中打开过的世界无法在旧版本中打开。
-1347	If installed mods don't fit the new version, the server may not start.	如果已安装的模组不兼容新版本，服务器可能无法启动。
-1348	Changes when you click Save. You can see progress in the task list at the top right.	点击保存后更改。进度可在右上角的任务列表中查看。
-1349	Whitelist turned on	已开启白名单
-1350	Whitelist turned off	已关闭白名单
-1351	Added {0}	已添加 {0}
-1352	Removed {0}	已移除 {0}
-1353	Loading…	正在加载…
-1354	Use whitelist	使用白名单
-1355	When on, only people on the list can join.	开启后只有名单上的人能进入。
-1356	Minecraft nickname	Minecraft 昵称
-1357	Add	添加
-1358	Online mode is off, so they're added by nickname only.	正版验证已关闭，只按昵称添加。
-1359	Enter a nickname to allow a player.	输入昵称以添加允许进入的玩家。
-1360	Remove	移除
-1361	Imported	已导入
-1362	Imported the {0} world. The server will start with this world	已导入世界 {0}。启动服务器后将使用此世界
-1363	Reset	已重置
-1364	Reset the world. A new world is created when the server starts	已重置世界。启动服务器时会创建新世界
-1365	Saved new world settings	已保存新世界设置
-1366	The current world goes to the Recycle Bin, and a new world is created with the settings below next time the server starts.	当前世界会移到回收站，下次启动服务器时按以下设置创建新世界。
-1367	The world is created with the settings below when the server first starts.	首次启动服务器时会按以下设置创建世界。
-1368	You can't respawn after dying	死亡后无法复活
-1369	Structures like villages and temples	村庄、神殿等结构
-1370	Reset	重置
-1371	Official server without mods or plugins	没有模组和插件的官方服务端
-1372	The most popular plugin server. Runs Spigot and Bukkit plugins too	最常用的插件服务端。也能运行 Spigot·Bukkit 插件
-1373	Based on Paper + more configurable features	基于 Paper，可配置的功能更多
-1374	Lightweight mod loader with fast support for new versions	轻量、支持新版本很快的模组加载器
-1375	Fabric-compatible mod loader	兼容 Fabric 的模组加载器
-1376	Long-standing mod loader with many mods	历史悠久、模组众多的模组加载器
-1377	Modern mod loader forked from Forge	从 Forge 分出的新一代模组加载器
-1378	Max monsters	怪物上限
-1379	Number of monsters that can spawn around each player. Lower is lighter.	每个玩家周围可生成的怪物数量。调低会更流畅。
-1380	 	只
-1381	Max animals	动物上限
-1382	Number of animals that can spawn around each player.	每个玩家周围可生成的动物数量。
-1383	Max water animals	水生动物上限
-1384	Number of water animals like squid and dolphins.	鱿鱼、海豚等水生动物的数量。
-1385	Auto-save interval	自动保存间隔
-1386	Saves the world at this interval. Shorter loses less on sudden shutdowns but briefly lags while saving.	按此间隔保存世界。越短突然关闭时损失越少，但保存时会短暂卡顿。
-1387	Dropped item despawn time	掉落物消失时间
-1388	Items on the ground disappear after this time. Default is 5 minutes.	地上的掉落物经过此时间后消失。默认 5 分钟。
-1389	Mob spawn range	生物生成距离
-1390	Mobs spawn within this distance (chunks) of players.	生物在玩家周围此距离（区块）内生成。
-1391	Item merge radius	物品合并距离
-1392	Merges identical items dropped close together. Larger is lighter.	把掉在附近的相同物品合并成一个。调大会更流畅。
-1393	XP orb merge radius	经验球合并距离
-1394	Merges nearby XP orbs into one. -1 means no merging.	把附近的经验球合并成一个。-1 为不合并。
-1395	Hide ores (anti X-ray)	隐藏矿石（防透视）
-1396	Hides underground ores from X-ray hacks. Makes the server a bit heavier.	对透视外挂隐藏地下矿石。服务器会稍微变重。
-1397	Max entity collisions	单个生物最大碰撞数
-1398	Reduces calculations when many mobs crowd together. Lower is lighter.	生物大量聚集时减少计算。调低会更流畅。
-1399	Optimize explosions	优化爆炸计算
-1400	Reduces lag when lots of TNT explodes.	大量 TNT 爆炸时减少卡顿。
-1401	Official Minecraft	Minecraft 官方
-1402	Couldn't connect to the {0}server. Check your internet connection.	无法连接到{0}服务器。请检查网络连接。
-1403	The {0}server isn't responding. Try again later.	{0}服务器没有响应。请稍后再试。
-1404	Not enough disk space. Free up space and try again.	磁盘空间不足。请清理空间后重试。
-1405	Another program is using the file, so it can't be changed. Close Explorer or other programs and try again.	其他程序正在使用该文件，无法更改。请关闭资源管理器或其他程序后重试。
-1406	Couldn't read the info from {0}. Try again later.	无法读取来自 {0} 的信息。请稍后再试。
-1407	Couldn't find the file {0}. It may have been removed or its address changed.	{0}找不到文件。可能已被删除或地址已更改。
-1408	on {0}	在 {0} 上
-1409	on the server	在服务器上
-1410	{0}Too many requests. Try again later.	{0}请求过多。请稍后再试。
-1411	There's a problem with the {0}server. Try again later.	{0}服务器出现问题。请稍后再试。
+클수록 멀리 보이지만 컴퓨터가 힘들어해요. 보통 8~12가 적당해요.	Higher lets you see farther but is harder on the computer. 8–12 is usually right.	越大看得越远，但电脑负担越重。通常 8~12 比较合适。
+청크	chunks	区块
+움직이는 거리	Simulation distance	模拟距离
+플레이어 주변에서 동물·작물이 움직이는 범위예요.	The range around players where animals and crops move.	玩家周围动物和作物会活动的范围。
+스폰 보호 범위	Spawn protection radius	出生点保护范围
+처음 태어나는 곳 주변을 관리자만 부술 수 있어요. 0이면 꺼져요.	Only admins can break blocks around the spawn. 0 turns it off.	只有管理员能破坏出生点周围的方块。0 为关闭。
+블록	blocks	格
+월드 크기 제한	World size limit	世界大小限制
+월드 경계까지의 거리(반지름)예요. 작게 하면 지도가 좁아져서 용량이 덜 늘어요.	Distance (radius) to the world border. Smaller keeps the map small so it uses less space.	到世界边界的距离（半径）。设小后地图变小，占用空间增长更慢。
+건축 높이 제한	Build height limit	建筑高度限制
+접속	Connection	连接
+최대 인원	Max players	最大人数
+명	players	人
+허락한 사람만 들어올 수 있게 해요. 눌러서 목록을 관리할 수 있어요.	Only allowed people can join. Click to manage the list.	只允许名单上的人进入。点击可管理名单。
+화이트리스트 바로 적용	Enforce whitelist	立即执行白名单
+켜면 목록에서 뺀 사람이 접속해 있어도 바로 내보내요.	When on, people removed from the list are kicked immediately even if they're online.	开启后，从名单中移除的人即使在线也会被立即踢出。
+정품 인증	Online mode (premium check)	正版验证
+끄면 정품이 아닌 계정도 들어올 수 있지만, 다른 사람 닉네임으로 들어올 수 있어서 위험해요.	When off, non-premium accounts can join too, but it's risky because people can join using others' nicknames.	关闭后非正版账户也能进入，但别人可能冒用昵称进入，很危险。
+VPN·프록시 접속 막기	Block VPN/proxy connections	阻止 VPN/代理连接
+정품 인증 서버와 접속 주소가 다르면 들어오지 못하게 해요.	Blocks joining when the connection address differs from the auth server's.	连接地址与正版验证服务器不同时禁止进入。
+아무도 없을 때 멈추기	Pause when empty	无人时暂停
+모두 나가고 1분이 지나면 월드 시간이 멈춰서 컴퓨터가 덜 힘들어요.	When everyone leaves for 1 minute, world time stops to ease the load on the computer.	所有人离开 1 分钟后世界时间停止，减轻电脑负担。
+서버 목록에 정보 보이기	Show info in server list	在服务器列表中显示信息
+끄면 서버 목록에서 인원·설명이 안 보이고 "연결할 수 없음"처럼 보여요. 들어오는 건 돼요.	When off, the player count and description are hidden in the server list and it looks like "Can't connect". Joining still works.	关闭后服务器列表中不显示人数和描述，看起来像"无法连接"。仍可正常进入。
+다른 서버에서 넘어오기 허용	Accept transfers from other servers	允许从其他服务器转入
+다른 서버가 플레이어를 이 서버로 보내는 것(/transfer)을 받아들여요.	Accepts other servers sending players to this server (/transfer).	接受其他服务器把玩家转到本服务器（/transfer）。
+접속 IP 기록	Log player IPs	记录连接 IP
+로그에 접속한 사람의 IP 주소를 남겨요.	Records the IP addresses of people who join in the log.	在日志中记录连接者的 IP 地址。
+서버 포트 (접속 주소)	Server port (connection address)	服务器端口（连接地址）
+플레이어가 들어오는 포트예요. 서버를 여러 개 동시에 켤 때만 바꾸세요.	The port players connect to. Change it only when running several servers at once.	玩家连接的端口。只有同时运行多个服务器时才需更改。
+서버 IP 고정	Server IP binding	固定服务器 IP
+이 컴퓨터에 네트워크가 여러 개일 때 한 곳에서만 받아요. 모르면 비워 두세요.	If this PC has several networks, listen on only one. Leave empty if unsure.	电脑有多个网络时只在其中一个上接收。不清楚的话留空。
+비우면 전부	Empty = all	留空为全部
+채팅	Chat	聊天
+채팅 서명 요구	Enforce secure chat	要求聊天签名
+정품 계정의 서명이 있는 채팅만 받아요. 끄면 서명 없는 모드 클라이언트도 채팅할 수 있어요.	Only accepts chat signed by premium accounts. When off, modded clients without signatures can chat too.	只接收带正版账户签名的聊天。关闭后无签名的模组客户端也能聊天。
+앱 명령 결과를 관리자 채팅에 보이기	Show app command results in admin chat	在管理员聊天中显示应用命令结果
+콘솔·관리 탭에서 보낸 명령의 결과를 관리자(OP) 채팅에도 보여 줘요.	Also shows results of commands sent from the Console/Manage tabs in admin (OP) chat.	从控制台/管理页发送的命令结果也会显示在管理员（OP）聊天中。
+채팅 도배 기준	Chat spam limit	聊天刷屏标准
+이 시간 안에 채팅을 너무 많이 치면 내보내요.	People who chat too much within this time are kicked.	在此时间内聊天过多会被踢出。
+초	s	秒
+명령어 도배 기준	Command spam limit	命令刷屏标准
+이 시간 안에 명령어를 너무 많이 치면 내보내요.	People who send too many commands within this time are kicked.	在此时间内输入命令过多会被踢出。
+리소스 팩	Resource pack	资源包
+리소스 팩 주소	Resource pack URL	资源包地址
+접속하는 사람에게 보낼 리소스 팩(.zip)의 다운로드 주소예요. 비우면 안 보내요.	Download URL of the resource pack (.zip) sent to people who join. Leave empty to not send one.	发送给进入者的资源包（.zip）下载地址。留空则不发送。
+리소스 팩 필수	Require resource pack	强制资源包
+켜면 리소스 팩을 거절한 사람은 들어올 수 없어요.	When on, people who decline the resource pack can't join.	开启后拒绝资源包的人无法进入。
+안내 문구	Prompt text	提示文字
+리소스 팩을 받을지 물어볼 때 보여 줄 말이에요.	Text shown when asking whether to download the resource pack.	询问是否下载资源包时显示的文字。
+서버 전용 텍스처를 받아 주세요	Please download the server textures	请下载服务器专用材质
+파일 확인 값 (SHA-1)	File checksum (SHA-1)	文件校验值（SHA-1）
+적으면 받은 파일이 맞는지 확인해요. 모르면 비워 두세요.	If filled in, the downloaded file is verified. Leave empty if unsure.	填写后会校验下载的文件。不清楚的话留空。
+성능	Performance	性能
+몹이 보이는 거리	Entity view distance	生物可见距离
+멀리 있는 몹·아이템을 얼마나 멀리서 보여 줄지예요. 낮추면 가벼워져요.	How far away distant mobs and items are shown. Lower is lighter.	远处的生物和物品在多远处显示。调低会更流畅。
+네트워크 압축 기준	Network compression threshold	网络压缩阈值
+이 크기(바이트)보다 큰 데이터를 압축해요. 256이면 충분해요.	Data larger than this size (bytes) is compressed. 256 is enough.	大于此大小（字节）的数据会被压缩。256 就够了。
+바이트	bytes	字节
+멈춤 감지 시간	Watchdog timeout	卡死检测时间
+서버가 이 시간(밀리초) 동안 멈추면 강제로 꺼요. 무거운 모드 서버에서 자꾸 꺼지면 늘리세요. -1이면 끄기.	If the server freezes this long (ms) it's force-stopped. Increase it if a heavy mod server keeps shutting down. -1 turns it off.	服务器卡住这么久（毫秒）会被强制关闭。重型模组服务器频繁关闭时请调高。-1 为关闭。
+월드 안전 저장	Sync chunk writes	安全保存世界
+켜면 조금 느려도 갑자기 꺼졌을 때 월드가 덜 망가져요.	When on, the world is less likely to be damaged by sudden shutdowns, at a small speed cost.	开启后稍慢一些，但突然关闭时世界更不容易损坏。
+월드 파일 압축 방식	Region file compression	世界文件压缩方式
+보통은 deflate를 쓰세요. lz4는 빠르지만 용량이 커요.	Usually use deflate. lz4 is faster but larger.	一般用 deflate。lz4 更快但占用更大。
+deflate (기본)	deflate (default)	deflate（默认）
+lz4 (빠름)	lz4 (fast)	lz4（快速）
+압축 안 함	No compression	不压缩
+빠른 네트워크 사용	Use native transport	使用快速网络
+가능하면 운영체제의 빠른 네트워크 기능을 써요.	Uses the OS's fast networking when possible.	尽可能使用操作系统的快速网络功能。
+고급	Advanced	高级
+원격 콘솔(RCON)	Remote console (RCON)	远程控制台（RCON）
+다른 프로그램이 이 서버에 명령을 보낼 수 있게 해요. 필요할 때만 켜세요.	Lets other programs send commands to this server. Turn on only when needed.	允许其他程序向此服务器发送命令。仅在需要时开启。
+RCON 포트 (원격 콘솔용)	RCON port (for remote console)	RCON 端口（远程控制台用）
+RCON 비밀번호	RCON password	RCON 密码
+RCON을 켰다면 꼭 어려운 비밀번호를 정해 주세요.	If RCON is on, be sure to set a strong password.	开启 RCON 的话，务必设置一个复杂的密码。
+서버 정보 조회(Query)	Server query	服务器信息查询（Query）
+서버 목록 사이트 등이 접속자 수를 조회할 수 있게 해요.	Lets sites like server lists query the player count.	允许服务器列表网站等查询在线人数。
+Query 포트 (서버 정보 조회용)	Query port (for server info)	Query 端口（服务器信息查询用）
+서버 포트와는 따로예요. 서버 정보 조회를 켰을 때만 써요.	Separate from the server port. Used only when server query is on.	与服务器端口不同。仅在开启信息查询时使用。
+함수 권한 단계	Function permission level	函数权限等级
+데이터 팩 함수가 쓸 수 있는 명령어 범위예요.	The range of commands data pack functions can use.	数据包函数可使用的命令范围。
+연쇄 블록 갱신 한도	Max chained neighbor updates	连锁方块更新上限
+레드스톤 등이 한 번에 일으킬 수 있는 블록 변화 수예요.	Number of block changes redstone etc. can trigger at once.	红石等一次可引发的方块变化数量。
+패킷 제한	Packet rate limit	数据包限制
+한 사람이 1초에 보낼 수 있는 데이터 수예요. 0이면 제한 없음.	Data a single player can send per second. 0 means no limit.	每人每秒可发送的数据量。0 为不限制。
+RCON 명령 결과를 관리자 채팅에 보이기	Show RCON command results in admin chat	在管理员聊天中显示 RCON 命令结果
+원격 콘솔로 보낸 명령의 결과를 관리자(OP) 채팅에도 보여 줘요.	Also shows results of commands sent via remote console in admin (OP) chat.	通过远程控制台发送的命令结果也会显示在管理员（OP）聊天中。
+행동 규칙 보여 주기	Show code of conduct	显示行为准则
+서버 폴더의 codeofconduct 폴더에 쓴 규칙을 들어오는 사람에게 보여 주고 동의를 받아요.	Shows the rules written in the server folder's codeofconduct folder to people who join and asks them to agree.	向进入者显示服务器文件夹中 codeofconduct 文件夹里写的规则并请其同意。
+문제 신고 주소	Bug report link	问题反馈地址
+플레이어가 게임 메뉴에서 서버 문제를 신고할 때 열리는 주소예요.	The address opened when a player reports a server problem from the game menu.	玩家在游戏菜单中反馈服务器问题时打开的地址。
+관리 API	Management API	管理 API
+다른 프로그램이 이 서버를 관리할 수 있는 통로를 열어요. 필요할 때만 켜세요.	Opens a channel other programs can use to manage this server. Turn on only when needed.	开启让其他程序管理此服务器的通道。仅在需要时开启。
+관리 API 포트	Management API port	管理 API 端口
+JMX 모니터링	JMX monitoring	JMX 监控
+자바 모니터링 도구로 서버 상태를 볼 수 있게 해요.	Lets Java monitoring tools view the server status.	允许用 Java 监控工具查看服务器状态。
+버전 정보를 아직 불러오고 있어요	Still loading version info	仍在加载版本信息
+{0} 서버와 서버 포트({1})가 겹쳐요. 서버 포트를 바꾸거나 "앱을 켜면 이 서버도 켜기"를 꺼 주세요.	The server port ({1}) overlaps with server {0}. Change the server port or turn off "Start this server when the app opens".	与服务器 {0} 的服务器端口（{1}）冲突。请更改服务器端口或关闭"打开应用时启动此服务器"。
+{0}(으)로 바꿨어요	Changed to {0}	已改为{0}
+설정을 불러오고 있어요	Loading settings	正在加载设置
+서버가 쓸 메모리	Server memory	服务器内存
+이 컴퓨터는	This computer has	这台电脑有
+예요. 모드가 많으면 4~6GB, Vanilla는 2GB면 충분해요.	. 4–6 GB is enough for many mods, 2 GB for Vanilla.	。模组多的话 4~6GB，原版 2GB 就够了。
+⚠ 컴퓨터에	⚠ Only	⚠ 电脑只剩
+만 남아요.	 will be left on the computer.	。
+자바 최적화가 켜져 있어서 서버를 켜자마자 이만큼을 다 잡아요.	Java optimization is on, so the server grabs all of this as soon as it starts.	已开启 Java 优化，服务器一启动就会占用全部这些内存。
+같은 컴퓨터에서 게임도 하면 버벅일 수 있어요.	If you also play games on the same computer, it may stutter.	如果在同一台电脑上玩游戏可能会卡顿。
+자바 최적화 (Aikar's flags)	Java optimization (Aikar's flags)	Java 优化（Aikar's flags）
+서버용으로 다듬은 자바 설정이에요. 메모리 정리 때문에 생기는 렉이 줄어요. 켜면 정한 메모리를 처음부터 다 잡아서 컴퓨터에 여유 메모리가 있어야 해요. 다음에 켤 때 적용돼요.	Java settings tuned for servers. Reduces lag caused by memory cleanup. When on, the set memory is taken all at once, so you need spare memory. Applies next start.	专为服务器调整的 Java 设置，可减少内存回收造成的卡顿。开启后一开始就占用全部设定内存，电脑需要有空余内存。下次启动时生效。
+추가 자바 옵션	Extra Java options	额外 Java 选项
+자바에 더 넘길 옵션이에요. 모르면 비워 두세요. 예: -XX:+UseZGC -Dfile.encoding=UTF-8	More options passed to Java. Leave empty if unsure. e.g. -XX:+UseZGC -Dfile.encoding=UTF-8	传给 Java 的额外选项。不清楚的话留空。例如：-XX:+UseZGC -Dfile.encoding=UTF-8
+다른 메모리 정리 방식(GC)을 골라서, 자바 최적화는 G1 전용 옵션을 빼고 적용해요.	A different garbage collector (GC) was chosen, so Java optimization is applied without its G1-only options.	选择了其他内存回收方式（GC），Java 优化将去掉 G1 专用选项后应用。
+튕기면 자동으로 다시 켜기	Auto-restart on crash	崩溃后自动重启
+서버가 갑자기 꺼지면 5초 뒤에 다시 켜요. 10분 안에 3번 넘게 튕기면 멈춰요.	Restarts 5 seconds after the server suddenly stops. Stops trying after more than 3 crashes within 10 minutes.	服务器突然关闭时 5 秒后重启。10 分钟内崩溃超过 3 次则停止。
+새 월드 설정	New world settings	新世界设置
+하드코어, 시드, 월드 종류를 정하고 월드를 새로 만들어요.	Set hardcore, seed, and world type and create a new world.	设置极限模式、种子和世界类型并新建世界。
+설정하기	Set up	设置
+{0} · {1}명	{0} · {1} players	{0} · {1} 人
+서버를 한 번 켜면 설정 항목이 더 생겨요.	More settings appear after starting the server once.	启动一次服务器后会出现更多设置项。
+바뀐 설정은 서버를 다시 켜면 적용돼요	Changed settings apply after restarting the server	修改的设置在重启服务器后生效
+바뀐 설정이 있어요	You have unsaved changes	有修改过的设置
+저장하기	Save	保存
+낮은 버전으로 바꿀까요?	Switch to a lower version?	切换到更低版本？
+{0} → {1}. 월드가 망가질 수 있어요. 바꾸기 전에 월드를 자동으로 백업해요.	{0} → {1}. The world may be damaged. The world is backed up automatically before the change.	{0} → {1}。世界可能会损坏。更改前会自动备份世界。
+저장하지 않은 설정이 있어요	There are unsaved settings	有未保存的设置
+저장하고 닫을까요?	Save and close?	保存并关闭？
+저장하고 닫기	Save and close	保存并关闭
+그냥 닫기	Just close	直接关闭
+비밀번호	Password	密码
+서버 아이콘을 바꿨어요. 서버를 다시 켜면 보여요	Changed the server icon. It shows after restarting the server	已更换服务器图标。重启服务器后显示
+눌러서 고르거나 그림을 끌어다 놓으세요	Click to choose or drag an image here	点击选择或拖入图片
+서버 아이콘	Server icon	服务器图标
+플레이어의 멀티플레이 목록에 보이는 그림이에요. 그림을 끌어다 놓거나 눌러서 골라요. 알아서 64×64로 맞춰요.	The picture shown in players' multiplayer list. Drag an image in or click to choose. It's resized to 64×64 automatically.	显示在玩家多人游戏列表中的图片。拖入或点击选择图片，会自动调整为 64×64。
+하드코어	Hardcore	极限模式
+죽으면 다시 살아날 수 없고 관전 모드가 돼요. 난이도는 어려움으로 고정돼요.	You can't respawn after dying and become a spectator. Difficulty is fixed at Hard.	死亡后无法复活，会变为旁观模式。难度固定为困难。
+10분	10 min	10 分钟
+30분	30 min	30 分钟
+1시간	1 hour	1 小时
+3시간	3 hours	3 小时
+포트가 겹쳐서 켤 수 없어요	Can't start due to a port conflict	端口冲突，无法启动
+앱을 켤 때 같이 켜지는	Starts with the app:	随应用一起启动的
+서버가 이 서버와 같은 서버 포트(	server uses the same server port (	服务器使用与本服务器相同的服务器端口（
+)를 써요. 같은 포트로는 한 서버만 켜질 수 있어요. 이 서버의 서버 포트를 바꾼 뒤 다시 켜 주세요 (예:	) as this one. Only one server can run on a port. Change this server's port and start again (e.g.	）。同一端口只能运行一个服务器。请更改本服务器的端口后重新启动（例如：
+서버 포트 바꾸러 가기	Go change server port	去更改服务器端口
+앱을 켜면 이 서버도 켜기	Start this server when the app opens	打开应用时启动此服务器
+앱 설정의 "윈도우를 켤 때 앱도 켜기"와 같이 쓰면 컴퓨터만 켜도 서버가 열려요. 여러 서버를 켜 두면 서버 목록 순서대로 하나씩 켜고, 포트가 겹치거나 메모리가 모자란 서버는 건너뛰어요.	Combined with "Launch app when Windows starts" in app settings, turning on the PC opens the server. With several servers on, they start one by one in list order, skipping any with port conflicts or not enough memory.	与应用设置中的"Windows 启动时打开应用"一起使用，开机即可开服。开启多个服务器时按列表顺序逐个启动，端口冲突或内存不足的会跳过。
+매일 다시 켜기	Daily restart	每日重启
+오래 켜 두면 느려지는 것을 막아요. 1분 전에 게임 안에 알리고, 저장한 뒤 다시 켜요.	Prevents slowdown from running a long time. Announces in-game 1 minute before, saves, then restarts.	防止长时间运行变慢。提前 1 分钟在游戏中通知，保存后重启。
+아무도 없으면 끄기	Stop when empty	无人时关闭
+모두 나가고 이 시간이 지나면 서버를 꺼서 컴퓨터를 쉬게 해요.	When everyone leaves and this time passes, the server stops so the computer can rest.	所有人离开并经过此时间后关闭服务器，让电脑休息。
+환영 메시지	Welcome message	欢迎消息
+들어온 사람에게만 보여요.	Only shown to the person who joined.	只有进入的人能看到。
+은 그 사람 닉네임으로 바뀌어요. 비우면 보내지 않아요.	is replaced with their nickname. Leave empty to not send.	会替换为该玩家的昵称。留空则不发送。
+{name}님 어서 오세요!	Welcome, {name}!	欢迎 {name}！
+Paper·Purpur 서버에만 있는 설정이에요. 서버를 다시 켜면 적용돼요.	These settings exist only on Paper/Purpur servers. They apply after restarting the server.	仅 Paper·Purpur 服务器才有的设置。重启服务器后生效。
+서버를 한 번 켜면	After starting the server once,	启动一次服务器后，
+개 항목이 더 생겨요.	more settings appear.	个设置项会出现。
+구경만 해요	Watch only	只能观看
+평지	Flat	超平坦
+큰 바이옴	Large biomes	巨型生物群系
+증폭 (높은 산)	Amplified (tall mountains)	放大化（高山）
+기본 정보	Basics	基本信息
+게임 방식	Gameplay	游戏方式
+버전 목록을 불러오지 못했어요. 인터넷 연결을 확인해 주세요. ({0})	Couldn't load the version list. Check your internet connection. ({0})	无法加载版本列表。请检查网络连接。（{0}）
+{0} 정보를 불러오지 못했어요. ({1})	Couldn't load {0} info. ({1})	无法加载 {0} 信息。（{1}）
+{0} 서버	{0} server	{0} 服务器
+예: 야생 서버	e.g. Survival server	例如：生存服务器
+같은 이름의 서버가 이미 있어요. 다른 이름을 써 주세요.	A server with the same name already exists. Use a different name.	已有同名服务器。请使用其他名称。
+마인크래프트 버전	Minecraft version	Minecraft 版本
+불러오는 중…	Loading…	正在加载…
+버전 검색 (예: 1.20)	Search versions (e.g. 1.20)	搜索版本（例如 1.20）
+{0} 빌드	{0} build	{0} 构建
+{0} 버전	{0} version	{0} 版本
+지원하는 버전이 없어요	No supported versions	没有支持的版本
+버전 검색	Search versions	搜索版本
+추천	Recommended	推荐
+스냅샷(개발 중인 버전)도 보여 주기	Also show snapshots (versions in development)	也显示快照（开发中的版本）
+은(는) 마인크래프트	doesn't support Minecraft	尚不支持 Minecraft
+을(를) 아직 지원하지 않아요. 다른 버전을 골라 주세요.	yet. Please choose another version.	。请选择其他版本。
+어떻게 플레이할까요?	How do you want to play?	想怎么玩？
+죽으면 다시 살아날 수 없어요 (난이도는 어려움)	You can't respawn after dying (difficulty is Hard)	死亡后无法复活（难度为困难）
+어떤 월드로 시작할까요?	What kind of world to start with?	从什么样的世界开始？
+월드 종류	World type	世界类型
+구조물 만들기	Generate structures	生成结构
+마을, 신전 같은 구조물이 생겨요	Structures like villages and temples appear	会生成村庄、神殿等结构
+시드	Seed	种子
+비워 두면 무작위	Random if left empty	留空则随机
+누가 들어올 수 있나요?	Who can join?	谁可以进入？
+끄면 정품이 아닌 계정도 들어올 수 있지만 위험해요	When off, non-premium accounts can join too, but it's risky	关闭后非正版账户也能进入，但有风险
+허락한 사람만 들어오게 해요. 목록은 서버 설정에서 관리해요	Only allowed people can join. Manage the list in server settings	只允许名单上的人进入。名单在服务器设置中管理
+이전	Previous	上一步
+다음	Next	下一步
+CurseForge API 키가 없어서 쓸 수 없어요	Unavailable without a CurseForge API key	没有 CurseForge API 密钥，无法使用
+컴퓨터 메모리가 {0}GB밖에 안 남았어요. 서버 메모리를 줄이거나 다른 프로그램을 꺼 주세요.	Only {0} GB of memory is left on the computer. Lower the server memory or close other programs.	电脑内存只剩 {0}GB。请减少服务器内存或关闭其他程序。
+CPU를 거의 다 쓰고 있어요. 모드가 많거나 보이는 거리가 넓으면 생겨요.	The CPU is almost fully used. Happens with many mods or a large view distance.	CPU 几乎被占满。模组多或视距大时会出现。
+서버가 느려졌어요 ({0} TPS). 렉이 걸리고 있어요.	The server has slowed down ({0} TPS). It's lagging.	服务器变慢了（{0} TPS），正在卡顿。
+메모리	Memory	内存
+실제 RAM에 올라와 있는 양이에요. 컴퓨터 전체에 {0} / {1}GB 남았어요	Amount actually in RAM. {0} / {1} GB left on the computer	实际占用的内存量。电脑整体剩余 {0} / {1}GB
+서버 속도	Server speed	服务器速度
+이 버전은 서버 속도를 알 수 없어요	Server speed isn't available for this version	此版本无法获取服务器速度
+20이면 정상이에요. 낮을수록 렉이 걸려요	20 is normal. Lower means more lag	20 为正常。越低越卡
+남은 시간을 계산하고 있어요	Estimating time remaining	正在计算剩余时间
+거의 다 됐어요	Almost done	快完成了
+약 {0}초 남았어요	About {0} s left	约剩 {0} 秒
+약 {0}분 {1}초 남았어요	About {0} min {1} s left	约剩 {0} 分 {1} 秒
+설치를 취소했어요	Installation cancelled	已取消安装
+{0} 서버 만들기를 중단했어요	Stopped creating server {0}	已中止创建服务器 {0}
+작업 목록	Tasks	任务列表
+작업	Tasks	任务
+끝난 것 지우기	Clear finished	清除已完成
+진행 중인 작업이 없어요	No tasks in progress	没有进行中的任务
+서버 만들기, 업데이트, 백업 같은 작업이 여기에 보여요.	Tasks like creating servers, updates, and backups appear here.	创建服务器、更新、备份等任务会显示在这里。
+하지 못했어요	Failed	失败
+만들지 못했어요	Couldn't create	创建失败
+중단하지 못했어요. 앱을 껐다 켠 뒤에 다시 해 보세요	Couldn't stop it. Restart the app and try again	无法中止。请重启应用后再试
+중단하는 중…	Stopping…	正在中止…
+중단	Stop	中止
+서버 열기	Open server	打开服务器
+이 사이트가 지금 응답하지 않아요. 앱 문제가 아니라 사이트 문제라서 잠시 뒤에 알아서 다시 돼요. 그동안 검색·설치가 안 되거나 아이콘이 안 보일 수 있어요.	This site isn't responding right now. It's a site issue, not the app, and will recover on its own shortly. Meanwhile search/install may not work and icons may not show.	该网站暂时没有响应。这是网站的问题而不是应用的问题，稍后会自动恢复。在此期间可能无法搜索、安装或显示图标。
+연결 안 됨	offline	无法连接
+새 버전 {0}이 준비됐어요. 누르면 설치하고 앱을 다시 켜요. (그냥 앱을 꺼도 그때 설치돼요)	New version {0} is ready. Click to install and restart the app. (It also installs when you just close the app)	新版本 {0} 已就绪。点击即可安装并重启应用。（直接关闭应用时也会安装）
+새 버전 {0}으로 업데이트할까요?	Update to version {0}?	更新到新版本 {0}？
+켜져 있는 서버 {0}개는 월드를 저장하고 꺼요. 업데이트가 끝나면 앱이 다시 켜져요.	{0} running server(s) will save their worlds and stop. The app reopens when the update is done.	正在运行的 {0} 个服务器会保存世界并关闭。更新完成后应用会重新打开。
+설치가 끝나면 앱이 다시 켜져요. 몇 초면 돼요.	The app reopens after installing. It only takes a few seconds.	安装完成后应用会重新打开，只需几秒钟。
+서버 끄고 업데이트	Stop servers and update	关闭服务器并更新
+최소화	Minimize	最小化
+이전 크기로	Restore down	向下还原
+최대화	Maximize	最大化
+불러오고 있어요	Loading	正在加载
+켜는 중	Starting	正在启动
+끄는 중	Stopping	正在关闭
+서버 프로그램을 준비하고 있어요	Preparing the server program	正在准备服务端程序
+모드 {0}개를 불러오고 있어요	Loading {0} mods	正在加载 {0} 个模组
+모드를 불러오고 있어요	Loading mods	正在加载模组
+게임 데이터를 불러오고 있어요	Loading game data	正在加载游戏数据
+서버를 시작하고 있어요	Starting the server	正在启动服务器
+월드를 불러오고 있어요	Loading the world	正在加载世界
+스폰 지역을 준비하고 있어요 ({0}%)	Preparing spawn area ({0}%)	正在准备出生区域（{0}%）
+서버를 켜고 있어요	Starting the server	正在启动服务器
+버전 목록을 불러오지 못했어요. ({0})	Couldn't load the version list. ({0})	无法加载版本列表。（{0}）
+· 서버를 끈 다음에 바꿀 수 있어요	· can be changed after stopping the server	· 关闭服务器后可以更改
+은(는)
+에서 지원하지 않아요.	 isn't supported on	 不支持
+⚠ 낮은 버전으로 바꾸면 월드가 망가질 수 있어요. 바꾸기 전에 월드를 자동으로 백업해요.	⚠ Switching to a lower version may damage the world. It's backed up automatically before the change.	⚠ 切换到更低版本可能损坏世界。更改前会自动备份世界。
+바꾸기 전에 월드를 자동으로 백업해요. 한 번 켜서 새 버전으로 바뀐 월드는 예전 버전에서 열리지 않아요.	The world is backed up automatically before the change. A world that has been opened on the new version won't open in older versions.	更改前会自动备份世界。在新版本中打开过的世界无法在旧版本中打开。
+설치된 모드가 새 버전에 맞지 않으면 서버가 켜지지 않을 수 있어요.	If installed mods don't fit the new version, the server may not start.	如果已安装的模组不兼容新版本，服务器可能无法启动。
+저장하기를 누르면 바뀌어요. 진행 상황은 오른쪽 위 작업 목록에서 볼 수 있어요.	Changes when you click Save. You can see progress in the task list at the top right.	点击保存后更改。进度可在右上角的任务列表中查看。
+화이트리스트를 켰어요	Whitelist turned on	已开启白名单
+화이트리스트를 껐어요	Whitelist turned off	已关闭白名单
+{0}님을 추가했어요	Added {0}	已添加 {0}
+{0}님을 뺐어요	Removed {0}	已移除 {0}
+불러오고 있어요…	Loading…	正在加载…
+화이트리스트 사용	Use whitelist	使用白名单
+켜면 목록에 있는 사람만 들어올 수 있어요.	When on, only people on the list can join.	开启后只有名单上的人能进入。
+마인크래프트 닉네임	Minecraft nickname	Minecraft 昵称
+추가	Add	添加
+정품 인증이 꺼져 있어서 닉네임만으로 추가돼요.	Online mode is off, so they're added by nickname only.	正版验证已关闭，只按昵称添加。
+닉네임을 넣어 허락할 플레이어를 추가해요.	Enter a nickname to allow a player.	输入昵称以添加允许进入的玩家。
+빼기	Remove	移除
+가져왔어요	Imported	已导入
+{0} 월드를 가져왔어요. 서버를 켜면 이 월드로 시작해요	Imported the {0} world. The server will start with this world	已导入世界 {0}。启动服务器后将使用此世界
+리셋했어요	Reset	已重置
+월드를 리셋했어요. 서버를 켜면 새 월드가 만들어져요	Reset the world. A new world is created when the server starts	已重置世界。启动服务器时会创建新世界
+새 월드 설정을 저장했어요	Saved new world settings	已保存新世界设置
+지금 월드는 휴지통으로 옮기고, 다음에 서버를 켤 때 아래 설정으로 새 월드를 만들어요.	The current world goes to the Recycle Bin, and a new world is created with the settings below next time the server starts.	当前世界会移到回收站，下次启动服务器时按以下设置创建新世界。
+서버를 처음 켤 때 아래 설정으로 월드를 만들어요.	The world is created with the settings below when the server first starts.	首次启动服务器时会按以下设置创建世界。
+죽으면 다시 살아날 수 없어요	You can't respawn after dying	死亡后无法复活
+마을, 신전 같은 구조물	Structures like villages and temples	村庄、神殿等结构
+리셋하기	Reset	重置
+모드·플러그인 없는 공식 서버	Official server without mods or plugins	没有模组和插件的官方服务端
+가장 많이 쓰는 플러그인 서버. Spigot·Bukkit 플러그인도 돌아가요	The most popular plugin server. Runs Spigot and Bukkit plugins too	最常用的插件服务端。也能运行 Spigot·Bukkit 插件
+Paper 기반 + 설정할 수 있는 기능이 더 많아요	Based on Paper + more configurable features	基于 Paper，可配置的功能更多
+가볍고 최신 버전 지원이 빠른 모드 로더	Lightweight mod loader with fast support for new versions	轻量、支持新版本很快的模组加载器
+Fabric 호환 모드 로더	Fabric-compatible mod loader	兼容 Fabric 的模组加载器
+오래되고 모드가 많은 모드 로더	Long-standing mod loader with many mods	历史悠久、模组众多的模组加载器
+Forge에서 갈라져 나온 최신 모드 로더	Modern mod loader forked from Forge	从 Forge 分出的新一代模组加载器
+몬스터 최대 수	Max monsters	怪物上限
+플레이어 한 명 주변에 생길 수 있는 몬스터 수예요. 줄이면 가벼워져요.	Number of monsters that can spawn around each player. Lower is lighter.	每个玩家周围可生成的怪物数量。调低会更流畅。
+마리	 	只
+동물 최대 수	Max animals	动物上限
+플레이어 한 명 주변에 생길 수 있는 동물 수예요.	Number of animals that can spawn around each player.	每个玩家周围可生成的动物数量。
+물속 동물 최대 수	Max water animals	水生动物上限
+오징어·돌고래 같은 물속 동물 수예요.	Number of water animals like squid and dolphins.	鱿鱼、海豚等水生动物的数量。
+자동 저장 간격	Auto-save interval	自动保存间隔
+월드를 이 간격마다 저장해요. 짧을수록 갑자기 꺼져도 덜 잃지만 저장할 때 잠깐 렉이 생겨요.	Saves the world at this interval. Shorter loses less on sudden shutdowns but briefly lags while saving.	按此间隔保存世界。越短突然关闭时损失越少，但保存时会短暂卡顿。
+떨어진 아이템이 사라지는 시간	Dropped item despawn time	掉落物消失时间
+바닥에 떨어진 아이템이 이 시간이 지나면 사라져요. 기본 5분이에요.	Items on the ground disappear after this time. Default is 5 minutes.	地上的掉落物经过此时间后消失。默认 5 分钟。
+몹이 생기는 거리	Mob spawn range	生物生成距离
+플레이어 주변 이 거리(청크) 안에서 몹이 생겨요.	Mobs spawn within this distance (chunks) of players.	生物在玩家周围此距离（区块）内生成。
+아이템 합치는 거리	Item merge radius	物品合并距离
+가까이 떨어진 같은 아이템을 하나로 합쳐요. 크게 하면 가벼워져요.	Merges identical items dropped close together. Larger is lighter.	把掉在附近的相同物品合并成一个。调大会更流畅。
+경험치 구슬 합치는 거리	XP orb merge radius	经验球合并距离
+가까운 경험치 구슬을 하나로 합쳐요. -1이면 안 합쳐요.	Merges nearby XP orbs into one. -1 means no merging.	把附近的经验球合并成一个。-1 为不合并。
+광석 숨기기 (X-ray 방지)	Hide ores (anti X-ray)	隐藏矿石（防透视）
+투시 핵으로 땅속 광석을 못 보게 숨겨요. 서버가 조금 무거워져요.	Hides underground ores from X-ray hacks. Makes the server a bit heavier.	对透视外挂隐藏地下矿石。服务器会稍微变重。
+한 몹이 부딪히는 최대 수	Max entity collisions	单个生物最大碰撞数
+몹이 한곳에 많이 몰렸을 때 계산을 줄여요. 낮추면 가벼워져요.	Reduces calculations when many mobs crowd together. Lower is lighter.	生物大量聚集时减少计算。调低会更流畅。
+폭발 계산 줄이기	Optimize explosions	优化爆炸计算
+TNT가 많이 터질 때 렉을 줄여요.	Reduces lag when lots of TNT explodes.	大量 TNT 爆炸时减少卡顿。
+마인크래프트 공식	Official Minecraft	Minecraft 官方
+{0}서버에 연결할 수 없어요. 인터넷 연결을 확인해 주세요.	Couldn't connect to the {0}server. Check your internet connection.	无法连接到{0}服务器。请检查网络连接。
+{0}서버가 응답하지 않아요. 잠시 뒤에 다시 해 주세요.	The {0}server isn't responding. Try again later.	{0}服务器没有响应。请稍后再试。
+디스크 공간이 부족해요. 공간을 비운 뒤에 다시 해 주세요.	Not enough disk space. Free up space and try again.	磁盘空间不足。请清理空间后重试。
+파일을 다른 프로그램이 쓰고 있어서 바꿀 수 없어요. 탐색기나 다른 프로그램을 닫고 다시 해 주세요.	Another program is using the file, so it can't be changed. Close Explorer or other programs and try again.	其他程序正在使用该文件，无法更改。请关闭资源管理器或其他程序后重试。
+{0}에서 받은 정보를 읽지 못했어요. 잠시 뒤에 다시 해 주세요.	Couldn't read the info from {0}. Try again later.	无法读取来自 {0} 的信息。请稍后再试。
+{0} 파일을 찾지 못했어요. 없어졌거나 주소가 바뀌었을 수 있어요.	Couldn't find the file {0}. It may have been removed or its address changed.	{0}找不到文件。可能已被删除或地址已更改。
+{0}에서	on {0}	在 {0} 上
+서버에서	on the server	在服务器上
+{0}요청이 너무 많아요. 잠시 뒤에 다시 해 주세요.	{0}Too many requests. Try again later.	{0}请求过多。请稍后再试。
+{0}서버에 문제가 있어요. 잠시 뒤에 다시 해 주세요.	There's a problem with the {0}server. Try again later.	{0}服务器出现问题。请稍后再试。

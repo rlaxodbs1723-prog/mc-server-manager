@@ -131,7 +131,7 @@ async function quick(): Promise<void> {
 
 // ---------- 언어 (영어·중국어) ----------
 // 번역하지 않는 것: 정규식, EULA 파일 내용, 조사 고르기용 조각, 언어 고르는 칸 (어느 언어에서든 그대로 보여야 한다)
-const NO_TR = new Set(["(?:Mod|모드) '([^\\n]+?)' \\({0}\\)", '# CraftPanel에서 사용자가 EULA(https://aka.ms/MinecraftEULA)에 동의함 # {0} eula=true', '을/를', '이/가', '은/는', '으로/로', '한국어', '언어 · Language'])
+const NO_TR = new Set(["(?:Mod|모드) '([^\\n]+?)' \\({0}\\)", '# MC CraftDeck에서 사용자가 EULA(https://aka.ms/MinecraftEULA)에 동의함 # {0} eula=true', '을/를', '이/가', '은/는', '으로/로', '한국어', '언어 · Language'])
 async function i18nChecks(): Promise<void> {
   const tables = { en: enTable as Record<string, string>, zh: zhTable as Record<string, string> }
   await check('언어: 코드의 한글 문장이 모두 번역돼 있다 (새로 넣고 번역 안 한 것 없음)', () => {

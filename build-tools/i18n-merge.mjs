@@ -1,4 +1,4 @@
-// build-tools/i18n/t*.tsv (번호<TAB>영어<TAB>중국어, 번호 대신 한글을 써도 된다)를
+// build-tools/i18n/t*.tsv (한글<TAB>영어<TAB>중국어, 예전 줄은 source.json 번호일 수도 있다)를
 // src/i18n/en.json, zh.json (한글 → 번역) 으로 합친다. 번호는 source.json 순서다.
 import fs from 'fs'
 

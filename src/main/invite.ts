@@ -24,7 +24,7 @@ async function open(folderPath: string, name: string): Promise<void> {
   const port = serverPort(folderPath)
   const lan = localIPv4().map((ip) => withPort(ip, port))
   set(folderPath, { state: 'opening', lan })
-  const result = await openPort(port, `CraftPanel - ${name}`)
+  const result = await openPort(port, `MC CraftDeck - ${name}`)
   if (status.get(folderPath)?.state !== 'opening') {
     if (result.ok) closePort(port).catch(() => {}) // 여는 사이에 서버가 꺼졌다
     return
@@ -35,7 +35,7 @@ async function open(folderPath: string, name: string): Promise<void> {
   clearInterval(renewTimers.get(folderPath))
   renewTimers.set(
     folderPath,
-    setInterval(() => openPort(port, `CraftPanel - ${name}`).catch(() => {}), RENEW_MS)
+    setInterval(() => openPort(port, `MC CraftDeck - ${name}`).catch(() => {}), RENEW_MS)
   )
   if (!result.externalIp) return set(folderPath, { state: 'failed', message: '포트는 열었지만 외부 주소를 알아내지 못했어요.', lan })
   set(folderPath, { state: 'open', address: withPort(result.externalIp, port), lan })

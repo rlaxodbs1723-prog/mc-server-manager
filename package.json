@@ -1,7 +1,7 @@
 {
   "name": "mc-server-manager",
-  "version": "1.0.2",
-  "description": "CraftPanel",
+  "version": "1.0.3",
+  "description": "MC CraftDeck",
   "main": "out/main/index.js",
   "private": true,
   "scripts": {
@@ -41,11 +41,11 @@
   "allowScripts": {
     "electron@44.4.5": true
   },
-  "productName": "CraftPanel",
+  "productName": "MC CraftDeck",
   "author": "Ora1ph",
   "build": {
     "appId": "com.mcservermanager.app",
-    "productName": "CraftPanel",
+    "productName": "MC CraftDeck",
     "directories": {
       "output": "dist",
       "buildResources": "resources"
@@ -81,10 +81,10 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "CraftPanel",
+      "shortcutName": "MC CraftDeck",
       "installerIcon": "resources/icon.ico",
       "uninstallerIcon": "resources/icon.ico",
-      "artifactName": "CraftPanel-Setup-${version}.${ext}",
+      "artifactName": "MC-CraftDeck-Setup-${version}.${ext}",
       "deleteAppDataOnUninstall": false,
       "include": "build-tools/uninstall.nsh",
       "multiLanguageInstaller": true,

@@ -1,358 +1,358 @@
-0	say The server will restart in 1 minute. Please rejoin shortly.	say 服务器将在 1 分钟后重启，请稍后重新进入。
-1	Daily restart: restarting the server in 1 minute.	每日重启：1 分钟后重启服务器。
-2	Couldn't restart: {0}	无法重启：{0}
-3	No one has been online for {0} min, so the server is shutting down.	{0} 分钟内无人在线，正在关闭服务器。
-4	Stopped server {0}	已关闭服务器 {0}
-5	No one was online for {0} min.	{0} 分钟内无人在线。
-6	Didn't auto-start because another server uses the same port ({0}). Change the port in Settings → Connection.	另一个服务器正在使用相同端口（{0}），因此未自动启动。请在 设置 → 连接 中更改端口。
-7	{0} (port conflict)	{0}（端口冲突）
-8	Didn't auto-start because servers started earlier used up the memory.	先启动的服务器占用了内存，内存不足，因此未自动启动。
-9	{0} (not enough memory)	{0}（内存不足）
-10	Couldn't auto-start: {0}	无法自动启动：{0}
-11	{0} (failed to start)	{0}（启动失败）
-12	Some servers couldn't auto-start	有服务器未能自动启动
-13	Scheduled backup done.	已完成定时备份。
-14	Scheduled backup failed: {0}	定时备份失败：{0}
-15	Scheduled backup failed	定时备份失败
-16	Already backing up.	正在备份中。
-17	You can back up once the server has fully started.	服务器完全启动后才能备份。
-18	You can back up once the server has fully stopped.	服务器完全关闭后才能备份。
-19	No world yet. Start the server once, then you can back up.	还没有世界。先启动一次服务器再备份。
-20	Invalid backup.	无效的备份。
-21	Backup not found.	找不到备份。
-22	Stop the server before restoring.	请先关闭服务器再恢复。
-23	Before restore	恢复前
-24	Installation cancelled.	已取消安装。
-25	That's outside the server folder.	不在服务器文件夹内。
-26	This file is used by the app and can't be handled here.	这是应用使用的文件，无法在此处理。
-27	Folder not found.	找不到文件夹。
-28	This file is too large to open here.	文件太大，无法在此打开。
-29	Only text config files can be opened.	只能打开文本配置文件。
-30	This isn't a text file.	这不是文本文件。
-31	Only text config files can be saved.	只能保存文本配置文件。
-32	This file was changed elsewhere after you opened it. Reload it, then edit.	打开后该文件在别处被修改了。请重新加载后再编辑。
-33	The file is too large.	文件太大。
-34	You can do this after stopping the server.	请先关闭服务器再操作。
-35	Invalid name. (\ / : * ? " < > | aren't allowed)	名称无效。（不能使用 \ / : * ? " < > |）
-36	This name is used by the app.	该名称已被应用使用。
-37	The server folder itself can't be changed.	不能修改服务器文件夹本身。
-38	That name already exists.	已存在同名项目。
-39	The server folder itself can't be deleted.	不能删除服务器文件夹本身。
-40	New files can only be text files like .txt .yml .json.	新文件只能是 .txt .yml .json 等文本文件。
-42	Couldn't convert old player files in the world	无法转换世界中的旧玩家文件
-43	This world contains player files saved in a very old format (players folder). The server stopped while trying to convert them. This often happens with downloaded maps.	该世界包含以很旧的格式保存的玩家文件（players 文件夹）。服务器启动时尝试转换失败而停止。下载的地图常出现此问题。
-44	Delete the players folder inside the world folder in the server folder, then start again.	删除服务器文件夹 → 世界文件夹中的 players 文件夹后重新启动。
-45	Couldn't read the world settings file	无法读取世界设置文件
-46	The world generation settings file (world_gen_settings) is missing or broken. This happens if world creation stopped on first start or the world is from another version.	世界生成设置文件（world_gen_settings）缺失或损坏。首次启动时创建世界中断，或世界来自其他版本时会出现。
-47	Reset the world in Settings → World, or restore an earlier world in the Backups tab.	在 设置 → 世界 中重置世界，或在备份页恢复到之前的世界。
-48	A data pack doesn't match this version	数据包与此版本不兼容
-49	A data pack in the world is for another Minecraft version and couldn't be read. Common when an imported map was made for a different version than the server.	世界中的数据包适用于其他 Minecraft 版本，无法读取。导入地图的制作版本与服务器版本不同时常出现。
-50	Disable the data pack below and start again. (Some map features may be missing)	禁用下面的数据包后重新启动。（地图的部分功能可能会缺失）
-51	Create a new server on the version the map was made for and import the map there.	用地图制作时的版本新建服务器并导入地图即可正常运行。
-52	Out of memory	内存不足
-53	The server used all its memory and stopped. Happens with many mods or many players exploring.	服务器用尽了可用内存而停止。模组多或多人到处探索时会出现。
-54	Increase memory by 1–2 GB in Settings → Performance.	在 设置 → 性能 中增加 1~2GB 内存。
-55	Lower "View distance" to 8–10 in Settings → World.	在 设置 → 世界 中将"视距"降到 8~10。
-56	Try removing a few heavy mods.	试着移除几个较重的模组。
-57	Another program is using the port	端口被其他程序占用
-58	Another server or program using the same port (usually 25565) is already running.	已有使用相同端口（通常为 25565）的其他服务器或程序在运行。
-59	Stop the other Minecraft server and start again.	关闭其他 Minecraft 服务器后重新启动。
-60	Change the port number in Settings → Connection (e.g. 25566).	在 设置 → 连接 中更改端口号（例如 25566）。
-61	A mod needs a different Java version	有模组的 Java 版本不兼容
-62	A mod (or plugin) was built with a newer Java than this server version. It's usually a file for another Minecraft version.	某个模组（或插件）使用比此服务器版本更新的 Java 构建。通常是其他 Minecraft 版本的文件。
-63	Check whether the suspect files below are for this server version and replace them with the right version.	检查下面的可疑文件是否适用于此服务器版本，并替换为正确版本。
-64	Try disabling recently added mods or plugins.	试着禁用最近添加的模组或插件。
-65	{0}{1}. It's a base mod most mods need.	{0}{1}。这是大多数模组需要的前置模组。
-66	 isn't installed	 未安装
-67	Version mismatch	版本不匹配
-68	A required plugin is missing or the wrong version	缺少必需的插件或版本不匹配
-69	Mods are incompatible or a required mod is missing	模组互不兼容或缺少必需模组
-70	A mod needs another mod that's missing or the wrong version.	某个模组需要的其他模组缺失或版本不匹配。
-71	Click Install/Update under "Required mods" below.	点击下方"必需模组"中的安装/更新。
-72	If that doesn't help, disable the suspect mods below.	如果仍然不行，请禁用下面的可疑模组。
-73	Search for the missing mod in the Mods tab and install it.	在模组页搜索缺失的模组并安装。
-74	Bring everything up to date with Mods tab → Check for updates.	通过 模组页 → 检查更新 全部更新到最新。
-75	The same mod is installed twice	同一个模组装了两次
-76	There are two files of the same mod in the mods folder (usually differing only in version).	mods 文件夹中有同一模组的两个文件（通常只是版本不同）。
-77	Open the mods folder in the server folder and delete the older of the duplicate files.	打开服务器文件夹中的 mods 文件夹，删除同名文件中较旧的那个。
-78	A mod touches client screen code on the server	有模组在服务器上调用了画面代码
-79	This mod is also used on servers, but this version crashes trying to patch game screen code that doesn't exist on servers. It's a mod bug, so remove it until it's fixed.	这个模组服务器也会用，但此版本试图修改服务器上不存在的画面代码而崩溃。这是模组的 bug，修复前请移除它。
-80	Disable the suspect mods below.	请禁用下面的可疑模组。
-81	Check Mods tab → Check for updates for a fixed version.	通过 模组页 → 检查更新 查看是否有修复版本。
-82	A client-side mod is on the server	服务器上有客户端模组
-83	"Client-only" mods for visuals, like minimaps and shaders, crash when loaded on a server.	小地图、光影等与画面相关的"仅客户端"模组在服务器上加载会崩溃。
-84	If unsure, disable recently added mods one at a time.	不确定的话，从最近添加的模组开始逐个禁用。
-85	A mod doesn't match this version	有模组与此版本不兼容
-86	A mod failed to patch Minecraft code. Usually it's for another version or conflicts with another mod.	有模组修改 Minecraft 代码失败。通常是其他版本的模组，或与其他模组冲突。
-87	Replace the suspect mods below with this server's version, or disable them.	将下面的可疑模组换成适用此服务器版本的，或禁用它们。
-88	Try Mods tab → Check for updates.	试试 模组页 → 检查更新。
-89	Something in the world keeps causing errors	世界中的某样东西不断报错
-90	A specific mob or block errors every time it moves, so the server stopped.{0}{1}	某个生物或方块每次活动都会出错，服务器因此停止。{0}{1}
-91	Cause: {0}	原因：{0}
-92	Location: {0}	位置：{0}
-93	If a mod added that mob or block, update or disable it.	如果是某个模组添加的该生物或方块，请更新或禁用它。
-94	You can restore the world from before the problem in the Backups tab.	可以在备份页恢复到出问题之前的世界。
-95	The server froze too long and was shut down	服务器卡住太久被关闭
-96	A single tick took over 60 seconds, so the server stopped itself. Can happen with heavy mods, big machines, or first-time world generation.	一次处理（刻）超过 60 秒，服务器自行停止。重型模组、大型机器或首次生成世界时可能出现。
-97	Increase or disable "Watchdog timeout" in Settings → Performance (-1).	在 设置 → 性能 中增加或关闭"卡死检测时间"（-1）。
-98	Try adding more memory.	试着增加内存。
-99	Try lowering the view distance.	试着降低视距。
-100	The world files may be corrupted	世界文件可能已损坏
-101	An error occurred reading world files. Happens if the PC shut off suddenly or the server was force-stopped while saving.	读取世界文件时出错。电脑突然关机或保存世界时服务器被强制关闭会出现。
-102	Restore a recent backup in the Backups tab.	在备份页恢复最近的备份。
-103	If there's no backup, you can start fresh with Settings → World reset.	如果没有备份，可以通过 设置 → 重置世界 重新开始。
-104	This world is from a newer version	这是较新版本的世界
-105	This world was saved by a newer Minecraft than the server. Newer worlds can't be opened in older versions.	该世界由比服务器更新的 Minecraft 保存。新版本的世界无法在旧版本中打开。
-106	Create a new server on the same (or newer) version and import this world.	用相同（或更新）版本新建服务器并导入此世界。
-107	You can restore the original world in the Backups tab.	可以在备份页恢复原来的世界。
-108	Mods got stuck in an infinite loop	模组陷入无限循环
-109	Some process kept calling itself endlessly and stopped. Common when mods conflict.	某个处理不断调用自身而停止。模组冲突时常出现。
-110	Disable recently added mods.	请禁用最近添加的模组。
-111	If there are suspect mods below, disable those first.	如果下方有可疑模组，请先禁用它们。
-112	Plugin error	插件错误
-113	A plugin errored while enabling. It's for another version or a required plugin is missing.	某个插件启用时出错。可能是其他版本的插件，或缺少必需插件。
-114	Replace the suspect plugins below with this version's, or disable them.	将下面的可疑插件换成此版本的，或禁用它们。
-115	Check for updates in the Plugins tab.	在插件页检查更新。
-116	Couldn't load the world	无法加载世界
-117	An error reading the world or data packs prevented the server from starting. The exact cause is in the error details below.	读取世界或数据包时出错，服务器无法启动。具体原因见下方错误信息。
-118	Restore an earlier world in the Backups tab.	在备份页恢复之前的世界。
-119	Invalid data pack name.	无效的数据包名称。
-120	Data pack not found.	找不到数据包。
-121	The server stopped unexpectedly	服务器意外关闭
-122	The server stopped with an error. The exact cause is in the error details and crash report below.	服务器因错误停止。具体原因见下方错误信息和崩溃报告。
-123	The server stopped with an error code.	服务器带着错误代码关闭了。
-124	If you recently added mods/plugins or changed settings, try reverting them.	如果最近添加了模组/插件或改了设置，请尝试撤销。
-125	If it happens again, restore an earlier world in the Backups tab.	如果重启后仍然这样，请在备份页恢复之前的世界。
-126	A CurseForge API key is required.	需要 CurseForge API 密钥。
-127	CurseForge is unavailable right now. Please search on Modrinth. (Updating the app may fix this)	暂时无法使用 CurseForge。请在 Modrinth 上查找。（更新应用后可能恢复）
-128	The CurseForge API key is invalid.	CurseForge API 密钥无效。
-129	CurseForge returned an error ({0}).	CurseForge 出错（{0}）。
-130	CurseForge is responding too slowly. Try again later.	CurseForge 响应太慢，请稍后再试。
-131	That doesn't look like an API key.	这不像是 API 密钥。
-132	The author blocked downloading this map in other apps. Download it from the CurseForge site and import the zip.	作者禁止在其他应用中下载此地图。请从 CurseForge 网站下载后以 zip 导入。
-133	Unknown download URL.	未知的下载地址。
-134	The author blocked downloading this modpack in other apps.	作者禁止在其他应用中下载此整合包。
-135	This file can't be downloaded from CurseForge.	无法从 CurseForge 下载此文件。
-136	Another program is using this data pack file. Close it and try again.	其他程序正在使用此数据包文件。请关闭该程序后重试。
-137	The server is using this data pack, so it can't be changed now. Stop the server and try again.	服务器正在使用此数据包，暂时无法更改。请关闭服务器后重试。
-138	"{0}" has no data pack file for this server ({1}).	"{0}" 没有适用于此服务器（{1}）的数据包文件。
-139	"{0}" has no data pack version for this server ({1}).	"{0}" 没有适用于此服务器（{1}）的数据包版本。
-140	Not a data pack file (zip).	不是数据包文件（zip）。
-141	File not found.	找不到文件。
-142	Not a data pack (a zip or a folder with pack.mcmeta).	不是数据包（zip 文件或含 pack.mcmeta 的文件夹）。
-143	A data pack with the same name already exists.	已存在同名数据包。
-144	This data pack was added manually, so its version can't be changed.	这是手动添加的数据包，无法更改版本。
-145	That's a version of a different data pack.	这是其他数据包的版本。
-146	This version has no file to download.	此版本没有可下载的文件。
-147	Request failed ({0}): {1}	请求失败（{0}）：{1}
-148	Download failed ({0}): {1}	下载失败（{0}）：{1}
-149	The downloaded file is corrupted (checksum mismatch): {0}	下载的文件已损坏（校验和不匹配）：{0}
-150	The download stalled. Check your internet connection: {0}	下载停止了。请检查网络连接：{0}
-151	Couldn't get the game rule list. Try again after the server has fully started.	无法获取游戏规则列表。请在服务器完全启动后重试。
-152	Invalid game rule name.	无效的游戏规则名称。
-153	Invalid value.	无效的值。
-154	Couldn't read the world file (level.dat).	无法读取世界文件（level.dat）。
-155	You can change this after stopping the server.	请先关闭服务器再更改。
-156	Please add an image file (png, jpg, etc.).	请放入图片文件（png、jpg 等）。
-157	Choose an image for the server icon	选择用作服务器图标的图片
-158	Image	图片
-159	Open	打开
-160	Quit	退出
-161	[preload error]	[preload 错误]
-162	Servers are still running	服务器仍在运行
-163	Continuing in the background until the task finishes	将在后台继续，直到任务完成
-164	The app is still running in the tray	应用仍在托盘中运行
-165	Click the icon at the right of the taskbar to open it again.	点击任务栏右侧的图标即可重新打开。
-166	That's not a server folder.	这不是服务器文件夹。
-167	Preparing	正在准备
-168	Installing base mods	正在安装前置模组
-169	Server created	服务器已创建
-170	Server {0} is ready. Click to open it.	服务器 {0} 已就绪。点击打开。
-171	Couldn't create the server	无法创建服务器
-172	Change version	更改版本
-173	Choose a modpack file	选择整合包文件
-174	Modpack	整合包
-175	Duplicate server	复制服务器
-176	Stop the server before deleting it.	请先关闭服务器再删除。
-177	Delete server	删除服务器
-178	Checking base mods	正在检查前置模组
-179	Reset world	重置世界
-180	Backup	备份
-181	Restore backup	恢复备份
-182	Delete backup	删除备份
-183	Import world	导入世界
-184	Install mod	安装模组
-185	Change mod version	更改模组版本
-186	Disable mods	禁用模组
-187	Update mods	更新模组
-188	You can update after tasks like creating servers or backups finish.	创建服务器、备份等任务完成后才能更新。
-189	The port was opened, but the external address couldn't be found.	端口已打开，但无法获取外部地址。
-190	You can check once the connection address is ready.	连接地址就绪后才能检查。
-191	You can check once the server has fully started.	服务器完全启动后才能检查。
-192	Reachable from outside! Send the address to your players.	外部可以连接！把地址发给玩家吧。
-193	Not reachable from outside. Windows Firewall may be blocking Java, there may be two routers (a router behind a router), or your ISP may block the port.	外部无法连接。可能是 Windows 防火墙拦截了 Java、有两层路由器（路由器后还有路由器），或运营商封锁了端口。
-194	Couldn't reach the check service. Try again later.	无法连接检测服务，请稍后再试。
-195	Only Windows is supported for now.	目前仅支持 Windows。
-196	Checking Java	正在检查 Java
-197	Couldn't find Java ({0}) for this computer.	找不到适用于此电脑的 Java（{0}）。
-198	Invalid Java file path: {0}	无效的 Java 文件路径：{0}
-199	Downloading Java	正在下载 Java
-200	Couldn't find java.exe after installing Java.	安装 Java 后找不到 java.exe。
-201	Loader info request failed ({0}): {1}	加载器信息请求失败（{0}）：{1}
-202	The installer failed. (code {0}) {1}	安装程序失败。（代码 {0}）{1}
-203	Couldn't find Paper build {0}.	找不到 Paper 构建 {0}。
-204	Downloading the Paper server file	正在下载 Paper 服务端文件
-205	Downloading the Purpur server file	正在下载 Purpur 服务端文件
-206	Downloading Fabric	正在下载 Fabric
-207	Couldn't find Fabric installer info.	找不到 Fabric 安装程序信息。
-208	Downloading the Quilt installer	正在下载 Quilt 安装程序
-209	Couldn't find Quilt installer info.	找不到 Quilt 安装程序信息。
-210	Installing Quilt	正在安装 Quilt
-211	Quilt installation failed.	Quilt 安装失败。
-212	Downloading the {0} installer	正在下载 {0} 安装程序
-213	Installing {0}	正在安装 {0}
-214	Couldn't find the server executable. Please recreate the server.	找不到服务端执行文件。请重新创建服务器。
-215	Busy: {0}. Try again when it's done.	正在{0}。完成后再试。
-216	Invalid nickname.	无效的昵称。
-217	Please enter a message to send.	请输入要发送的消息。
-218	Invalid difficulty.	无效的难度。
-219	Invalid game mode.	无效的游戏模式。
-220	Invalid time.	无效的时间。
-221	Invalid weather.	无效的天气。
-222	Invalid item name.	无效的物品名称。
-223	kick {0} Kicked by an admin	kick {0} 被管理员踢出
-224	ban {0} Banned by an admin	ban {0} 被管理员封禁
-225	Unknown action.	未知操作。
-226	Only available while the server is running.	仅在服务器运行时可用。
-227	No CurseForge API key, so CurseForge can't be searched.	没有 CurseForge API 密钥，无法在 CurseForge 中搜索。
-228	This version has no modpack file (.mrpack).	此版本没有整合包文件（.mrpack）。
-229	Please add a modpack file (.mrpack or .zip).	请放入整合包文件（.mrpack 或 .zip）。
-230	Not a modpack file. (no modrinth.index.json or manifest.json) {0}	不是整合包文件。（没有 modrinth.index.json 或 manifest.json）{0}
-231	The modpack has no Minecraft version info.	整合包中没有 Minecraft 版本信息。
-232	This modpack uses an unsupported loader.	此整合包使用了不支持的加载器。
-233	Some files come from a disallowed source: {0}	有文件来自不允许的来源：{0}
-234	CurseForge modpacks need a CurseForge API key. Connect it first on the map download screen.	CurseForge 整合包需要 CurseForge API 密钥。请先在地图下载界面连接。
-235	This modpack uses an unsupported loader ({0}).	此整合包使用了不支持的加载器（{0}）。
-236	Unknown	未知
-237	The modpack contains an invalid path: {0}	整合包中有无效路径：{0}
-238	The modpack prep files are missing. Please choose the modpack again.	整合包准备文件丢失。请重新选择整合包。
-239	Downloading modpack files ({0}/{1})	正在下载整合包文件（{0}/{1}）
-240	Copying modpack config files	正在复制整合包配置文件
-241	Too many requests to Modrinth. Try again shortly.	对 Modrinth 的请求过多，请稍后再试。
-242	Modrinth request failed ({0})	Modrinth 请求失败（{0}）
-243	Invalid project/version ID.	无效的项目/版本 ID。
-244	Mod	模组
-245	Plugin	插件
-246	Mods or plugins can't be installed on a Vanilla server. Create a new server like Fabric or Paper.	原版服务器无法安装模组或插件。请新建 Fabric、Paper 等服务器。
-247	Only jar files can be installed.	只能安装 jar 文件。
-248	Can't change this while the server is running. Stop the server first.	服务器运行时无法更改。请先关闭服务器。
-249	"{0}" is a {1} installed only on players' computers, so the server doesn't need it.	"{0}" 是只装在玩家电脑上的{1}，服务器不需要。
-250	"{0}" has no version for this server ({1}).	"{0}" 没有适用于此服务器（{1}）的版本。
-251	"{0}" is already installed ({1}). Delete that file first to switch versions.	"{0}" 已安装（{1}）。要更换版本请先删除该文件。
-252	"{0}" has no file for this server ({1}), or downloading it in other apps is blocked.	"{0}" 没有适用于此服务器（{1}）的文件，或禁止在其他应用中下载。
-253	This file was added manually, so its version can't be changed.	这是手动添加的文件，无法更改版本。
-254	That's a version of a different mod.	这是其他模组的版本。
-255	Invalid mod ID.	无效的模组 ID。
-256	Couldn't find "{0}" on Modrinth. It may only be on CurseForge.	在 Modrinth 上找不到"{0}"。它可能只在 CurseForge 上。
-257	Only {0} files (.jar) can be added.	只能放入{0}文件（.jar）。
-258	A file with the same name already exists: {0}	已存在同名文件：{0}
-259	Player modpacks can only be made from mod servers.	只有模组服务器才能制作玩家用整合包。
-260	{0} (for players)	{0}（玩家用）
-261	Save player mod bundle	保存玩家用模组包
-262	Save player modpack	保存玩家用整合包
-263	Modrinth modpack	Modrinth 整合包
-264	{0} player mods: install Minecraft {1}, {2} {3}, then put these files in the .minecraft/mods folder.	{0} 玩家用模组：安装 Minecraft {1}、{2} {3} 后，把这些文件放进 .minecraft/mods 文件夹。
-265	README.txt	说明.txt
-266	Player modpack made by CraftPanel	由 CraftPanel 制作的玩家用整合包
-267	Unknown Minecraft version: {0}	未知的 Minecraft 版本：{0}
-268	Unknown NBT tag type: {0}	未知的 NBT 标签类型：{0}
-269	Not an NBT file.	不是 NBT 文件。
-270	{0} (disabled)	{0}（已禁用）
-271	The server is set to use {0} GB, but the computer has only {1} GB total, leaving too little for Windows. Lower the memory in Settings.	服务器设定使用 {0}GB，但电脑总内存只有 {1}GB，Windows 可用空间不足。请在设置中减少内存。
-272	Only {0} GB of memory is free right now. Closing other programs (games, browsers, etc.) helps the server run better.	当前电脑剩余内存只有 {0}GB。关闭其他程序（游戏、浏览器等）可让服务器运行更顺畅。
-274	[App]	[应用]
-275	[App] {0}	[应用] {0}
-276	Already running.	已在运行。
-277	You must accept the EULA to start the server.	必须同意 EULA 才能启动服务器。
-278	Port {0} is already used by another server or program. Close it and start again.	端口 {0} 已被其他服务器或程序占用。请关闭该程序后重新启动。
-279	Launch error: {0}	启动错误：{0}
-280	[App] The server exited abnormally. (code {0})	[应用] 服务器异常退出。（代码 {0}）
-281	[App] The server stopped. (code {0})	[应用] 服务器已关闭。（代码 {0}）
-282	The server isn't running.	服务器未运行。
-283	Not a server pack. (no mods folder)	不是服务端包。（没有 mods 文件夹）
-284	Couldn't determine the server pack's Minecraft version or loader (Forge, Fabric, etc.).	无法确定服务端包的 Minecraft 版本或加载器（Forge、Fabric 等）。
-285	Couldn't find a {1} version for {0}.	找不到适用于 {0} 的 {1} 版本。
-286	Please enter a server name.	请输入服务器名称。
-287	This name can't be used as a folder name on Windows.	该名称不能在 Windows 中用作文件夹名。
-288	Unsupported server type.	不支持的服务器类型。
-289	Please choose a {0} version.	请选择 {0} 版本。
-290	Checking version info	正在检查版本信息
-291	Version {0} has no official server file.	{0} 版本没有官方服务端文件。
-292	Downloading the Minecraft server file	正在下载 Minecraft 服务端文件
-293	Copying the singleplayer world	正在复制单人世界
-294	Done	完成
-295	Stop the server before changing the version.	请先关闭服务器再更改版本。
-296	That's the current version.	与当前版本相同。
-297	Backing up the world before the change	更改前正在备份世界
-298	Before {0} → {1}	{0} → {1} 更改前
-299	Java options must start with "-": {0}	Java 选项必须以"-"开头：{0}
-300	This option isn't allowed: {0}	不能使用此选项：{0}
-301	Set the memory ({0}) with "Server memory" above.	内存（{0}）请在上方"服务器内存"中设置。
-302	Unknown setting: {0}	未知设置：{0}
-303	{0}: can only be on or off.	{0}：只能选择开或关。
-304	{0}: value out of range.	{0}：值超出范围。
-305	{0}: couldn't find this entry in the config file.	{0}：在配置文件中找不到此项。
-306	Please choose the restart time again.	请重新选择重启时间。
-307	Invalid setting name: {0}	无效的设置名称：{0}
-308	Stop the server before creating a new world.	请先关闭服务器再新建世界。
-309	Before world reset	重置世界前
-310	Server {0} is running	服务器 {0} 已启动
-311	Players can join now.	玩家现在可以进入了。
-312	Server {0} crashed	服务器 {0} 崩溃了
-313	(stopped while starting)	（启动过程中关闭了）
-314	[App] Crash cause: {0}	[应用] 崩溃原因：{0}
-315	{0} (crashed several times within 10 minutes, so it wasn't restarted)	{0}（10 分钟内多次崩溃，未自动重启）
-316	Restarting the server in {0} s…	{0} 秒后重启服务器…
-317	Stop the server before duplicating it.	请先关闭服务器再复制。
-318	App started	应用启动
-319	Warning: {0}	警告：{0}
-320	Error: {0}	错误：{0}
-321	Test URL: {0}	测试地址：{0}
-322	Checking GitHub	在 GitHub 上检查
-323	No new version	没有新版本
-324	Downloading new version {0}	正在下载新版本 {0}
-325	New version {0} ready	新版本 {0} 已就绪
-326	Test: install now	测试：立即安装
-327	Checking for a new version	检查新版本
-328	Check failed: {0}	检查失败：{0}
-329	No update to install.	没有可安装的更新。
-330	Install and restart	安装并重启
-331	Couldn't read router info.	无法读取路由器信息。
-332	UPnP {0} failed ({1})	UPnP {0} 失败（{1}）
-333	Your router doesn't support automatic port opening (UPnP), or it's turned off.	路由器不支持自动开放端口（UPnP），或已关闭。
-334	There's another router outside your router, so opening the port won't allow outside connections. (router's address: {0})	路由器外面还有一层路由器，即使开放端口外部也无法连接。（路由器获得的地址：{0}）
-335	The router refused to open the port. ({0})	路由器拒绝开放端口。（{0}）
-336	Couldn't reach the Minecraft account server. Check your internet connection.	无法连接 Minecraft 账户服务器。请检查网络连接。
-337	Couldn't find a premium account named "{0}". Check the spelling.	找不到昵称为"{0}"的正版账户。请检查拼写。
-338	Couldn't verify the account. ({0})	无法验证账户。（{0}）
-339	Nicknames are 3–16 characters of letters, numbers, and _.	昵称为 3~16 位英文字母、数字或 _。
-340	{0} is already on the list.	{0} 已在列表中。
-341	Choose a map zip file to import	选择要导入的地图 zip 文件
-342	Map archive	地图压缩包
-343	There's no Minecraft world in the zip.	zip 中没有 Minecraft 世界。
-344	This folder isn't a Minecraft world (no level.dat).	此文件夹不是 Minecraft 世界（没有 level.dat）。
-345	Please add a zip file or a world folder.	请放入 zip 文件或世界文件夹。
-346	The downloaded file contains no Minecraft world.	下载的文件中没有 Minecraft 世界。
-347	This world was made in {0}, so it can't be opened on a {1} server. Minecraft can't open newer worlds in older versions. Change the server version to {2} or later, then import.	该世界由 {0} 创建，无法在 {1} 服务器上打开。Minecraft 无法用旧版本打开新版本的世界。请将服务器版本改为 {2} 或更高后再导入。
-348	Stop the server before importing a world.	请先关闭服务器再导入世界。
-349	Please choose the world from the list again.	请重新从列表中选择世界。
-350	Not a world folder (no level.dat).	不是世界文件夹（没有 level.dat）。
-351	Folders inside the server can't be imported.	不能导入服务器内部的文件夹。
-352	Before world import	导入世界前
-353	Couldn't open the zip file. It may be corrupted.	无法打开 zip 文件，文件可能已损坏。
-354	The zip contains an invalid path.	zip 中有无效路径。
-355	It would be too large when extracted.	解压后太大。
-356	Couldn't read the zip file.	无法读取 zip 文件。
-357	There's no Minecraft world (level.dat) in the zip.	zip 中没有 Minecraft 世界（level.dat）。
-358	I'll safely save and stop {0} running server(s), then close the app.	将安全保存并关闭正在运行的 {0} 个服务器，然后关闭应用。
-359	{0} server(s) being created will be cancelled.	正在创建的 {0} 个服务器将被取消。
+say 서버가 1분 뒤에 다시 시작돼요. 잠시 뒤에 다시 들어와 주세요.	say The server will restart in 1 minute. Please rejoin shortly.	say 服务器将在 1 分钟后重启，请稍后重新进入。
+매일 다시 켜기: 1분 뒤에 서버를 다시 켜요.	Daily restart: restarting the server in 1 minute.	每日重启：1 分钟后重启服务器。
+다시 켜지 못했어요: {0}	Couldn't restart: {0}	无法重启：{0}
+{0}분 동안 아무도 없어서 서버를 꺼요.	No one has been online for {0} min, so the server is shutting down.	{0} 分钟内无人在线，正在关闭服务器。
+{0} 서버를 껐어요	Stopped server {0}	已关闭服务器 {0}
+{0}분 동안 아무도 없었어요.	No one was online for {0} min.	{0} 分钟内无人在线。
+다른 서버가 같은 포트({0})를 쓰고 있어서 자동으로 켜지 않았어요. 설정 → 접속에서 포트를 바꿔 주세요.	Didn't auto-start because another server uses the same port ({0}). Change the port in Settings → Connection.	另一个服务器正在使用相同端口（{0}），因此未自动启动。请在 设置 → 连接 中更改端口。
+{0} (포트 겹침)	{0} (port conflict)	{0}（端口冲突）
+먼저 켠 서버들 때문에 메모리가 모자라서 자동으로 켜지 않았어요.	Didn't auto-start because servers started earlier used up the memory.	先启动的服务器占用了内存，内存不足，因此未自动启动。
+{0} (메모리 부족)	{0} (not enough memory)	{0}（内存不足）
+자동으로 켜지 못했어요: {0}	Couldn't auto-start: {0}	无法自动启动：{0}
+{0} (켜지 못함)	{0} (failed to start)	{0}（启动失败）
+자동으로 켜지 못한 서버가 있어요	Some servers couldn't auto-start	有服务器未能自动启动
+정기 백업을 했어요.	Scheduled backup done.	已完成定时备份。
+정기 백업을 하지 못했어요: {0}	Scheduled backup failed: {0}	定时备份失败：{0}
+정기 백업을 하지 못했어요	Scheduled backup failed	定时备份失败
+이미 백업하는 중이에요.	Already backing up.	正在备份中。
+서버가 다 켜진 다음에 백업할 수 있어요.	You can back up once the server has fully started.	服务器完全启动后才能备份。
+서버가 다 꺼진 다음에 백업할 수 있어요.	You can back up once the server has fully stopped.	服务器完全关闭后才能备份。
+아직 월드가 없어요. 서버를 한 번 켠 다음에 백업할 수 있어요.	No world yet. Start the server once, then you can back up.	还没有世界。先启动一次服务器再备份。
+잘못된 백업이에요.	Invalid backup.	无效的备份。
+백업을 찾을 수 없어요.	Backup not found.	找不到备份。
+서버를 끈 다음에 복원할 수 있어요.	Stop the server before restoring.	请先关闭服务器再恢复。
+되돌리기 전	Before restore	恢复前
+설치를 취소했어요.	Installation cancelled.	已取消安装。
+서버 폴더 밖이에요.	That's outside the server folder.	不在服务器文件夹内。
+앱이 쓰는 파일이라 여기서 다룰 수 없어요.	This file is used by the app and can't be handled here.	这是应用使用的文件，无法在此处理。
+폴더를 찾을 수 없어요.	Folder not found.	找不到文件夹。
+파일이 너무 커서 여기서 열 수 없어요.	This file is too large to open here.	文件太大，无法在此打开。
+글자로 된 설정 파일만 열 수 있어요.	Only text config files can be opened.	只能打开文本配置文件。
+글자로 된 파일이 아니에요.	This isn't a text file.	这不是文本文件。
+글자로 된 설정 파일만 저장할 수 있어요.	Only text config files can be saved.	只能保存文本配置文件。
+연 뒤에 다른 곳에서 이 파일이 바뀌었어요. 다시 불러온 뒤 고쳐 주세요.	This file was changed elsewhere after you opened it. Reload it, then edit.	打开后该文件在别处被修改了。请重新加载后再编辑。
+파일이 너무 커요.	The file is too large.	文件太大。
+서버를 끈 다음에 할 수 있어요.	You can do this after stopping the server.	请先关闭服务器再操作。
+쓸 수 없는 이름이에요. (\ / : * ? " < > | 는 못 써요)	Invalid name. (\ / : * ? " < > | aren't allowed)	名称无效。（不能使用 \ / : * ? " < > |）
+앱이 쓰는 이름이라 쓸 수 없어요.	This name is used by the app.	该名称已被应用使用。
+서버 폴더 자체는 바꿀 수 없어요.	The server folder itself can't be changed.	不能修改服务器文件夹本身。
+같은 이름이 이미 있어요.	That name already exists.	已存在同名项目。
+서버 폴더 자체는 지울 수 없어요.	The server folder itself can't be deleted.	不能删除服务器文件夹本身。
+새 파일은 .txt .yml .json 같은 글자 파일만 만들 수 있어요.	New files can only be text files like .txt .yml .json.	新文件只能是 .txt .yml .json 等文本文件。
+월드 안의 옛날 플레이어 파일을 바꾸지 못했어요	Couldn't convert old player files in the world	无法转换世界中的旧玩家文件
+이 월드에는 아주 옛날 방식으로 저장된 플레이어 파일(players 폴더)이 들어 있어요. 서버가 켜질 때 이것을 새 방식으로 바꾸려다 실패해서 멈췄어요. 받은 맵에서 자주 생겨요.	This world contains player files saved in a very old format (players folder). The server stopped while trying to convert them. This often happens with downloaded maps.	该世界包含以很旧的格式保存的玩家文件（players 文件夹）。服务器启动时尝试转换失败而停止。下载的地图常出现此问题。
+서버 폴더 → 월드 폴더 안의 players 폴더를 지우고 다시 켜 보세요.	Delete the players folder inside the world folder in the server folder, then start again.	删除服务器文件夹 → 世界文件夹中的 players 文件夹后重新启动。
+월드 설정 파일을 읽지 못했어요	Couldn't read the world settings file	无法读取世界设置文件
+월드의 생성 설정 파일(world_gen_settings)이 없거나 망가졌어요. 처음 켤 때 월드를 만들다가 멈췄거나, 다른 버전에서 만든 월드일 때 생겨요.	The world generation settings file (world_gen_settings) is missing or broken. This happens if world creation stopped on first start or the world is from another version.	世界生成设置文件（world_gen_settings）缺失或损坏。首次启动时创建世界中断，或世界来自其他版本时会出现。
+설정 → 월드에서 월드를 리셋하거나, 백업 탭에서 이전 월드로 되돌려 보세요.	Reset the world in Settings → World, or restore an earlier world in the Backups tab.	在 设置 → 世界 中重置世界，或在备份页恢复到之前的世界。
+데이터팩이 이 버전과 맞지 않아요	A data pack doesn't match this version	数据包与此版本不兼容
+월드에 들어 있는 데이터팩이 다른 마인크래프트 버전용이라 읽지 못했어요. 맵을 가져왔다면 그 맵이 만들어진 버전과 서버 버전이 다를 때 자주 생겨요.	A data pack in the world is for another Minecraft version and couldn't be read. Common when an imported map was made for a different version than the server.	世界中的数据包适用于其他 Minecraft 版本，无法读取。导入地图的制作版本与服务器版本不同时常出现。
+아래 데이터팩을 끄고 다시 켜 보세요. (맵의 일부 기능이 빠질 수 있어요)	Disable the data pack below and start again. (Some map features may be missing)	禁用下面的数据包后重新启动。（地图的部分功能可能会缺失）
+맵이 만들어진 버전으로 서버를 새로 만들어 맵을 가져오면 제대로 돌아가요.	Create a new server on the version the map was made for and import the map there.	用地图制作时的版本新建服务器并导入地图即可正常运行。
+메모리가 부족해요	Out of memory	内存不足
+서버가 쓸 수 있는 메모리를 다 써서 멈췄어요. 모드가 많거나 여러 사람이 넓은 곳을 돌아다니면 생겨요.	The server used all its memory and stopped. Happens with many mods or many players exploring.	服务器用尽了可用内存而停止。模组多或多人到处探索时会出现。
+설정 → 성능에서 메모리를 1~2GB 늘려 주세요.	Increase memory by 1–2 GB in Settings → Performance.	在 设置 → 性能 中增加 1~2GB 内存。
+설정 → 월드에서 "보이는 거리"를 8~10으로 줄여 보세요.	Lower "View distance" to 8–10 in Settings → World.	在 设置 → 世界 中将"视距"降到 8~10。
+무거운 모드를 몇 개 빼 보세요.	Try removing a few heavy mods.	试着移除几个较重的模组。
+포트를 다른 프로그램이 쓰고 있어요	Another program is using the port	端口被其他程序占用
+같은 포트(보통 25565)를 쓰는 다른 서버나 프로그램이 이미 켜져 있어요.	Another server or program using the same port (usually 25565) is already running.	已有使用相同端口（通常为 25565）的其他服务器或程序在运行。
+다른 마인크래프트 서버를 끄고 다시 켜 보세요.	Stop the other Minecraft server and start again.	关闭其他 Minecraft 服务器后重新启动。
+설정 → 접속에서 포트 번호를 바꿔 보세요 (예: 25566).	Change the port number in Settings → Connection (e.g. 25566).	在 设置 → 连接 中更改端口号（例如 25566）。
+자바 버전이 맞지 않는 모드가 있어요	A mod needs a different Java version	有模组的 Java 版本不兼容
+어떤 모드(또는 플러그인)가 이 서버 버전보다 새 자바로 만들어졌어요. 보통 다른 마인크래프트 버전용 파일이에요.	A mod (or plugin) was built with a newer Java than this server version. It's usually a file for another Minecraft version.	某个模组（或插件）使用比此服务器版本更新的 Java 构建。通常是其他 Minecraft 版本的文件。
+아래 의심 파일이 이 서버 버전용인지 확인하고, 맞는 버전으로 바꿔 주세요.	Check whether the suspect files below are for this server version and replace them with the right version.	检查下面的可疑文件是否适用于此服务器版本，并替换为正确版本。
+최근에 넣은 모드·플러그인을 꺼 보세요.	Try disabling recently added mods or plugins.	试着禁用最近添加的模组或插件。
+{0}{1}. 대부분의 모드가 필요로 하는 기본 모드예요.	{0}{1}. It's a base mod most mods need.	{0}{1}。这是大多数模组需要的前置模组。
+가 설치돼 있지 않아요	 isn't installed	 未安装
+버전이 맞지 않아요	Version mismatch	版本不匹配
+필요한 플러그인이 없거나 버전이 맞지 않아요	A required plugin is missing or the wrong version	缺少必需的插件或版本不匹配
+모드끼리 맞지 않거나 필요한 모드가 없어요	Mods are incompatible or a required mod is missing	模组互不兼容或缺少必需模组
+어떤 모드가 필요로 하는 다른 모드가 없거나, 버전이 맞지 않아요.	A mod needs another mod that's missing or the wrong version.	某个模组需要的其他模组缺失或版本不匹配。
+아래 "필요한 모드"에서 설치·업데이트를 눌러 주세요.	Click Install/Update under "Required mods" below.	点击下方"必需模组"中的安装/更新。
+그래도 안 되면 아래 의심 모드를 꺼 주세요.	If that doesn't help, disable the suspect mods below.	如果仍然不行，请禁用下面的可疑模组。
+모드 탭에서 빠진 모드를 검색해서 설치해 주세요.	Search for the missing mod in the Mods tab and install it.	在模组页搜索缺失的模组并安装。
+모드 탭 → 업데이트 확인으로 모두 최신으로 맞춰 보세요.	Bring everything up to date with Mods tab → Check for updates.	通过 模组页 → 检查更新 全部更新到最新。
+같은 모드가 두 번 들어 있어요	The same mod is installed twice	同一个模组装了两次
+같은 모드의 파일이 mods 폴더에 두 개 있어요 (보통 버전만 다른 파일).	There are two files of the same mod in the mods folder (usually differing only in version).	mods 文件夹中有同一模组的两个文件（通常只是版本不同）。
+서버 폴더의 mods 폴더를 열어 같은 이름의 파일 중 오래된 것을 지워 주세요.	Open the mods folder in the server folder and delete the older of the duplicate files.	打开服务器文件夹中的 mods 文件夹，删除同名文件中较旧的那个。
+모드 하나가 서버에서 화면 코드를 건드려요	A mod touches client screen code on the server	有模组在服务器上调用了画面代码
+서버에서도 쓰는 모드인데, 이 버전은 서버에 없는 게임 화면 코드를 고치려다 튕겨요. 모드 쪽 버그라서 고쳐질 때까지는 그 모드를 빼야 해요.	This mod is also used on servers, but this version crashes trying to patch game screen code that doesn't exist on servers. It's a mod bug, so remove it until it's fixed.	这个模组服务器也会用，但此版本试图修改服务器上不存在的画面代码而崩溃。这是模组的 bug，修复前请移除它。
+아래 의심 모드를 꺼 주세요.	Disable the suspect mods below.	请禁用下面的可疑模组。
+모드 탭 → 업데이트 확인으로 고쳐진 버전이 나왔는지 보세요.	Check Mods tab → Check for updates for a fixed version.	通过 模组页 → 检查更新 查看是否有修复版本。
+게임하는 사람 컴퓨터용 모드가 서버에 있어요	A client-side mod is on the server	服务器上有客户端模组
+미니맵·셰이더처럼 화면에 관련된 "클라이언트 전용" 모드는 서버에서 켜지면 튕겨요.	"Client-only" mods for visuals, like minimaps and shaders, crash when loaded on a server.	小地图、光影等与画面相关的"仅客户端"模组在服务器上加载会崩溃。
+모르겠으면 최근에 넣은 모드부터 하나씩 꺼 보세요.	If unsure, disable recently added mods one at a time.	不确定的话，从最近添加的模组开始逐个禁用。
+모드 하나가 이 버전과 맞지 않아요	A mod doesn't match this version	有模组与此版本不兼容
+모드가 마인크래프트 코드를 고치려다 실패했어요. 보통 다른 버전용 모드이거나, 다른 모드와 부딪혀요.	A mod failed to patch Minecraft code. Usually it's for another version or conflicts with another mod.	有模组修改 Minecraft 代码失败。通常是其他版本的模组，或与其他模组冲突。
+아래 의심 모드를 이 서버 버전용으로 바꾸거나 꺼 주세요.	Replace the suspect mods below with this server's version, or disable them.	将下面的可疑模组换成适用此服务器版本的，或禁用它们。
+모드 탭 → 업데이트 확인을 해 보세요.	Try Mods tab → Check for updates.	试试 模组页 → 检查更新。
+월드 안의 무언가가 계속 오류를 내요	Something in the world keeps causing errors	世界中的某样东西不断报错
+특정 몹이나 블록이 움직일 때마다 오류가 나서 서버가 멈췄어요.{0}{1}	A specific mob or block errors every time it moves, so the server stopped.{0}{1}	某个生物或方块每次活动都会出错，服务器因此停止。{0}{1}
+원인: {0}	Cause: {0}	原因：{0}
+위치: {0}	Location: {0}	位置：{0}
+그 몹·블록을 추가한 모드가 있으면 업데이트하거나 꺼 보세요.	If a mod added that mob or block, update or disable it.	如果是某个模组添加的该生物或方块，请更新或禁用它。
+백업 탭에서 문제가 생기기 전 월드로 되돌릴 수 있어요.	You can restore the world from before the problem in the Backups tab.	可以在备份页恢复到出问题之前的世界。
+서버가 너무 오래 멈춰 있어서 꺼졌어요	The server froze too long and was shut down	服务器卡住太久被关闭
+한 번의 처리(틱)가 60초 넘게 걸려서 서버가 스스로 멈췄어요. 무거운 모드나 큰 기계, 월드를 처음 만들 때 생길 수 있어요.	A single tick took over 60 seconds, so the server stopped itself. Can happen with heavy mods, big machines, or first-time world generation.	一次处理（刻）超过 60 秒，服务器自行停止。重型模组、大型机器或首次生成世界时可能出现。
+설정 → 성능에서 "멈춤 감지 시간"을 늘리거나 끄세요 (-1).	Increase or disable "Watchdog timeout" in Settings → Performance (-1).	在 设置 → 性能 中增加或关闭"卡死检测时间"（-1）。
+메모리를 늘려 보세요.	Try adding more memory.	试着增加内存。
+보이는 거리를 줄여 보세요.	Try lowering the view distance.	试着降低视距。
+월드 파일이 손상됐을 수 있어요	The world files may be corrupted	世界文件可能已损坏
+월드 파일을 읽다가 오류가 났어요. 컴퓨터가 갑자기 꺼졌거나, 월드가 저장되는 중에 서버가 강제로 꺼지면 생겨요.	An error occurred reading world files. Happens if the PC shut off suddenly or the server was force-stopped while saving.	读取世界文件时出错。电脑突然关机或保存世界时服务器被强制关闭会出现。
+백업 탭에서 최근 백업으로 되돌려 보세요.	Restore a recent backup in the Backups tab.	在备份页恢复最近的备份。
+백업이 없으면 설정 → 월드 리셋으로 새로 시작할 수 있어요.	If there's no backup, you can start fresh with Settings → World reset.	如果没有备份，可以通过 设置 → 重置世界 重新开始。
+더 새 버전에서 쓰던 월드예요	This world is from a newer version	这是较新版本的世界
+이 월드는 서버보다 새 버전의 마인크래프트에서 저장됐어요. 새 버전의 월드는 옛 버전에서 열 수 없어요.	This world was saved by a newer Minecraft than the server. Newer worlds can't be opened in older versions.	该世界由比服务器更新的 Minecraft 保存。新版本的世界无法在旧版本中打开。
+같은 버전(또는 더 새 버전)으로 서버를 새로 만들어 이 월드를 가져오세요.	Create a new server on the same (or newer) version and import this world.	用相同（或更新）版本新建服务器并导入此世界。
+백업 탭에서 원래 월드로 되돌릴 수 있어요.	You can restore the original world in the Backups tab.	可以在备份页恢复原来的世界。
+모드끼리 무한 반복에 빠졌어요	Mods got stuck in an infinite loop	模组陷入无限循环
+어떤 처리가 끝없이 자기 자신을 불러서 멈췄어요. 모드끼리 부딪힐 때 자주 생겨요.	Some process kept calling itself endlessly and stopped. Common when mods conflict.	某个处理不断调用自身而停止。模组冲突时常出现。
+최근에 넣은 모드를 꺼 보세요.	Disable recently added mods.	请禁用最近添加的模组。
+아래 의심 모드가 있으면 그것부터 꺼 주세요.	If there are suspect mods below, disable those first.	如果下方有可疑模组，请先禁用它们。
+플러그인 오류예요	Plugin error	插件错误
+플러그인 하나가 켜지다 오류를 냈어요. 다른 버전용이거나 필요한 플러그인이 없어요.	A plugin errored while enabling. It's for another version or a required plugin is missing.	某个插件启用时出错。可能是其他版本的插件，或缺少必需插件。
+아래 의심 플러그인을 이 버전용으로 바꾸거나 꺼 주세요.	Replace the suspect plugins below with this version's, or disable them.	将下面的可疑插件换成此版本的，或禁用它们。
+플러그인 탭에서 업데이트 확인을 해 보세요.	Check for updates in the Plugins tab.	在插件页检查更新。
+월드를 불러오지 못했어요	Couldn't load the world	无法加载世界
+월드나 데이터팩을 읽다가 오류가 나서 서버를 켜지 못했어요. 정확한 원인은 아래 오류 내용에 있어요.	An error reading the world or data packs prevented the server from starting. The exact cause is in the error details below.	读取世界或数据包时出错，服务器无法启动。具体原因见下方错误信息。
+백업 탭에서 이전 월드로 되돌려 보세요.	Restore an earlier world in the Backups tab.	在备份页恢复之前的世界。
+잘못된 데이터팩 이름이에요.	Invalid data pack name.	无效的数据包名称。
+데이터팩을 찾을 수 없어요.	Data pack not found.	找不到数据包。
+서버가 갑자기 꺼졌어요	The server stopped unexpectedly	服务器意外关闭
+서버가 오류로 멈췄어요. 정확한 원인은 아래 오류 내용과 크래시 보고서에 있어요.	The server stopped with an error. The exact cause is in the error details and crash report below.	服务器因错误停止。具体原因见下方错误信息和崩溃报告。
+서버가 오류 코드와 함께 꺼졌어요.	The server stopped with an error code.	服务器带着错误代码关闭了。
+최근에 넣은 모드·플러그인이나 바꾼 설정이 있으면 되돌려 보세요.	If you recently added mods/plugins or changed settings, try reverting them.	如果最近添加了模组/插件或改了设置，请尝试撤销。
+다시 켜도 같으면 백업 탭에서 이전 월드로 되돌려 보세요.	If it happens again, restore an earlier world in the Backups tab.	如果重启后仍然这样，请在备份页恢复之前的世界。
+CurseForge API 키가 필요해요.	A CurseForge API key is required.	需要 CurseForge API 密钥。
+CurseForge를 지금 쓸 수 없어요. Modrinth에서 찾아 주세요. (앱을 업데이트하면 다시 될 수 있어요)	CurseForge is unavailable right now. Please search on Modrinth. (Updating the app may fix this)	暂时无法使用 CurseForge。请在 Modrinth 上查找。（更新应用后可能恢复）
+CurseForge API 키가 맞지 않아요.	The CurseForge API key is invalid.	CurseForge API 密钥无效。
+CurseForge에서 오류가 났어요 ({0}).	CurseForge returned an error ({0}).	CurseForge 出错（{0}）。
+CurseForge 응답이 너무 느려요. 잠시 뒤에 다시 해 보세요.	CurseForge is responding too slowly. Try again later.	CurseForge 响应太慢，请稍后再试。
+API 키 모양이 아니에요.	That doesn't look like an API key.	这不像是 API 密钥。
+이 맵은 제작자가 다른 앱에서 받는 것을 막아 두었어요. CurseForge 사이트에서 받아서 zip으로 가져와 주세요.	The author blocked downloading this map in other apps. Download it from the CurseForge site and import the zip.	作者禁止在其他应用中下载此地图。请从 CurseForge 网站下载后以 zip 导入。
+알 수 없는 다운로드 주소예요.	Unknown download URL.	未知的下载地址。
+이 모드팩은 제작자가 다른 앱에서 받는 것을 막아 두었어요.	The author blocked downloading this modpack in other apps.	作者禁止在其他应用中下载此整合包。
+CurseForge에서 받을 수 없는 파일이에요.	This file can't be downloaded from CurseForge.	无法从 CurseForge 下载此文件。
+다른 프로그램이 이 데이터팩 파일을 쓰고 있어요. 그 프로그램을 닫고 다시 해 주세요.	Another program is using this data pack file. Close it and try again.	其他程序正在使用此数据包文件。请关闭该程序后重试。
+서버가 이 데이터팩을 쓰고 있어서 지금은 바꿀 수 없어요. 서버를 끈 다음에 다시 해 주세요.	The server is using this data pack, so it can't be changed now. Stop the server and try again.	服务器正在使用此数据包，暂时无法更改。请关闭服务器后重试。
+"{0}"은(는) 이 서버({1})에 맞는 데이터팩 파일이 없어요.	"{0}" has no data pack file for this server ({1}).	"{0}" 没有适用于此服务器（{1}）的数据包文件。
+"{0}"은(는) 이 서버({1})에 맞는 데이터팩 버전이 없어요.	"{0}" has no data pack version for this server ({1}).	"{0}" 没有适用于此服务器（{1}）的数据包版本。
+데이터팩 파일(zip)이 아니에요.	Not a data pack file (zip).	不是数据包文件（zip）。
+파일을 찾을 수 없어요.	File not found.	找不到文件。
+데이터팩(zip 파일이나 pack.mcmeta가 있는 폴더)이 아니에요.	Not a data pack (a zip or a folder with pack.mcmeta).	不是数据包（zip 文件或含 pack.mcmeta 的文件夹）。
+같은 이름의 데이터팩이 이미 있어요.	A data pack with the same name already exists.	已存在同名数据包。
+직접 넣은 데이터팩이라 버전을 바꿀 수 없어요.	This data pack was added manually, so its version can't be changed.	这是手动添加的数据包，无法更改版本。
+다른 데이터팩의 버전이에요.	That's a version of a different data pack.	这是其他数据包的版本。
+받을 파일이 없는 버전이에요.	This version has no file to download.	此版本没有可下载的文件。
+요청 실패 ({0}): {1}	Request failed ({0}): {1}	请求失败（{0}）：{1}
+다운로드 실패 ({0}): {1}	Download failed ({0}): {1}	下载失败（{0}）：{1}
+받은 파일이 손상됐어요 (체크섬 불일치): {0}	The downloaded file is corrupted (checksum mismatch): {0}	下载的文件已损坏（校验和不匹配）：{0}
+다운로드가 멈췄어요. 인터넷 연결을 확인해 주세요: {0}	The download stalled. Check your internet connection: {0}	下载停止了。请检查网络连接：{0}
+게임 규칙 목록을 받지 못했어요. 서버가 완전히 켜진 다음에 다시 해 보세요.	Couldn't get the game rule list. Try again after the server has fully started.	无法获取游戏规则列表。请在服务器完全启动后重试。
+잘못된 게임 규칙 이름이에요.	Invalid game rule name.	无效的游戏规则名称。
+잘못된 값이에요.	Invalid value.	无效的值。
+월드 파일(level.dat)을 읽지 못했어요.	Couldn't read the world file (level.dat).	无法读取世界文件（level.dat）。
+서버를 끈 다음에 바꿀 수 있어요.	You can change this after stopping the server.	请先关闭服务器再更改。
+그림 파일(png, jpg 등)을 넣어 주세요.	Please add an image file (png, jpg, etc.).	请放入图片文件（png、jpg 等）。
+서버 아이콘으로 쓸 그림을 골라 주세요	Choose an image for the server icon	选择用作服务器图标的图片
+그림	Image	图片
+열기	Open	打开
+종료	Quit	退出
+[preload 오류]	[preload error]	[preload 错误]
+서버는 계속 돌아가고 있어요	Servers are still running	服务器仍在运行
+작업이 끝날 때까지 뒤에서 계속해요	Continuing in the background until the task finishes	将在后台继续，直到任务完成
+앱이 트레이에서 계속 켜져 있어요	The app is still running in the tray	应用仍在托盘中运行
+작업 표시줄 오른쪽 아이콘을 누르면 다시 열 수 있어요.	Click the icon at the right of the taskbar to open it again.	点击任务栏右侧的图标即可重新打开。
+서버 폴더가 아니에요.	That's not a server folder.	这不是服务器文件夹。
+준비하고 있어요	Preparing	正在准备
+기본 모드를 설치하고 있어요	Installing base mods	正在安装前置模组
+서버를 만들었어요	Server created	服务器已创建
+{0} 서버가 준비됐어요. 눌러서 열어 보세요.	Server {0} is ready. Click to open it.	服务器 {0} 已就绪。点击打开。
+서버를 만들지 못했어요	Couldn't create the server	无法创建服务器
+버전 바꾸기	Change version	更改版本
+모드팩 파일을 골라 주세요	Choose a modpack file	选择整合包文件
+모드팩	Modpack	整合包
+서버 복제	Duplicate server	复制服务器
+서버를 끈 다음에 삭제할 수 있어요.	Stop the server before deleting it.	请先关闭服务器再删除。
+서버 삭제	Delete server	删除服务器
+기본 모드를 확인하고 있어요	Checking base mods	正在检查前置模组
+월드 리셋	Reset world	重置世界
+백업	Backup	备份
+백업 되돌리기	Restore backup	恢复备份
+백업 삭제	Delete backup	删除备份
+월드 가져오기	Import world	导入世界
+모드 설치	Install mod	安装模组
+모드 버전 바꾸기	Change mod version	更改模组版本
+모드 끄기	Disable mods	禁用模组
+모드 업데이트	Update mods	更新模组
+서버 만들기·백업 같은 작업이 끝난 뒤에 업데이트할 수 있어요.	You can update after tasks like creating servers or backups finish.	创建服务器、备份等任务完成后才能更新。
+포트는 열었지만 외부 주소를 알아내지 못했어요.	The port was opened, but the external address couldn't be found.	端口已打开，但无法获取外部地址。
+접속 주소가 준비된 다음에 확인할 수 있어요.	You can check once the connection address is ready.	连接地址就绪后才能检查。
+서버가 완전히 켜진 다음에 확인할 수 있어요.	You can check once the server has fully started.	服务器完全启动后才能检查。
+밖에서도 접속돼요! 플레이어에게 주소를 보내 주세요.	Reachable from outside! Send the address to your players.	外部可以连接！把地址发给玩家吧。
+밖에서 접속되지 않아요. 윈도우 방화벽이 Java를 막고 있거나, 공유기가 두 개(공유기 뒤에 또 공유기)이거나, 통신사가 포트를 막았을 수 있어요.	Not reachable from outside. Windows Firewall may be blocking Java, there may be two routers (a router behind a router), or your ISP may block the port.	外部无法连接。可能是 Windows 防火墙拦截了 Java、有两层路由器（路由器后还有路由器），或运营商封锁了端口。
+확인 서비스에 연결하지 못했어요. 잠시 뒤에 다시 해 보세요.	Couldn't reach the check service. Try again later.	无法连接检测服务，请稍后再试。
+현재는 Windows만 지원해요.	Only Windows is supported for now.	目前仅支持 Windows。
+Java를 확인하고 있어요	Checking Java	正在检查 Java
+이 컴퓨터용 Java({0})를 찾을 수 없어요.	Couldn't find Java ({0}) for this computer.	找不到适用于此电脑的 Java（{0}）。
+잘못된 Java 파일 경로: {0}	Invalid Java file path: {0}	无效的 Java 文件路径：{0}
+Java를 받고 있어요	Downloading Java	正在下载 Java
+Java 설치 후 java.exe를 찾지 못했어요.	Couldn't find java.exe after installing Java.	安装 Java 后找不到 java.exe。
+로더 정보 요청 실패 ({0}): {1}	Loader info request failed ({0}): {1}	加载器信息请求失败（{0}）：{1}
+설치 프로그램이 실패했어요. (코드 {0}) {1}	The installer failed. (code {0}) {1}	安装程序失败。（代码 {0}）{1}
+Paper 빌드 {0}을(를) 찾지 못했어요.	Couldn't find Paper build {0}.	找不到 Paper 构建 {0}。
+Paper 서버 파일을 받고 있어요	Downloading the Paper server file	正在下载 Paper 服务端文件
+Purpur 서버 파일을 받고 있어요	Downloading the Purpur server file	正在下载 Purpur 服务端文件
+Fabric을 받고 있어요	Downloading Fabric	正在下载 Fabric
+Fabric 설치 프로그램 정보를 찾지 못했어요.	Couldn't find Fabric installer info.	找不到 Fabric 安装程序信息。
+Quilt 설치 프로그램을 받고 있어요	Downloading the Quilt installer	正在下载 Quilt 安装程序
+Quilt 설치 프로그램 정보를 찾지 못했어요.	Couldn't find Quilt installer info.	找不到 Quilt 安装程序信息。
+Quilt를 설치하고 있어요	Installing Quilt	正在安装 Quilt
+Quilt 설치에 실패했어요.	Quilt installation failed.	Quilt 安装失败。
+{0} 설치 프로그램을 받고 있어요	Downloading the {0} installer	正在下载 {0} 安装程序
+{0}를 설치하고 있어요	Installing {0}	正在安装 {0}
+서버 실행 파일을 찾지 못했어요. 서버를 다시 만들어 주세요.	Couldn't find the server executable. Please recreate the server.	找不到服务端执行文件。请重新创建服务器。
+지금 {0} 중이에요. 끝난 다음에 다시 해 주세요.	Busy: {0}. Try again when it's done.	正在{0}。完成后再试。
+잘못된 닉네임이에요.	Invalid nickname.	无效的昵称。
+보낼 메시지를 입력해 주세요.	Please enter a message to send.	请输入要发送的消息。
+잘못된 난이도예요.	Invalid difficulty.	无效的难度。
+잘못된 게임 모드예요.	Invalid game mode.	无效的游戏模式。
+잘못된 시간이에요.	Invalid time.	无效的时间。
+잘못된 날씨예요.	Invalid weather.	无效的天气。
+잘못된 아이템 이름이에요.	Invalid item name.	无效的物品名称。
+kick {0} 관리자가 내보냈어요	kick {0} Kicked by an admin	kick {0} 被管理员踢出
+ban {0} 관리자가 차단했어요	ban {0} Banned by an admin	ban {0} 被管理员封禁
+알 수 없는 동작이에요.	Unknown action.	未知操作。
+서버가 켜져 있을 때만 할 수 있어요.	Only available while the server is running.	仅在服务器运行时可用。
+CurseForge API 키가 없어서 CurseForge에서 찾을 수 없어요.	No CurseForge API key, so CurseForge can't be searched.	没有 CurseForge API 密钥，无法在 CurseForge 中搜索。
+모드팩 파일(.mrpack)이 없는 버전이에요.	This version has no modpack file (.mrpack).	此版本没有整合包文件（.mrpack）。
+모드팩 파일(.mrpack 또는 .zip)을 넣어 주세요.	Please add a modpack file (.mrpack or .zip).	请放入整合包文件（.mrpack 或 .zip）。
+모드팩 파일이 아니에요. (modrinth.index.json이나 manifest.json이 없어요) {0}	Not a modpack file. (no modrinth.index.json or manifest.json) {0}	不是整合包文件。（没有 modrinth.index.json 或 manifest.json）{0}
+모드팩에 마인크래프트 버전 정보가 없어요.	The modpack has no Minecraft version info.	整合包中没有 Minecraft 版本信息。
+이 모드팩은 지원하지 않는 로더를 써요.	This modpack uses an unsupported loader.	此整合包使用了不支持的加载器。
+허용되지 않은 곳에서 받는 파일이 있어요: {0}	Some files come from a disallowed source: {0}	有文件来自不允许的来源：{0}
+CurseForge 모드팩은 CurseForge API 키가 필요해요. 맵 다운로드 화면에서 먼저 연결해 주세요.	CurseForge modpacks need a CurseForge API key. Connect it first on the map download screen.	CurseForge 整合包需要 CurseForge API 密钥。请先在地图下载界面连接。
+이 모드팩은 지원하지 않는 로더를 써요 ({0}).	This modpack uses an unsupported loader ({0}).	此整合包使用了不支持的加载器（{0}）。
+알 수 없음	Unknown	未知
+모드팩에 잘못된 경로가 있어요: {0}	The modpack contains an invalid path: {0}	整合包中有无效路径：{0}
+모드팩 준비 파일이 없어요. 모드팩을 다시 골라 주세요.	The modpack prep files are missing. Please choose the modpack again.	整合包准备文件丢失。请重新选择整合包。
+모드팩 파일을 받고 있어요 ({0}/{1})	Downloading modpack files ({0}/{1})	正在下载整合包文件（{0}/{1}）
+모드팩 설정 파일을 복사하고 있어요	Copying modpack config files	正在复制整合包配置文件
+Modrinth 요청이 너무 많아요. 잠시 후 다시 시도해 주세요.	Too many requests to Modrinth. Try again shortly.	对 Modrinth 的请求过多，请稍后再试。
+Modrinth 요청 실패 ({0})	Modrinth request failed ({0})	Modrinth 请求失败（{0}）
+잘못된 프로젝트/버전 ID예요.	Invalid project/version ID.	无效的项目/版本 ID。
+모드	Mod	模组
+플러그인	Plugin	插件
+Vanilla 서버에는 모드나 플러그인을 설치할 수 없어요. Fabric·Paper 같은 서버를 새로 만들어 주세요.	Mods or plugins can't be installed on a Vanilla server. Create a new server like Fabric or Paper.	原版服务器无法安装模组或插件。请新建 Fabric、Paper 等服务器。
+jar 파일만 설치할 수 있어요.	Only jar files can be installed.	只能安装 jar 文件。
+서버가 켜져 있을 때는 바꿀 수 없어요. 먼저 서버를 꺼 주세요.	Can't change this while the server is running. Stop the server first.	服务器运行时无法更改。请先关闭服务器。
+"{0}"은(는) 게임하는 사람 컴퓨터에만 설치하는 {1}라서 서버에는 필요 없어요.	"{0}" is a {1} installed only on players' computers, so the server doesn't need it.	"{0}" 是只装在玩家电脑上的{1}，服务器不需要。
+"{0}"은(는) 이 서버({1})에 맞는 버전이 없어요.	"{0}" has no version for this server ({1}).	"{0}" 没有适用于此服务器（{1}）的版本。
+"{0}"은(는) 이미 들어 있어요 ({1}). 다른 버전으로 바꾸려면 그 파일을 먼저 지워 주세요.	"{0}" is already installed ({1}). Delete that file first to switch versions.	"{0}" 已安装（{1}）。要更换版本请先删除该文件。
+"{0}"은(는) 이 서버({1})에 맞는 파일이 없거나, 다른 앱에서 받을 수 없게 막혀 있어요.	"{0}" has no file for this server ({1}), or downloading it in other apps is blocked.	"{0}" 没有适用于此服务器（{1}）的文件，或禁止在其他应用中下载。
+직접 넣은 파일이라 버전을 바꿀 수 없어요.	This file was added manually, so its version can't be changed.	这是手动添加的文件，无法更改版本。
+다른 모드의 버전이에요.	That's a version of a different mod.	这是其他模组的版本。
+잘못된 모드 ID예요.	Invalid mod ID.	无效的模组 ID。
+Modrinth에서 "{0}"을(를) 찾지 못했어요. CurseForge에만 있는 모드일 수 있어요.	Couldn't find "{0}" on Modrinth. It may only be on CurseForge.	在 Modrinth 上找不到"{0}"。它可能只在 CurseForge 上。
+{0} 파일(.jar)만 넣을 수 있어요.	Only {0} files (.jar) can be added.	只能放入{0}文件（.jar）。
+같은 이름의 파일이 이미 있어요: {0}	A file with the same name already exists: {0}	已存在同名文件：{0}
+모드 서버에서만 플레이어용 모드팩을 만들 수 있어요.	Player modpacks can only be made from mod servers.	只有模组服务器才能制作玩家用整合包。
+{0} (플레이어용)	{0} (for players)	{0}（玩家用）
+플레이어용 모드 묶음 저장	Save player mod bundle	保存玩家用模组包
+플레이어용 모드팩 저장	Save player modpack	保存玩家用整合包
+Modrinth 모드팩	Modrinth modpack	Modrinth 整合包
+{0} 플레이어용 모드 마인크래프트 {1}, {2} {3}을(를) 설치한 뒤 이 파일들을 .minecraft/mods 폴더에 넣으세요.	{0} player mods: install Minecraft {1}, {2} {3}, then put these files in the .minecraft/mods folder.	{0} 玩家用模组：安装 Minecraft {1}、{2} {3} 后，把这些文件放进 .minecraft/mods 文件夹。
+읽어 주세요.txt	README.txt	说明.txt
+MC CraftDeck이 만든 플레이어용 모드팩	Player modpack made by MC CraftDeck	由 MC CraftDeck 制作的玩家用整合包
+알 수 없는 마인크래프트 버전: {0}	Unknown Minecraft version: {0}	未知的 Minecraft 版本：{0}
+알 수 없는 NBT 태그 종류: {0}	Unknown NBT tag type: {0}	未知的 NBT 标签类型：{0}
+NBT 파일 형식이 아니에요.	Not an NBT file.	不是 NBT 文件。
+{0} (꺼져 있음)	{0} (disabled)	{0}（已禁用）
+서버에 {0}GB를 주도록 돼 있는데, 컴퓨터 전체 메모리가 {1}GB라 윈도우가 쓸 자리가 모자라요. 설정에서 메모리를 줄여 주세요.	The server is set to use {0} GB, but the computer has only {1} GB total, leaving too little for Windows. Lower the memory in Settings.	服务器设定使用 {0}GB，但电脑总内存只有 {1}GB，Windows 可用空间不足。请在设置中减少内存。
+지금 컴퓨터에 남은 메모리가 {0}GB뿐이에요. 다른 프로그램(게임, 브라우저 등)을 닫으면 서버가 더 잘 돌아가요.	Only {0} GB of memory is free right now. Closing other programs (games, browsers, etc.) helps the server run better.	当前电脑剩余内存只有 {0}GB。关闭其他程序（游戏、浏览器等）可让服务器运行更顺畅。
+[앱]	[App]	[应用]
+[앱] {0}	[App] {0}	[应用] {0}
+이미 실행 중이에요.	Already running.	已在运行。
+EULA에 동의해야 서버를 켤 수 있어요.	You must accept the EULA to start the server.	必须同意 EULA 才能启动服务器。
+{0} 포트를 이미 다른 서버나 프로그램이 쓰고 있어요. 그 프로그램을 끄고 다시 켜 주세요.	Port {0} is already used by another server or program. Close it and start again.	端口 {0} 已被其他服务器或程序占用。请关闭该程序后重新启动。
+실행 오류: {0}	Launch error: {0}	启动错误：{0}
+[앱] 서버가 비정상 종료됐어요. (코드 {0})	[App] The server exited abnormally. (code {0})	[应用] 服务器异常退出。（代码 {0}）
+[앱] 서버가 꺼졌어요. (코드 {0})	[App] The server stopped. (code {0})	[应用] 服务器已关闭。（代码 {0}）
+서버가 켜져 있지 않아요.	The server isn't running.	服务器未运行。
+서버 팩이 아니에요. (mods 폴더가 없어요)	Not a server pack. (no mods folder)	不是服务端包。（没有 mods 文件夹）
+서버 팩의 마인크래프트 버전이나 로더(Forge·Fabric 등)를 알아내지 못했어요.	Couldn't determine the server pack's Minecraft version or loader (Forge, Fabric, etc.).	无法确定服务端包的 Minecraft 版本或加载器（Forge、Fabric 等）。
+{0}에 맞는 {1} 버전을 찾지 못했어요.	Couldn't find a {1} version for {0}.	找不到适用于 {0} 的 {1} 版本。
+서버 이름을 입력해 주세요.	Please enter a server name.	请输入服务器名称。
+이 이름은 Windows에서 폴더 이름으로 쓸 수 없어요.	This name can't be used as a folder name on Windows.	该名称不能在 Windows 中用作文件夹名。
+지원하지 않는 서버 종류예요.	Unsupported server type.	不支持的服务器类型。
+{0} 버전을 골라 주세요.	Please choose a {0} version.	请选择 {0} 版本。
+버전 정보를 확인하고 있어요	Checking version info	正在检查版本信息
+{0} 버전은 공식 서버 파일이 없어요.	Version {0} has no official server file.	{0} 版本没有官方服务端文件。
+마인크래프트 서버 파일을 받고 있어요	Downloading the Minecraft server file	正在下载 Minecraft 服务端文件
+싱글플레이 월드를 복사하고 있어요	Copying the singleplayer world	正在复制单人世界
+완료	Done	完成
+서버를 끈 다음에 버전을 바꿀 수 있어요.	Stop the server before changing the version.	请先关闭服务器再更改版本。
+지금과 같은 버전이에요.	That's the current version.	与当前版本相同。
+바꾸기 전에 월드를 백업하고 있어요	Backing up the world before the change	更改前正在备份世界
+{0} → {1} 바꾸기 전	Before {0} → {1}	{0} → {1} 更改前
+자바 옵션은 "-"로 시작해야 해요: {0}	Java options must start with "-": {0}	Java 选项必须以"-"开头：{0}
+이 옵션은 쓸 수 없어요: {0}	This option isn't allowed: {0}	不能使用此选项：{0}
+메모리({0})는 위의 "서버가 쓸 메모리"로 정해 주세요.	Set the memory ({0}) with "Server memory" above.	内存（{0}）请在上方"服务器内存"中设置。
+알 수 없는 설정이에요: {0}	Unknown setting: {0}	未知设置：{0}
+{0}: 켜기·끄기만 고를 수 있어요.	{0}: can only be on or off.	{0}：只能选择开或关。
+{0}: 범위를 벗어난 값이에요.	{0}: value out of range.	{0}：值超出范围。
+{0}: 설정 파일에서 이 항목을 찾지 못했어요.	{0}: couldn't find this entry in the config file.	{0}：在配置文件中找不到此项。
+재시작 시각을 다시 골라 주세요.	Please choose the restart time again.	请重新选择重启时间。
+잘못된 설정 이름이에요: {0}	Invalid setting name: {0}	无效的设置名称：{0}
+서버를 끈 다음에 월드를 새로 만들 수 있어요.	Stop the server before creating a new world.	请先关闭服务器再新建世界。
+월드 리셋 전	Before world reset	重置世界前
+{0} 서버가 켜졌어요	Server {0} is running	服务器 {0} 已启动
+이제 플레이어들이 들어올 수 있어요.	Players can join now.	玩家现在可以进入了。
+{0} 서버가 튕겼어요	Server {0} crashed	服务器 {0} 崩溃了
+(켜지는 중에 꺼졌어요)	(stopped while starting)	（启动过程中关闭了）
+[앱] 튕긴 원인: {0}	[App] Crash cause: {0}	[应用] 崩溃原因：{0}
+{0} (10분 안에 여러 번 튕겨서 자동으로 다시 켜지 않았어요)	{0} (crashed several times within 10 minutes, so it wasn't restarted)	{0}（10 分钟内多次崩溃，未自动重启）
+{0}초 뒤에 서버를 다시 켜요…	Restarting the server in {0} s…	{0} 秒后重启服务器…
+서버를 끈 다음에 복제할 수 있어요.	Stop the server before duplicating it.	请先关闭服务器再复制。
+앱 시작	App started	应用启动
+경고: {0}	Warning: {0}	警告：{0}
+오류: {0}	Error: {0}	错误：{0}
+테스트 주소: {0}	Test URL: {0}	测试地址：{0}
+깃허브에서 확인	Checking GitHub	在 GitHub 上检查
+새 버전 없음	No new version	没有新版本
+새 버전 {0} 받는 중	Downloading new version {0}	正在下载新版本 {0}
+새 버전 {0} 준비됨	New version {0} ready	新版本 {0} 已就绪
+테스트: 바로 설치	Test: install now	测试：立即安装
+새 버전 확인	Checking for a new version	检查新版本
+확인 실패: {0}	Check failed: {0}	检查失败：{0}
+설치할 업데이트가 없어요.	No update to install.	没有可安装的更新。
+설치하고 다시 켜기	Install and restart	安装并重启
+공유기 정보를 읽지 못했어요.	Couldn't read router info.	无法读取路由器信息。
+UPnP {0} 실패 ({1})	UPnP {0} failed ({1})	UPnP {0} 失败（{1}）
+공유기가 자동 포트 열기(UPnP)를 지원하지 않거나 꺼져 있어요.	Your router doesn't support automatic port opening (UPnP), or it's turned off.	路由器不支持自动开放端口（UPnP），或已关闭。
+공유기 바깥에 공유기가 하나 더 있어서, 포트를 열어도 밖에서 접속되지 않아요. (공유기가 받은 주소: {0})	There's another router outside your router, so opening the port won't allow outside connections. (router's address: {0})	路由器外面还有一层路由器，即使开放端口外部也无法连接。（路由器获得的地址：{0}）
+공유기가 포트 열기를 거절했어요. ({0})	The router refused to open the port. ({0})	路由器拒绝开放端口。（{0}）
+마인크래프트 계정 서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.	Couldn't reach the Minecraft account server. Check your internet connection.	无法连接 Minecraft 账户服务器。请检查网络连接。
+"{0}" 닉네임의 정품 계정을 찾지 못했어요. 철자를 확인해 주세요.	Couldn't find a premium account named "{0}". Check the spelling.	找不到昵称为"{0}"的正版账户。请检查拼写。
+계정을 확인하지 못했어요. ({0})	Couldn't verify the account. ({0})	无法验证账户。（{0}）
+닉네임은 영어, 숫자, _로 3~16자예요.	Nicknames are 3–16 characters of letters, numbers, and _.	昵称为 3~16 位英文字母、数字或 _。
+{0}님은 이미 목록에 있어요.	{0} is already on the list.	{0} 已在列表中。
+가져올 맵 zip 파일을 골라 주세요	Choose a map zip file to import	选择要导入的地图 zip 文件
+맵 압축 파일	Map archive	地图压缩包
+zip 안에 마인크래프트 월드가 없어요.	There's no Minecraft world in the zip.	zip 中没有 Minecraft 世界。
+이 폴더는 마인크래프트 월드가 아니에요 (level.dat이 없어요).	This folder isn't a Minecraft world (no level.dat).	此文件夹不是 Minecraft 世界（没有 level.dat）。
+zip 파일이나 월드 폴더를 넣어 주세요.	Please add a zip file or a world folder.	请放入 zip 文件或世界文件夹。
+받은 파일에 마인크래프트 월드가 없어요.	The downloaded file contains no Minecraft world.	下载的文件中没有 Minecraft 世界。
+이 월드는 {0}에서 만든 월드라 {1} 서버에서는 열 수 없어요. 마인크래프트는 새 버전 월드를 예전 버전으로 열지 못해요. 서버 버전을 {2} 이상으로 바꾼 뒤 가져와 주세요.	This world was made in {0}, so it can't be opened on a {1} server. Minecraft can't open newer worlds in older versions. Change the server version to {2} or later, then import.	该世界由 {0} 创建，无法在 {1} 服务器上打开。Minecraft 无法用旧版本打开新版本的世界。请将服务器版本改为 {2} 或更高后再导入。
+서버를 끈 다음에 월드를 가져올 수 있어요.	Stop the server before importing a world.	请先关闭服务器再导入世界。
+목록에서 월드를 다시 골라 주세요.	Please choose the world from the list again.	请重新从列表中选择世界。
+월드 폴더가 아니에요 (level.dat이 없어요).	Not a world folder (no level.dat).	不是世界文件夹（没有 level.dat）。
+서버 안의 폴더는 가져올 수 없어요.	Folders inside the server can't be imported.	不能导入服务器内部的文件夹。
+월드 가져오기 전	Before world import	导入世界前
+zip 파일을 열지 못했어요. 파일이 망가졌을 수 있어요.	Couldn't open the zip file. It may be corrupted.	无法打开 zip 文件，文件可能已损坏。
+zip 안에 잘못된 경로가 있어요.	The zip contains an invalid path.	zip 中有无效路径。
+압축을 풀면 너무 커요.	It would be too large when extracted.	解压后太大。
+zip 파일을 읽지 못했어요.	Couldn't read the zip file.	无法读取 zip 文件。
+zip 안에 마인크래프트 월드(level.dat)가 없어요.	There's no Minecraft world (level.dat) in the zip.	zip 中没有 Minecraft 世界（level.dat）。
+켜져 있는 서버 {0}개를 안전하게 저장하고 끈 다음 앱을 닫을게요.	I'll safely save and stop {0} running server(s), then close the app.	将安全保存并关闭正在运行的 {0} 个服务器，然后关闭应用。
+만들고 있는 서버 {0}개는 취소돼요.	{0} server(s) being created will be cancelled.	正在创建的 {0} 个服务器将被取消。

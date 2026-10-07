@@ -1,400 +1,400 @@
-360	The current task ({0}) will be interrupted and files may be damaged. It's best to wait until it finishes.	当前任务（{0}）会中途停止，文件可能损坏。最好等它完成。
-361	Still working	仍在处理中
-362	Servers are running	服务器正在运行
-363	Creating a server	正在创建服务器
-364	Close the app?	关闭应用？
-365	just now	刚刚
-366	{0} min	{0} 分钟
-367	{0} h{1}	{0} 小时{1}
-368	{0} d	{0} 天
-369	Just started	刚刚启动
-370	Up for {0}	已运行 {0}
-371	{0} online · {1}	{0} 人在线 · {1}
-372	{0} {1}	{0} {1} 个
-373	Backup {0} ago	{0} 前备份
-374	No backups	没有备份
-375	New server	新建服务器
-376	My servers	我的服务器
-377	No servers yet.	还没有服务器。
-378	Create your first server with the button above.	点击上方按钮创建第一个服务器吧。
-379	Stop server	关闭服务器
-380	Start server	启动服务器
-381	Settings	设置
-382	Rename	重命名
-383	Duplicate	复制
-384	Open folder	打开文件夹
-385	Delete	删除
-386	Close anyway	仍然关闭
-387	Stop and close	关闭服务器并退出
-388	Cancel and close	取消并关闭
-389	Saving servers	正在保存服务器
-390	Please wait a moment so the world isn't damaged.	请稍等，以免世界损坏。
-391	Server	服务器
-392	The server crashed; restarting in 5 s ({0}) · {1}	服务器崩溃，5 秒后重启（{0}）· {1}
-393	Connected to CurseForge	已连接 CurseForge
-394	Disconnected from CurseForge	已断开 CurseForge
-395	App settings	应用设置
-396	Startup	启动
-397	Launch app when Windows starts	Windows 启动时打开应用
-398	Servers with "Start this server when the app opens" will also start.	开启了"打开应用时启动此服务器"的服务器也会一起启动。
-399	Only works in the installed app. Currently running in development mode.	仅在安装版中有效。当前以开发模式运行。
-400	Start in tray without a window	启动时不显示窗口，只在托盘中
-401	When launched automatically at Windows startup, stay only at the right of the taskbar without opening a window.	Windows 启动时自动打开的话，不显示窗口，只放在任务栏右侧。
-402	When closing the window	关闭窗口时
-403	To tray only when servers are running	有服务器运行时才最小化到托盘
-404	Always to tray	总是最小化到托盘
-405	To quit an app in the tray, use the icon at the right of the taskbar → Quit.	托盘中的应用可以通过任务栏右侧图标 → 退出 来关闭。
-406	Notifications	通知
-407	Windows notifications	Windows 通知
-408	Notifies you when a server starts, crashes, or finishes being created. Not shown while you're looking at the app.	服务器启动、崩溃或创建完成时通知你。正在查看应用时不会弹出。
-409	Connected with the key built into the app.	已使用应用内置的密钥连接。
-410	Connected with your own API key.	已使用你自己的 API 密钥连接。
-411	Disconnect	断开连接
-412	Connect to also find CurseForge mods, modpacks, and maps. Get an API key at console.curseforge.com.	连接后也可以查找 CurseForge 的模组、整合包和地图。API 密钥可在 console.curseforge.com 获取。
-413	CurseForge API key	CurseForge API 密钥
-414	Connect	连接
-415	Data	数据
-416	Where servers, backups, and Java are stored. Version	服务器、备份和 Java 的存放位置。版本
-417	Close	关闭
-418	Create backup	创建备份
-419	Backed up	已备份
-420	Restore to backup	恢复到备份
-421	Restored	已恢复
-422	Restored the {0} world	已恢复到 {0} 的世界
-423	World backups	世界备份
-424	Open backup folder	打开备份文件夹
-425	Busy: {0}. Available when it's done	正在{0}。完成后可用
-426	Backing up…	正在备份…
-427	Back up now	立即备份
-428	Scheduled backup	定时备份
-429	Off	关闭
-430	Every 30 min	每 30 分钟
-431	Every hour	每小时
-432	Every 3 hours	每 3 小时
-433	Every 6 hours	每 6 小时
-434	Every 12 hours	每 12 小时
-435	Daily	每天
-436	Automatic backups to keep	自动备份保留数量
-437	Latest {0}	最近 {0} 个
-438	Backs up automatically when the server starts and at the set interval while running. Old automatic backups are removed for you.	服务器启动时以及运行期间按设定间隔自动备份。旧的自动备份会自动删除。
-439	No backups yet	还没有备份
-440	Backups are made automatically when the server starts. You can also make one now.	启动服务器时会自动备份，也可以现在立即创建。
-441	Auto	自动
-442	Manual	手动
-443	Stop the server before restoring	请先关闭服务器再恢复
-444	Restore to this point	恢复到此时
-445	Restore	恢复
-446	Restore this backup?	恢复此备份？
-447	Restores the {0} world. The current world goes to the Recycle Bin.	恢复到 {0} 的世界。当前世界会移到回收站。
-448	Restore	恢复
-449	Delete this backup?	删除此备份？
-450	Moves the {0} backup to the Recycle Bin.	将 {0} 的备份移到回收站。
-451	say <message>	say <消息>
-452	Announce to everyone	向所有人公告
-453	See who's online	查看在线玩家
-454	op <nickname>	op <昵称>
-455	Make admin	设为管理员
-456	deop <nickname>	deop <昵称>
-457	Remove admin	取消管理员
-458	kick <nickname> [reason]	kick <昵称> [原因]
-459	Kick	踢出
-460	ban <nickname> [reason]	ban <昵称> [原因]
-461	Ban	封禁
-462	pardon <nickname>	pardon <昵称>
-463	Unban	解除封禁
-464	Whitelist	白名单
-465	gamemode <mode> [nickname]	gamemode <模式> [昵称]
-466	Change game mode	更改游戏模式
-467	difficulty <difficulty>	difficulty <难度>
-468	Change difficulty	更改难度
-469	Change time	更改时间
-470	Change weather	更改天气
-471	tp <nickname> <nickname|x y z>	tp <昵称> <昵称|x y z>
-472	Teleport	传送
-473	give <nickname> <item> [count]	give <昵称> <物品> [数量]
-474	Give item	给予物品
-475	kill <nickname>	kill <昵称>
-476	Kill	杀死
-477	effect give <nickname> <effect>	effect give <昵称> <效果>
-478	Give effect	给予效果
-479	enchant <nickname> <enchantment>	enchant <昵称> <附魔>
-480	Enchant	附魔
-481	xp add <nickname> <amount>	xp add <昵称> <数量>
-482	Give XP	给予经验
-483	clear <nickname>	clear <昵称>
-484	Clear inventory	清空物品栏
-485	gamerule <rule> [value]	gamerule <规则> [值]
-486	Game rules	游戏规则
-487	World spawn point	世界出生点
-488	spawnpoint <nickname> [x y z]	spawnpoint <昵称> [x y z]
-489	Personal spawn point	个人出生点
-490	Show world seed	查看世界种子
-491	Save now	立即保存
-492	Save and stop	保存并关闭
-493	tell <nickname> <message>	tell <昵称> <消息>
-494	Whisper	私聊
-495	title <nickname|@a> title <text>	title <昵称|@a> title <文字>
-496	Big text on screen	屏幕大字
-497	summon <mob> [x y z]	summon <生物> [x y z]
-498	Summon mob	召唤生物
-499	Check/adjust server tick	查看/调整服务器刻
-500	worldborder set <size>	worldborder set <大小>
-501	World border	世界边界
-502	Everyone	所有人
-503	Online	在线
-504	The server crashed	服务器崩溃了
-505	Cause	原因
-506	Hide error details	隐藏错误信息
-507	Show error details	查看错误信息
-508	Crash report	崩溃报告
-509	OK	确定
-510	Basic	基础
-511	Plugin servers	插件服务器
-512	Mod servers	模组服务器
-513	Choose what kind of server to create. We'll guide you through the rest step by step.	选择要创建的服务器类型。其余步骤会一步步引导你。
-514	Create from a modpack	从整合包创建
-515	(applied right away)	（已立即生效）
-516	Installed {0}{1}	已安装 {0}{1}
-517	{0} {1}{2}	{0}{1}{2}
-518	Disabled	已禁用
-519	Enabled	已启用
-520	Deleted {0}	已删除 {0}
-521	Added {0}{1}	已添加 {0}{1}
-522	{0} items	{0} 个
-523	{0}	{0}
-524	Drop to add data packs	松开以添加数据包
-525	Search by data pack name	按数据包名称搜索
-526	Only data packs for this server version are shown.	只显示适用于此服务器版本的数据包。
-527	Applied immediately even while running.	运行中也会立即生效。
-528	One with the same name from another site is already installed	已安装来自其他网站的同名项目
-529	Same name installed	已安装同名项目
-530	· downloads	· 下载
-531	Installed	已安装
-532	Install	安装
-533	Loading more	正在加载更多
-534	No data packs for this version	没有适用于此版本的数据包
-535	Try searching another name.	试试搜索其他名称。
-536	Installed data packs	已安装的数据包
-537
-538	Find installed data packs	查找已安装的数据包
-539	Modrinth isn't responding right now, so some icons and names couldn't load. Retrying every 30 s.	Modrinth 暂时没有响应，部分图标和名称无法加载。每 30 秒重试一次。
-540	No data packs yet	还没有数据包
-541	Find and install on the left, or drag a zip file here.	在左侧查找并安装，或把 zip 文件拖到这里。
-542	No data packs matching '{0}'	没有与"{0}"匹配的数据包
-543	Disable (kept, not deleted)	禁用（不删除，只是移出）
-544	Enable again	重新启用
-545	This data pack was added manually, so its version can't be changed	这是手动添加的数据包，无法更改版本
-546	One with the same name is already installed	已安装同名项目
-547	A data pack with the same name as '{0}' was downloaded from another site. Installing the same thing twice stops the server from starting. Install only if you're sure it's different.	已从其他网站下载了与"{0}"同名的数据包。同一个东西装两次会导致服务器无法启动。确定不同时再安装。
-548	Install anyway	仍然安装
-549	Stop the server before adding	请先关闭服务器再添加
-550	Screen error:	界面错误：
-551	Something went wrong with the screen	界面出现了问题
-552	Servers keep running. Reloading usually fixes it.	服务器仍在正常运行。重新加载通常能解决。
-553	Reload	重新加载
-554	Please accept the Minecraft EULA	请同意 Minecraft 最终用户许可协议
-555	To run a server you must accept Mojang's End User License Agreement (EULA). It restricts things like making money from servers or selling paid items, so give it a read.	开服需要同意 Mojang 的最终用户许可协议（EULA）。其中对用服务器赚钱、出售付费物品等有限制，请读一读。
-556	Read the full EULA	阅读 EULA 全文
-557	I've read and agree to the EULA	我已阅读并同意 EULA
-558	Cancel	取消
-559	Agree and start	同意并启动
-560	Stop the server first	请先关闭服务器
-561	Edit	编辑
-562	Show in Explorer	在资源管理器中显示
-563	Rename (after stopping the server)	重命名（关闭服务器后）
-564	Change	更改
-565	Renamed	已重命名
-566	To Recycle Bin (after stopping the server)	移到回收站（关闭服务器后）
-567	To Recycle Bin	移到回收站
-568	New folder	新建文件夹
-569	Create	创建
-570	Folder created	已创建文件夹
-571	New file	新建文件
-572	Open this folder in Explorer	在资源管理器中打开此文件夹
-573	Search in this folder	在此文件夹中查找
-574	Refresh	刷新
-575	New	新建
-576	 selected	 个已选
-577	Clear selection	取消选择
-578	Select all	全选
-579	Name	名称
-580	Size	大小
-581	Modified	修改日期
-582	Menu	菜单
-583	Nothing matches '{0}'	没有与"{0}"匹配的项目
-584	Empty folder	空文件夹
-585	Select {0}	选择 {0}
-586	Move {0} items to the Recycle Bin?	将 {0} 个项目移到回收站？
-587	Move {0} to the Recycle Bin?	将 {0} 移到回收站？
-588	You can restore them from the Recycle Bin. Deleting mod or world files may stop the server from starting.	可以从回收站恢复。删除模组或世界文件可能导致服务器无法启动。
-589	Moved to Recycle Bin	已移到回收站
-590	Click a file on the left to edit	请点击左侧要编辑的文件
-591	Config files like yml, json, toml, and properties open here. Mod and plugin configs are in the config and plugins folders.	yml、json、toml、properties 等配置文件在这里打开。模组和插件配置在 config、plugins 文件夹中。
-592	Not saved	未保存
-593	{1} without saving your changes to {0}?	不保存对 {0} 的修改就{1}？
-594	open another file	打开其他文件
-595	close	关闭
-596	Open without saving	不保存并打开
-597	Close without saving	不保存并关闭
-598	Server folder root	服务器文件夹根目录
-599	There's an error near line {0}.	第 {0} 行附近有错误。
-600	Invalid JSON format.	JSON 格式不正确。
-601	Saved. Restart the server to apply	已保存。重启服务器后生效
-602	Saved	已保存
-603	Couldn't find '{0}'	找不到"{0}"
-604	There are unsaved changes	有未保存的内容
-605	Find (Enter)	查找（Enter）
-606	Discard unsaved changes	放弃未保存的修改
-607	Save	保存
-608	The server is running. Saved changes apply after a restart, and some files are overwritten when the server stops.	服务器正在运行。保存的内容需重启服务器才生效，部分文件会在服务器关闭时被覆盖。
-609	Invalid format	格式不正确
-610	{0} If saved like this, the mod may fail to read the config and reset it to defaults. Save anyway?	{0} 这样保存的话，模组可能无法读取配置并恢复为默认值。仍然保存吗？
-611	Save anyway	仍然保存
-612	On first start, a window asking you to accept the Minecraft EULA appears once.	首次启动时会弹出一次同意 Minecraft 协议（EULA）的窗口。
-613	Wait until it's fully started	等待完全启动
-614	The first time takes about 1–2 minutes to create the world. You'll get a notification when it's ready.	首次需要约 1~2 分钟创建世界。启动完成后会通知你。
-615	Send the address to players	把地址发给玩家
-616	Copy the address under the server name and send it. Players paste it in Multiplayer → Add Server to join.	复制服务器名称下方的地址发送给玩家。玩家在 多人游戏 → 添加服务器 中粘贴即可加入。
-617	Give players the mods	把模组给玩家
-618	Players need the same mods on mod servers. Send them all at once with "Export player modpack" in the Mods tab.	模组服务器的玩家也需要相同的模组。可在模组页用"导出玩家用整合包"一次性发送。
-619	Your server is ready	服务器已就绪
-620	Follow these steps to play with your players.	按以下步骤即可和玩家们一起玩。
-621	Player	玩家
-622	Mobs	生物
-623	World	世界
-624	Blocks & items	方块和物品
-625	Other	其他
-626	Keep inventory	死亡不掉落
-627	Keep your inventory and XP when you die	死亡时不会失去物品栏和经验
-628	Natural regeneration	自然回复
-629	Health refills on its own when you're full	吃饱时生命值会自动回复
-630	Immediate respawn	立即重生
-631	Respawn right away without the death screen	死亡后跳过重生界面立即重生
-632	Fall damage	摔落伤害
-633	Falling from high places hurts	从高处摔落会受伤
-634	Fire damage	火焰伤害
-635	Touching fire hurts	碰到火会受伤
-636	Drowning damage	溺水伤害
-637	Running out of air underwater hurts	在水下憋不住气会受伤
-638	Freeze damage	冰冻伤害
-639	Freezing in powder snow hurts	在细雪中冻僵会受伤
-640	Player vs player (PvP)	玩家互相攻击（PvP）
-641	Players can hit each other	玩家之间可以互相攻击
-642	Death messages	死亡消息
-643	Shows in chat who died and how	在聊天中显示谁怎么死的
-644	Advancement announcements	进度通知
-645	Announces completed advancements in chat	完成进度时在聊天中通知
-646	Players sleeping percentage (%)	睡觉人数比例（%）
-647	Night is skipped when this many people sleep	这么多人睡觉就能跳过夜晚
-648	Spawn radius	重生范围
-649	How widely first spawn positions spread (blocks)	初次出生位置的分散范围（方块）
-650	Locator bar	定位栏
-651	Shows other players' directions on screen	在屏幕上显示其他玩家的方向
-652	Reduced debug info	简化调试信息
-653	Hides coordinates etc. on the F3 screen	在 F3 界面隐藏坐标等信息
-654	Ender pearls vanish on death	死亡时末影珍珠消失
-655	Thrown ender pearls disappear when you die	死亡时已投掷的末影珍珠会消失
-656	Nether portal wait time	下界传送门等待时间
-657	Time to wait before a portal takes you in Survival (ticks)	生存模式下进入传送门需要等待的时间（刻）
-658	Nether portal wait time (Creative)	下界传送门等待时间（创造）
-659	Time to wait before a portal takes you in Creative (ticks)	创造模式下进入传送门需要等待的时间（刻）
-660	Elytra speed check	鞘翅速度检查
-661	When off, abnormally fast elytra flight isn't blocked	关闭后不阻止异常快速的鞘翅飞行
-662	Movement speed check	移动速度检查
-663	When off, abnormally fast movement isn't blocked	关闭后不阻止异常快速的移动
-664	Limited crafting	限制合成
-665	Only recipes you've unlocked can be crafted	只能合成已解锁的配方
-666	Spectators generate chunks	旁观者生成区块
-667	New terrain is generated even while roaming in spectator mode	旁观模式下移动也会生成新地形
-668	Mob spawning	生物生成
-669	Animals and monsters spawn naturally	动物和怪物会自然生成
-670	Monster spawning	怪物生成
-671	Monsters like zombies and creepers spawn	僵尸、苦力怕等怪物会生成
-672	Mob griefing	生物破坏
-673	Creeper explosions, endermen moving blocks, etc.	苦力怕爆炸、末影人搬方块等
-674	Phantom spawning	幻翼生成
-675	Phantoms appear if you don't sleep for a long time	长时间不睡觉会出现幻翼
-676	Pillager patrols	掠夺者巡逻队
-677	Groups of pillagers roam around	掠夺者群体四处游荡
-678	Wandering trader	流浪商人
-679	Wandering traders visit	流浪商人会来访
-680	Warden spawning	监守者生成
-681	Sculk shriekers summon the Warden	幽匿尖啸体会召唤监守者
-682	Raids	袭击
-683	The Bad Omen effect triggers village raids	不祥之兆效果会引发村庄袭击
-684	Universal anger	普遍愤怒
-685	Angered neutral mobs attack all nearby players	被激怒的中立生物会攻击附近所有玩家
-686	Forgive dead players	原谅死亡玩家
-687	Neutral mobs calm down when their attacker dies	攻击者死亡后中立生物会平息
-688	Max entity cramming	实体挤压上限
-689	Mobs get hurt if more than this gather in one block	一格内聚集超过此数量时生物会受伤
-690	Mob loot	生物掉落
-691	Mobs drop items when killed	击杀生物会掉落物品
-692	Daylight cycle	昼夜更替
-693	When off, day and night stop	关闭后昼夜停止
-694	Weather cycle	天气变化
-695	When off, the weather doesn't change	关闭后天气不会变化
-696	Random tick speed	随机刻速度
-697	Higher means crops and trees grow faster (default 3)	越高作物和树木长得越快（默认 3）
-698	Fire spread radius	火焰蔓延范围
-699	How many blocks around players fire spreads (0 = no spread)	火会蔓延到玩家周围多少格（0 为不蔓延）
-700	Vine spreading	藤蔓蔓延
-701	Vines grow and spread on their own	藤蔓会自己生长蔓延
-702	Infinite water	无限水源
-703	New water sources form between two water blocks	两格水之间会形成新水源
-704	Infinite lava	无限熔岩
-705	New lava sources form between two lava blocks	两格熔岩之间会形成新熔岩源
-706	Snow accumulation height	积雪高度
-707	Max layers of snow that pile up when it snows	下雪时积雪的最大层数
-708	Allow nether portals	允许使用下界传送门
-709	When off, you can't go to the Nether through portals	关闭后无法通过传送门进入下界
-710	Global sounds	全局音效
-711	Plays sounds like boss spawns to everyone	向所有人播放 Boss 出现等音效
-712	Block drops	方块掉落
-713	Breaking blocks drops items	破坏方块会掉落物品
-714	Entity drops	实体掉落
-715	Breaking boats, paintings, etc. drops items	破坏船、画等会掉落物品
-716	TNT explodes	TNT 爆炸
-717	When off, TNT doesn't explode	关闭后 TNT 不会爆炸
-718	Block explosion drop decay	方块爆炸掉落衰减
-719	Only some blocks broken by block explosions (e.g. beds) drop	床等方块爆炸破坏的方块只掉落一部分
-720	Mob explosion drop decay	生物爆炸掉落衰减
-721	Only some blocks broken by creeper explosions drop	苦力怕爆炸破坏的方块只掉落一部分
-722	TNT explosion drop decay	TNT 爆炸掉落衰减
-723	Only some blocks broken by TNT drop	TNT 破坏的方块只掉落一部分
-724	Projectiles break blocks	弹射物破坏方块
-725	Arrows etc. break blocks like decorated pots	箭等会打碎饰纹陶罐之类的方块
-726	Spawners enabled	刷怪笼启用
-727	Mobs come out of mob spawners	刷怪笼会生成生物
-728	Command feedback	命令反馈
-729	Shows command results in chat	在聊天中显示命令执行结果
-730	Command block output	命令方块输出
-731	Shows command block results in admin chat	在管理员聊天中显示命令方块执行结果
-732	Command blocks work	命令方块启用
-733	When off, command blocks don't run	关闭后命令方块不会执行
-734	Log admin commands	记录管理员命令
-735	Notifies other admins of commands used by admins	将管理员使用的命令通知其他管理员
-736	Max command chain length	命令连锁上限
-737	Number of commands that can run at once	一次可执行的命令数量
-738	Max command fork count	命令分支上限
-739	Max number of branches a command run can fork into	命令执行可分叉的最大数量
-740	Block modification limit	方块修改上限
-741	Blocks that commands like fill can change at once	fill 等命令一次可修改的方块数
-742	Disable elytra movement check	关闭鞘翅移动检查
-743	When on, abnormally fast elytra flight isn't blocked	开启后不阻止异常快速的鞘翅飞行
-744	Game loop function	游戏循环函数
-745	Name of the function (data pack) to run every tick	每刻执行的函数（数据包）名称
-746	All	全部
-747	On	开
-748	Off	关
-749	Search by rule name	按规则名称搜索
-750	Asking the server	正在询问服务器
-751	No matching rules	没有匹配的规则
-752	Changes apply immediately.	修改后立即生效。
-753	Extracting…	正在解压…
-754	Drag a map zip file or world folder here	把地图 zip 文件或世界文件夹拖到这里
-755	Click to choose a zip file	点击选择 zip 文件
-756	Popular	热门
-757	Newest	最新
-758	Recently updated	最近更新
-759	Most downloaded	下载最多
+지금 하고 있는 작업({0})이 중간에 멈춰서 파일이 망가질 수 있어요. 끝날 때까지 기다리는 게 좋아요.	The current task ({0}) will be interrupted and files may be damaged. It's best to wait until it finishes.	当前任务（{0}）会中途停止，文件可能损坏。最好等它完成。
+아직 작업 중이에요	Still working	仍在处理中
+서버가 켜져 있어요	Servers are running	服务器正在运行
+서버를 만들고 있어요	Creating a server	正在创建服务器
+앱을 닫을까요?	Close the app?	关闭应用？
+방금	just now	刚刚
+{0}분	{0} min	{0} 分钟
+{0}시간{1}	{0} h{1}	{0} 小时{1}
+{0}일	{0} d	{0} 天
+방금 켜짐	Just started	刚刚启动
+{0}째 켜짐	Up for {0}	已运行 {0}
+{0}명 접속 · {1}	{0} online · {1}	{0} 人在线 · {1}
+{0} {1}개	{0} {1}	{0} {1} 个
+백업 {0} 전	Backup {0} ago	{0} 前备份
+백업 없음	No backups	没有备份
+새 서버 만들기	New server	新建服务器
+내 서버	My servers	我的服务器
+아직 만든 서버가 없어요.	No servers yet.	还没有服务器。
+위 버튼으로 첫 서버를 만들어 보세요.	Create your first server with the button above.	点击上方按钮创建第一个服务器吧。
+서버 끄기	Stop server	关闭服务器
+서버 켜기	Start server	启动服务器
+설정	Settings	设置
+이름 바꾸기	Rename	重命名
+복제	Duplicate	复制
+폴더 열기	Open folder	打开文件夹
+삭제	Delete	删除
+그래도 닫기	Close anyway	仍然关闭
+끄고 닫기	Stop and close	关闭服务器并退出
+취소하고 닫기	Cancel and close	取消并关闭
+서버를 저장하고 있어요	Saving servers	正在保存服务器
+월드가 망가지지 않게 잠시만 기다려 주세요.	Please wait a moment so the world isn't damaged.	请稍等，以免世界损坏。
+서버	Server	服务器
+서버가 튕겨서 5초 뒤에 다시 켜요 ({0}) · {1}	The server crashed; restarting in 5 s ({0}) · {1}	服务器崩溃，5 秒后重启（{0}）· {1}
+CurseForge에 연결했어요	Connected to CurseForge	已连接 CurseForge
+CurseForge 연결을 끊었어요	Disconnected from CurseForge	已断开 CurseForge
+앱 설정	App settings	应用设置
+시작	Startup	启动
+윈도우를 켤 때 앱도 켜기	Launch app when Windows starts	Windows 启动时打开应用
+"앱을 켜면 이 서버도 켜기"를 켠 서버도 같이 켜져요.	Servers with "Start this server when the app opens" will also start.	开启了"打开应用时启动此服务器"的服务器也会一起启动。
+설치한 앱에서만 돼요. 지금은 개발용으로 실행 중이에요.	Only works in the installed app. Currently running in development mode.	仅在安装版中有效。当前以开发模式运行。
+창 없이 트레이로 시작	Start in tray without a window	启动时不显示窗口，只在托盘中
+윈도우를 켤 때 자동으로 켜지면 창을 띄우지 않고 작업 표시줄 오른쪽에만 둬요.	When launched automatically at Windows startup, stay only at the right of the taskbar without opening a window.	Windows 启动时自动打开的话，不显示窗口，只放在任务栏右侧。
+창을 닫으면	When closing the window	关闭窗口时
+켜진 서버가 있을 때만 트레이로	To tray only when servers are running	有服务器运行时才最小化到托盘
+항상 트레이로	Always to tray	总是最小化到托盘
+트레이에 있는 앱은 작업 표시줄 오른쪽 아이콘 → 종료로 끌 수 있어요.	To quit an app in the tray, use the icon at the right of the taskbar → Quit.	托盘中的应用可以通过任务栏右侧图标 → 退出 来关闭。
+알림	Notifications	通知
+윈도우 알림	Windows notifications	Windows 通知
+서버가 켜졌을 때, 튕겼을 때, 서버를 다 만들었을 때 알려 줘요. 앱을 보고 있을 때는 뜨지 않아요.	Notifies you when a server starts, crashes, or finishes being created. Not shown while you're looking at the app.	服务器启动、崩溃或创建完成时通知你。正在查看应用时不会弹出。
+앱에 들어 있는 키로 연결돼 있어요.	Connected with the key built into the app.	已使用应用内置的密钥连接。
+내가 넣은 API 키로 연결돼 있어요.	Connected with your own API key.	已使用你自己的 API 密钥连接。
+연결 끊기	Disconnect	断开连接
+연결하면 CurseForge의 모드·모드팩·맵도 찾을 수 있어요. API 키는 console.curseforge.com에서 받을 수 있어요.	Connect to also find CurseForge mods, modpacks, and maps. Get an API key at console.curseforge.com.	连接后也可以查找 CurseForge 的模组、整合包和地图。API 密钥可在 console.curseforge.com 获取。
+CurseForge API 키	CurseForge API key	CurseForge API 密钥
+연결	Connect	连接
+데이터	Data	数据
+서버·백업·Java가 저장되는 곳이에요. 버전	Where servers, backups, and Java are stored. Version	服务器、备份和 Java 的存放位置。版本
+닫기	Close	关闭
+백업 만들기	Create backup	创建备份
+백업했어요	Backed up	已备份
+백업으로 되돌리기	Restore to backup	恢复到备份
+되돌렸어요	Restored	已恢复
+{0} 월드로 되돌렸어요	Restored the {0} world	已恢复到 {0} 的世界
+월드 백업	World backups	世界备份
+백업 폴더 열기	Open backup folder	打开备份文件夹
+{0} 중이에요. 끝나면 할 수 있어요	Busy: {0}. Available when it's done	正在{0}。完成后可用
+백업하는 중…	Backing up…	正在备份…
+지금 백업하기	Back up now	立即备份
+정기 백업	Scheduled backup	定时备份
+안 함	Off	关闭
+30분마다	Every 30 min	每 30 分钟
+1시간마다	Every hour	每小时
+3시간마다	Every 3 hours	每 3 小时
+6시간마다	Every 6 hours	每 6 小时
+12시간마다	Every 12 hours	每 12 小时
+하루마다	Daily	每天
+자동 백업 남기는 개수	Automatic backups to keep	自动备份保留数量
+최근 {0}개	Latest {0}	最近 {0} 个
+서버를 켤 때, 그리고 켜져 있는 동안 정한 간격마다 자동으로 백업해요. 오래된 자동 백업은 알아서 지워요.	Backs up automatically when the server starts and at the set interval while running. Old automatic backups are removed for you.	服务器启动时以及运行期间按设定间隔自动备份。旧的自动备份会自动删除。
+아직 백업이 없어요	No backups yet	还没有备份
+서버를 켜면 자동으로 백업돼요. 지금 바로 만들 수도 있어요.	Backups are made automatically when the server starts. You can also make one now.	启动服务器时会自动备份，也可以现在立即创建。
+자동	Auto	自动
+직접	Manual	手动
+서버를 끈 다음에 복원할 수 있어요	Stop the server before restoring	请先关闭服务器再恢复
+이 시점으로 되돌리기	Restore to this point	恢复到此时
+복원	Restore	恢复
+이 백업으로 되돌릴까요?	Restore this backup?	恢复此备份？
+{0} 월드로 되돌려요. 지금 월드는 휴지통으로 옮겨요.	Restores the {0} world. The current world goes to the Recycle Bin.	恢复到 {0} 的世界。当前世界会移到回收站。
+되돌리기	Restore	恢复
+백업을 지울까요?	Delete this backup?	删除此备份？
+{0} 백업을 휴지통으로 옮겨요.	Moves the {0} backup to the Recycle Bin.	将 {0} 的备份移到回收站。
+say <메시지>	say <message>	say <消息>
+모두에게 공지	Announce to everyone	向所有人公告
+접속 중인 사람 보기	See who's online	查看在线玩家
+op <닉네임>	op <nickname>	op <昵称>
+관리자로 지정	Make admin	设为管理员
+deop <닉네임>	deop <nickname>	deop <昵称>
+관리자 해제	Remove admin	取消管理员
+kick <닉네임> [이유]	kick <nickname> [reason]	kick <昵称> [原因]
+내보내기	Kick	踢出
+ban <닉네임> [이유]	ban <nickname> [reason]	ban <昵称> [原因]
+차단	Ban	封禁
+pardon <닉네임>	pardon <nickname>	pardon <昵称>
+차단 해제	Unban	解除封禁
+화이트리스트	Whitelist	白名单
+gamemode <모드> [닉네임]	gamemode <mode> [nickname]	gamemode <模式> [昵称]
+게임 모드 바꾸기	Change game mode	更改游戏模式
+difficulty <난이도>	difficulty <difficulty>	difficulty <难度>
+난이도 바꾸기	Change difficulty	更改难度
+시간 바꾸기	Change time	更改时间
+날씨 바꾸기	Change weather	更改天气
+tp <닉네임> <닉네임|x y z>	tp <nickname> <nickname|x y z>	tp <昵称> <昵称|x y z>
+순간이동	Teleport	传送
+give <닉네임> <아이템> [개수]	give <nickname> <item> [count]	give <昵称> <物品> [数量]
+아이템 주기	Give item	给予物品
+kill <닉네임>	kill <nickname>	kill <昵称>
+죽이기	Kill	杀死
+effect give <닉네임> <효과>	effect give <nickname> <effect>	effect give <昵称> <效果>
+효과 주기	Give effect	给予效果
+enchant <닉네임> <마법>	enchant <nickname> <enchantment>	enchant <昵称> <附魔>
+마법 부여	Enchant	附魔
+xp add <닉네임> <양>	xp add <nickname> <amount>	xp add <昵称> <数量>
+경험치 주기	Give XP	给予经验
+clear <닉네임>	clear <nickname>	clear <昵称>
+인벤토리 비우기	Clear inventory	清空物品栏
+gamerule <규칙> [값]	gamerule <rule> [value]	gamerule <规则> [值]
+게임 규칙	Game rules	游戏规则
+월드 스폰 지점	World spawn point	世界出生点
+spawnpoint <닉네임> [x y z]	spawnpoint <nickname> [x y z]	spawnpoint <昵称> [x y z]
+개인 스폰 지점	Personal spawn point	个人出生点
+월드 시드 보기	Show world seed	查看世界种子
+지금 저장	Save now	立即保存
+저장하고 끄기	Save and stop	保存并关闭
+tell <닉네임> <메시지>	tell <nickname> <message>	tell <昵称> <消息>
+귓속말	Whisper	私聊
+title <닉네임|@a> title <글>	title <nickname|@a> title <text>	title <昵称|@a> title <文字>
+화면에 큰 글씨	Big text on screen	屏幕大字
+summon <몹> [x y z]	summon <mob> [x y z]	summon <生物> [x y z]
+몹 소환	Summon mob	召唤生物
+서버 틱 확인·조절	Check/adjust server tick	查看/调整服务器刻
+worldborder set <크기>	worldborder set <size>	worldborder set <大小>
+월드 경계	World border	世界边界
+모든 사람	Everyone	所有人
+접속 중	Online	在线
+서버가 튕겼어요	The server crashed	服务器崩溃了
+원인	Cause	原因
+오류 내용 숨기기	Hide error details	隐藏错误信息
+오류 내용 보기	Show error details	查看错误信息
+크래시 보고서	Crash report	崩溃报告
+확인	OK	确定
+기본	Basic	基础
+플러그인 서버	Plugin servers	插件服务器
+모드 서버	Mod servers	模组服务器
+어떤 서버를 만들지 골라 주세요. 나머지는 차근차근 안내해 드릴게요.	Choose what kind of server to create. We'll guide you through the rest step by step.	选择要创建的服务器类型。其余步骤会一步步引导你。
+모드팩으로 만들기	Create from a modpack	从整合包创建
+(바로 적용했어요)	(applied right away)	（已立即生效）
+{0}을(를) 설치했어요{1}	Installed {0}{1}	已安装 {0}{1}
+{0}을(를) {1}{2}	{0} {1}{2}	{0}{1}{2}
+껐어요	Disabled	已禁用
+켰어요	Enabled	已启用
+{0}을(를) 지웠어요	Deleted {0}	已删除 {0}
+{0} 넣었어요{1}	Added {0}{1}	已添加 {0}{1}
+{0}개를	{0} items	{0} 个
+{0}을(를)	{0}	{0}
+놓으면 데이터팩을 추가해요	Drop to add data packs	松开以添加数据包
+데이터팩 이름으로 검색해 보세요	Search by data pack name	按数据包名称搜索
+이 서버 버전에 맞는 데이터팩만 보여 드려요.	Only data packs for this server version are shown.	只显示适用于此服务器版本的数据包。
+켜져 있어도 바로 적용돼요.	Applied immediately even while running.	运行中也会立即生效。
+다른 사이트에서 받은 같은 이름이 이미 설치돼 있어요	One with the same name from another site is already installed	已安装来自其他网站的同名项目
+같은 이름 설치됨	Same name installed	已安装同名项目
+· 다운로드	· downloads	· 下载
+설치됨	Installed	已安装
+설치	Install	安装
+더 불러오고 있어요	Loading more	正在加载更多
+이 버전에 맞는 데이터팩이 없어요	No data packs for this version	没有适用于此版本的数据包
+다른 이름으로 찾아보세요.	Try searching another name.	试试搜索其他名称。
+설치된 데이터팩	Installed data packs	已安装的数据包
+개
+설치된 데이터팩 찾기	Find installed data packs	查找已安装的数据包
+Modrinth가 지금 응답하지 않아서 일부 아이콘·이름을 못 불러왔어요. 30초마다 다시 해 볼게요.	Modrinth isn't responding right now, so some icons and names couldn't load. Retrying every 30 s.	Modrinth 暂时没有响应，部分图标和名称无法加载。每 30 秒重试一次。
+아직 데이터팩이 없어요	No data packs yet	还没有数据包
+왼쪽에서 찾아 설치하거나, zip 파일을 여기로 끌어다 놓아요.	Find and install on the left, or drag a zip file here.	在左侧查找并安装，或把 zip 文件拖到这里。
+'{0}'에 맞는 데이터팩이 없어요	No data packs matching '{0}'	没有与"{0}"匹配的数据包
+끄기 (지우지 않고 빼 둬요)	Disable (kept, not deleted)	禁用（不删除，只是移出）
+다시 켜기	Enable again	重新启用
+직접 넣은 데이터팩이라 버전을 바꿀 수 없어요	This data pack was added manually, so its version can't be changed	这是手动添加的数据包，无法更改版本
+같은 이름이 이미 설치돼 있어요	One with the same name is already installed	已安装同名项目
+'{0}'과(와) 이름이 같은 데이터팩이 다른 사이트에서 받아져 있어요. 같은 것을 두 번 넣으면 서버가 켜지지 않아요. 다른 것이 확실할 때만 설치해 주세요.	A data pack with the same name as '{0}' was downloaded from another site. Installing the same thing twice stops the server from starting. Install only if you're sure it's different.	已从其他网站下载了与"{0}"同名的数据包。同一个东西装两次会导致服务器无法启动。确定不同时再安装。
+그래도 설치	Install anyway	仍然安装
+서버를 끈 다음에 넣을 수 있어요	Stop the server before adding	请先关闭服务器再添加
+화면 오류:	Screen error:	界面错误：
+화면에 문제가 생겼어요	Something went wrong with the screen	界面出现了问题
+서버는 그대로 돌아가고 있어요. 다시 불러오면 대부분 해결돼요.	Servers keep running. Reloading usually fixes it.	服务器仍在正常运行。重新加载通常能解决。
+다시 불러오기	Reload	重新加载
+마인크래프트 이용 약관에 동의해 주세요	Please accept the Minecraft EULA	请同意 Minecraft 最终用户许可协议
+서버를 열려면 Mojang의 최종 사용자 라이선스 계약(EULA)에 동의해야 해요. 서버로 돈을 벌거나 유료 아이템을 파는 것 등에 제한이 있으니 한 번 읽어 보세요.	To run a server you must accept Mojang's End User License Agreement (EULA). It restricts things like making money from servers or selling paid items, so give it a read.	开服需要同意 Mojang 的最终用户许可协议（EULA）。其中对用服务器赚钱、出售付费物品等有限制，请读一读。
+EULA 전문 읽기	Read the full EULA	阅读 EULA 全文
+EULA를 읽었고 동의해요	I've read and agree to the EULA	我已阅读并同意 EULA
+취소	Cancel	取消
+동의하고 켜기	Agree and start	同意并启动
+서버를 끈 다음에 할 수 있어요	Stop the server first	请先关闭服务器
+편집하기	Edit	编辑
+탐색기에서 보기	Show in Explorer	在资源管理器中显示
+이름 바꾸기 (서버를 끈 뒤에)	Rename (after stopping the server)	重命名（关闭服务器后）
+바꾸기	Change	更改
+이름을 바꿨어요	Renamed	已重命名
+휴지통으로 (서버를 끈 뒤에)	To Recycle Bin (after stopping the server)	移到回收站（关闭服务器后）
+휴지통으로	To Recycle Bin	移到回收站
+새 폴더	New folder	新建文件夹
+만들기	Create	创建
+폴더를 만들었어요	Folder created	已创建文件夹
+새 파일	New file	新建文件
+탐색기에서 이 폴더 열기	Open this folder in Explorer	在资源管理器中打开此文件夹
+이 폴더에서 찾기	Search in this folder	在此文件夹中查找
+새로고침	Refresh	刷新
+새로 만들기	New	新建
+개 골랐어요	 selected	 个已选
+고르기 풀기	Clear selection	取消选择
+모두 고르기	Select all	全选
+이름	Name	名称
+크기	Size	大小
+바꾼 날짜	Modified	修改日期
+메뉴	Menu	菜单
+'{0}'에 맞는 것이 없어요	Nothing matches '{0}'	没有与"{0}"匹配的项目
+빈 폴더예요	Empty folder	空文件夹
+{0} 고르기	Select {0}	选择 {0}
+{0}개를 휴지통으로 옮길까요?	Move {0} items to the Recycle Bin?	将 {0} 个项目移到回收站？
+{0}을(를) 휴지통으로 옮길까요?	Move {0} to the Recycle Bin?	将 {0} 移到回收站？
+휴지통에서 되살릴 수 있어요. 모드·월드 파일을 지우면 서버가 켜지지 않을 수 있어요.	You can restore them from the Recycle Bin. Deleting mod or world files may stop the server from starting.	可以从回收站恢复。删除模组或世界文件可能导致服务器无法启动。
+휴지통으로 옮겼어요	Moved to Recycle Bin	已移到回收站
+왼쪽에서 고칠 파일을 눌러 주세요	Click a file on the left to edit	请点击左侧要编辑的文件
+yml·json·toml·properties 같은 설정 파일이 여기서 열려요. 모드·플러그인 설정은 config·plugins 폴더에 있어요.	Config files like yml, json, toml, and properties open here. Mod and plugin configs are in the config and plugins folders.	yml、json、toml、properties 等配置文件在这里打开。模组和插件配置在 config、plugins 文件夹中。
+저장하지 않았어요	Not saved	未保存
+{0}에서 고친 내용을 저장하지 않고 {1}?	{1} without saving your changes to {0}?	不保存对 {0} 的修改就{1}？
+다른 파일을 열까요	open another file	打开其他文件
+닫을까요	close	关闭
+저장 안 하고 열기	Open without saving	不保存并打开
+저장 안 하고 닫기	Close without saving	不保存并关闭
+서버 폴더 맨 위	Server folder root	服务器文件夹根目录
+{0}번째 줄 근처에 틀린 곳이 있어요.	There's an error near line {0}.	第 {0} 行附近有错误。
+JSON 형식이 맞지 않아요.	Invalid JSON format.	JSON 格式不正确。
+저장했어요. 서버를 다시 켜면 적용돼요	Saved. Restart the server to apply	已保存。重启服务器后生效
+저장했어요	Saved	已保存
+'{0}'을(를) 찾지 못했어요	Couldn't find '{0}'	找不到"{0}"
+저장 안 한 내용이 있어요	There are unsaved changes	有未保存的内容
+찾기 (Enter)	Find (Enter)	查找（Enter）
+저장하지 않은 고친 내용을 버려요	Discard unsaved changes	放弃未保存的修改
+저장	Save	保存
+서버가 켜져 있어요. 저장한 내용은 서버를 다시 켜야 적용되고, 어떤 파일은 서버가 꺼질 때 다시 덮어써요.	The server is running. Saved changes apply after a restart, and some files are overwritten when the server stops.	服务器正在运行。保存的内容需重启服务器才生效，部分文件会在服务器关闭时被覆盖。
+형식이 맞지 않아요	Invalid format	格式不正确
+{0} 이대로 저장하면 모드가 설정을 읽지 못하고 기본값으로 되돌릴 수 있어요. 그래도 저장할까요?	{0} If saved like this, the mod may fail to read the config and reset it to defaults. Save anyway?	{0} 这样保存的话，模组可能无法读取配置并恢复为默认值。仍然保存吗？
+그래도 저장	Save anyway	仍然保存
+처음 켤 때 마인크래프트 약관(EULA)에 동의하는 창이 한 번 떠요.	On first start, a window asking you to accept the Minecraft EULA appears once.	首次启动时会弹出一次同意 Minecraft 协议（EULA）的窗口。
+다 켜질 때까지 기다리기	Wait until it's fully started	等待完全启动
+처음에는 월드를 만드느라 1~2분쯤 걸려요. 다 켜지면 알림이 와요.	The first time takes about 1–2 minutes to create the world. You'll get a notification when it's ready.	首次需要约 1~2 分钟创建世界。启动完成后会通知你。
+플레이어에게 주소 보내기	Send the address to players	把地址发给玩家
+서버 이름 아래 주소를 복사해서 보내요. 플레이어는 멀티플레이 → 서버 추가에 붙여 넣으면 들어올 수 있어요.	Copy the address under the server name and send it. Players paste it in Multiplayer → Add Server to join.	复制服务器名称下方的地址发送给玩家。玩家在 多人游戏 → 添加服务器 中粘贴即可加入。
+플레이어에게 모드 주기	Give players the mods	把模组给玩家
+모드 서버는 플레이어도 같은 모드가 필요해요. 모드 탭의 "플레이어용 모드팩 내보내기"로 한 번에 보낼 수 있어요.	Players need the same mods on mod servers. Send them all at once with "Export player modpack" in the Mods tab.	模组服务器的玩家也需要相同的模组。可在模组页用"导出玩家用整合包"一次性发送。
+서버가 준비됐어요	Your server is ready	服务器已就绪
+이 순서대로 하면 플레이어들과 같이 놀 수 있어요.	Follow these steps to play with your players.	按以下步骤即可和玩家们一起玩。
+플레이어	Player	玩家
+몹	Mobs	生物
+월드	World	世界
+블록·아이템	Blocks & items	方块和物品
+기타	Other	其他
+죽어도 아이템 유지	Keep inventory	死亡不掉落
+죽었을 때 인벤토리와 경험치를 잃지 않아요	Keep your inventory and XP when you die	死亡时不会失去物品栏和经验
+체력 자연 회복	Natural regeneration	自然回复
+배가 부르면 체력이 저절로 차요	Health refills on its own when you're full	吃饱时生命值会自动回复
+바로 부활	Immediate respawn	立即重生
+죽으면 부활 화면 없이 바로 다시 태어나요	Respawn right away without the death screen	死亡后跳过重生界面立即重生
+낙하 피해	Fall damage	摔落伤害
+높은 곳에서 떨어지면 다쳐요	Falling from high places hurts	从高处摔落会受伤
+불 피해	Fire damage	火焰伤害
+불에 닿으면 다쳐요	Touching fire hurts	碰到火会受伤
+익사 피해	Drowning damage	溺水伤害
+물속에서 숨이 차면 다쳐요	Running out of air underwater hurts	在水下憋不住气会受伤
+동상 피해	Freeze damage	冰冻伤害
+가루눈 속에서 얼면 다쳐요	Freezing in powder snow hurts	在细雪中冻僵会受伤
+플레이어끼리 공격(PvP)	Player vs player (PvP)	玩家互相攻击（PvP）
+플레이어가 서로 때릴 수 있어요	Players can hit each other	玩家之间可以互相攻击
+사망 메시지	Death messages	死亡消息
+누가 어떻게 죽었는지 채팅에 보여 줘요	Shows in chat who died and how	在聊天中显示谁怎么死的
+발전 과제 알림	Advancement announcements	进度通知
+발전 과제를 달성하면 채팅에 알려 줘요	Announces completed advancements in chat	完成进度时在聊天中通知
+잠자기 인원 비율(%)	Players sleeping percentage (%)	睡觉人数比例（%）
+이만큼의 사람이 자면 밤이 넘어가요	Night is skipped when this many people sleep	这么多人睡觉就能跳过夜晚
+부활 범위	Spawn radius	重生范围
+처음 태어나는 위치가 흩어지는 범위(블록)	How widely first spawn positions spread (blocks)	初次出生位置的分散范围（方块）
+위치 표시 막대	Locator bar	定位栏
+화면에 다른 플레이어 방향을 보여 줘요	Shows other players' directions on screen	在屏幕上显示其他玩家的方向
+디버그 정보 줄이기	Reduced debug info	简化调试信息
+F3 화면에서 좌표 등을 숨겨요	Hides coordinates etc. on the F3 screen	在 F3 界面隐藏坐标等信息
+죽으면 엔더 진주 사라짐	Ender pearls vanish on death	死亡时末影珍珠消失
+던진 엔더 진주가 죽을 때 사라져요	Thrown ender pearls disappear when you die	死亡时已投掷的末影珍珠会消失
+네더 차원문 대기 시간	Nether portal wait time	下界传送门等待时间
+서바이벌에서 차원문을 탈 때까지 기다리는 시간(틱)	Time to wait before a portal takes you in Survival (ticks)	生存模式下进入传送门需要等待的时间（刻）
+네더 차원문 대기 시간(크리에이티브)	Nether portal wait time (Creative)	下界传送门等待时间（创造）
+크리에이티브에서 차원문을 탈 때까지 기다리는 시간(틱)	Time to wait before a portal takes you in Creative (ticks)	创造模式下进入传送门需要等待的时间（刻）
+겉날개 속도 검사	Elytra speed check	鞘翅速度检查
+끄면 겉날개가 비정상적으로 빨라도 막지 않아요	When off, abnormally fast elytra flight isn't blocked	关闭后不阻止异常快速的鞘翅飞行
+이동 속도 검사	Movement speed check	移动速度检查
+끄면 비정상적으로 빠른 이동을 막지 않아요	When off, abnormally fast movement isn't blocked	关闭后不阻止异常快速的移动
+제작법 제한	Limited crafting	限制合成
+알아낸 제작법만 만들 수 있어요	Only recipes you've unlocked can be crafted	只能合成已解锁的配方
+관전자 지형 생성	Spectators generate chunks	旁观者生成区块
+관전 모드로 돌아다닐 때도 새 지형을 만들어요	New terrain is generated even while roaming in spectator mode	旁观模式下移动也会生成新地形
+몹 생성	Mob spawning	生物生成
+동물과 몬스터가 자연스럽게 생겨요	Animals and monsters spawn naturally	动物和怪物会自然生成
+몬스터 생성	Monster spawning	怪物生成
+좀비·크리퍼 같은 몬스터가 생겨요	Monsters like zombies and creepers spawn	僵尸、苦力怕等怪物会生成
+몹이 블록 망가뜨리기	Mob griefing	生物破坏
+크리퍼 폭발, 엔더맨이 블록 옮기기 등	Creeper explosions, endermen moving blocks, etc.	苦力怕爆炸、末影人搬方块等
+팬텀 생성	Phantom spawning	幻翼生成
+오래 안 자면 팬텀이 나타나요	Phantoms appear if you don't sleep for a long time	长时间不睡觉会出现幻翼
+약탈자 순찰대	Pillager patrols	掠夺者巡逻队
+약탈자 무리가 돌아다녀요	Groups of pillagers roam around	掠夺者群体四处游荡
+떠돌이 상인	Wandering trader	流浪商人
+떠돌이 상인이 찾아와요	Wandering traders visit	流浪商人会来访
+워든 생성	Warden spawning	监守者生成
+스컬크 비명체가 워든을 불러요	Sculk shriekers summon the Warden	幽匿尖啸体会召唤监守者
+습격	Raids	袭击
+흉조 효과로 마을 습격이 일어나요	The Bad Omen effect triggers village raids	不祥之兆效果会引发村庄袭击
+모두에게 화내기	Universal anger	普遍愤怒
+화난 중립 몹이 가까운 모든 플레이어를 공격해요	Angered neutral mobs attack all nearby players	被激怒的中立生物会攻击附近所有玩家
+죽은 플레이어 용서	Forgive dead players	原谅死亡玩家
+공격한 사람이 죽으면 중립 몹이 화를 풀어요	Neutral mobs calm down when their attacker dies	攻击者死亡后中立生物会平息
+끼임 한도	Max entity cramming	实体挤压上限
+한 칸에 이보다 많이 모이면 몹이 다쳐요	Mobs get hurt if more than this gather in one block	一格内聚集超过此数量时生物会受伤
+몹 전리품	Mob loot	生物掉落
+몹을 잡으면 아이템을 떨어뜨려요	Mobs drop items when killed	击杀生物会掉落物品
+시간 흐름	Daylight cycle	昼夜更替
+끄면 낮·밤이 멈춰요	When off, day and night stop	关闭后昼夜停止
+날씨 변화	Weather cycle	天气变化
+끄면 날씨가 바뀌지 않아요	When off, the weather doesn't change	关闭后天气不会变化
+작물 성장 속도	Random tick speed	随机刻速度
+클수록 작물·나무가 빨리 자라요 (기본 3)	Higher means crops and trees grow faster (default 3)	越高作物和树木长得越快（默认 3）
+불 번짐 범위	Fire spread radius	火焰蔓延范围
+플레이어 주변 몇 블록까지 불이 번질지 (0이면 안 번져요)	How many blocks around players fire spreads (0 = no spread)	火会蔓延到玩家周围多少格（0 为不蔓延）
+덩굴 퍼짐	Vine spreading	藤蔓蔓延
+덩굴이 저절로 자라서 퍼져요	Vines grow and spread on their own	藤蔓会自己生长蔓延
+물 무한 생성	Infinite water	无限水源
+물 두 칸 사이에 새 물 원천이 생겨요	New water sources form between two water blocks	两格水之间会形成新水源
+용암 무한 생성	Infinite lava	无限熔岩
+용암 두 칸 사이에 새 용암 원천이 생겨요	New lava sources form between two lava blocks	两格熔岩之间会形成新熔岩源
+눈 쌓이는 높이	Snow accumulation height	积雪高度
+눈이 올 때 쌓이는 최대 층 수	Max layers of snow that pile up when it snows	下雪时积雪的最大层数
+네더 차원문 사용	Allow nether portals	允许使用下界传送门
+끄면 차원문으로 네더에 갈 수 없어요	When off, you can't go to the Nether through portals	关闭后无法通过传送门进入下界
+전체 소리	Global sounds	全局音效
+보스 등장 같은 소리를 모두에게 들려줘요	Plays sounds like boss spawns to everyone	向所有人播放 Boss 出现等音效
+블록 아이템 떨어뜨림	Block drops	方块掉落
+블록을 부수면 아이템이 나와요	Breaking blocks drops items	破坏方块会掉落物品
+엔티티 아이템 떨어뜨림	Entity drops	实体掉落
+보트·그림 등을 부수면 아이템이 나와요	Breaking boats, paintings, etc. drops items	破坏船、画等会掉落物品
+TNT 폭발	TNT explodes	TNT 爆炸
+끄면 TNT가 터지지 않아요	When off, TNT doesn't explode	关闭后 TNT 不会爆炸
+블록 폭발 시 아이템 줄이기	Block explosion drop decay	方块爆炸掉落衰减
+침대 등 블록 폭발에 부서진 블록 일부만 떨어뜨려요	Only some blocks broken by block explosions (e.g. beds) drop	床等方块爆炸破坏的方块只掉落一部分
+몹 폭발 시 아이템 줄이기	Mob explosion drop decay	生物爆炸掉落衰减
+크리퍼 폭발에 부서진 블록 일부만 떨어뜨려요	Only some blocks broken by creeper explosions drop	苦力怕爆炸破坏的方块只掉落一部分
+TNT 폭발 시 아이템 줄이기	TNT explosion drop decay	TNT 爆炸掉落衰减
+TNT에 부서진 블록 일부만 떨어뜨려요	Only some blocks broken by TNT drop	TNT 破坏的方块只掉落一部分
+발사체가 블록 부수기	Projectiles break blocks	弹射物破坏方块
+화살 등이 장식 항아리 같은 블록을 부숴요	Arrows etc. break blocks like decorated pots	箭等会打碎饰纹陶罐之类的方块
+스포너 작동	Spawners enabled	刷怪笼启用
+몹 스포너에서 몹이 나와요	Mobs come out of mob spawners	刷怪笼会生成生物
+명령어 결과 알림	Command feedback	命令反馈
+명령어를 쓰면 결과를 채팅에 보여 줘요	Shows command results in chat	在聊天中显示命令执行结果
+명령 블록 알림	Command block output	命令方块输出
+명령 블록 실행 결과를 관리자 채팅에 보여 줘요	Shows command block results in admin chat	在管理员聊天中显示命令方块执行结果
+명령 블록 작동	Command blocks work	命令方块启用
+끄면 명령 블록이 실행되지 않아요	When off, command blocks don't run	关闭后命令方块不会执行
+관리자 명령 기록	Log admin commands	记录管理员命令
+관리자가 쓴 명령어를 다른 관리자에게 알려요	Notifies other admins of commands used by admins	将管理员使用的命令通知其他管理员
+명령 연쇄 한도	Max command chain length	命令连锁上限
+한 번에 실행할 수 있는 명령어 수	Number of commands that can run at once	一次可执行的命令数量
+명령 분기 한도	Max command fork count	命令分支上限
+명령어 실행이 갈라질 수 있는 최대 수	Max number of branches a command run can fork into	命令执行可分叉的最大数量
+블록 변경 한도	Block modification limit	方块修改上限
+fill 같은 명령으로 한 번에 바꿀 수 있는 블록 수	Blocks that commands like fill can change at once	fill 等命令一次可修改的方块数
+겉날개 움직임 확인 끄기	Disable elytra movement check	关闭鞘翅移动检查
+켜면 겉날개가 비정상적으로 빨라도 막지 않아요	When on, abnormally fast elytra flight isn't blocked	开启后不阻止异常快速的鞘翅飞行
+게임 반복 함수	Game loop function	游戏循环函数
+매 틱마다 실행할 함수(데이터 팩) 이름	Name of the function (data pack) to run every tick	每刻执行的函数（数据包）名称
+전체	All	全部
+켜짐	On	开
+꺼짐	Off	关
+규칙 이름으로 찾기	Search by rule name	按规则名称搜索
+서버에 물어보고 있어요	Asking the server	正在询问服务器
+찾는 규칙이 없어요	No matching rules	没有匹配的规则
+바꾸면 바로 적용돼요.	Changes apply immediately.	修改后立即生效。
+압축을 푸는 중…	Extracting…	正在解压…
+맵 zip 파일이나 월드 폴더를 여기에 끌어다 놓으세요	Drag a map zip file or world folder here	把地图 zip 文件或世界文件夹拖到这里
+누르면 zip 파일을 고를 수 있어요	Click to choose a zip file	点击选择 zip 文件
+인기순	Popular	热门
+최신순	Newest	最新
+업데이트순	Recently updated	最近更新
+다운로드순	Most downloaded	下载最多

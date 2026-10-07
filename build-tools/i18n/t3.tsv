@@ -1,337 +1,337 @@
-760	Name	名称
-761	To download CurseForge maps	要下载 CurseForge 地图
-762	API key	API 密钥
-763	is needed once. Log in to console.curseforge.com and	需要一次。登录 console.curseforge.com 并
-764	paste the key found there.	粘贴其中的密钥。
-765	Open CurseForge console	打开 CurseForge 控制台
-766	Paste API key	粘贴 API 密钥
-767	Map download cancelled	已取消下载地图
-768	Back to list	返回列表
-769	Downloading…	正在下载…
-770	· extracts when done	· 下载完成后解压
-771	Loading file list	正在加载文件列表
-772	No zip files available	没有可下载的 zip 文件
-773	No version info	无版本信息
-774	⚠ Version differs from the server (	⚠ 与服务器（
-775	)	）版本不同
-776	Download	下载
-777	Search maps (e.g. parkour, escape, skyblock)	搜索地图（例如 parkour、逃脱、skyblock）
-778	No maps found	没有找到地图
-779	New world	新建世界
-780	My world / zip	我的世界 / zip
-781	Map download	地图下载
-782	Choose another world	选择其他世界
-783	· click to change	· 点击更改
-784	This world is for	此世界适用于
-785	. Worlds from a version newer than the server (	。比服务器（
-786	) may not open.	）更新版本的世界可能无法打开。
-787	Clear	清除
-788	On the same Wi-Fi: {0} · On this PC: localhost	同一 Wi-Fi 下：{0} · 本机：localhost
-789	On this PC: localhost	本机：localhost
-790	Not reachable from outside	外部无法连接
-791	Preparing connection address…	正在准备连接地址…
-792	Connection address {0}	连接地址 {0}
-793	Address copied. Send it to your players!	已复制地址，发给玩家吧！
-794	Copy address	复制地址
-795	Check outside access	检查外部能否连接
-796	Peaceful	和平
-797	Easy	简单
-798	Normal	普通
-799	Hard	困难
-800	Survival	生存
-801	Gather resources and survive	收集资源，活下去
-802	Creative	创造
-803	Unlimited blocks, can fly	方块无限，可以飞行
-804	Adventure	冒险
-805	Can't break blocks	无法破坏方块
-806	Spectator	旁观
-807	Pass through walls and just watch	穿墙观看
-808	You can manage this while the server is running.	服务器运行时可以管理。
-809	Send announcement	发送公告
-810	Announcement sent	已发送公告
-811	Message to everyone	发给所有人的消息
-812	Can send while the server is running	服务器运行时可以发送
-813	Send	发送
-814	{0} online	{0} 人在线
-815	No one here yet	还没有人
-816	The server is stopped	服务器已关闭
-817	Players appear here when they join.	玩家进入后会显示在这里。
-818	View {0}'s info	查看 {0} 的信息
-819	Admin	管理员
-820	Game mode	游戏模式
-821	Changed {0} to {1} mode	已将 {0} 切换为{1}模式
-822	Remove admin rights	取消管理员权限
-823	Make admin	设为管理员
-824	Removed {0}'s admin rights	已取消 {0} 的管理员权限
-825	Made {0} an admin	已将 {0} 设为管理员
-826	Kicked {0}	已踢出 {0}
-827	{0} banned	已封禁 {0} 人
-828	Unbanned {0}	已解除 {0} 的封禁
-829	Unban	解除封禁
-830	Difficulty	难度
-831	Changed difficulty to {0}	已将难度改为{0}
-832	Change everyone's game mode	更改所有人的游戏模式
-833	Now	当前
-834	Time · Weather	时间 · 天气
-835	Set to morning	已切换到早晨
-836	Morning	早晨
-837	Set to day	已切换到白天
-838	Day	白天
-839	Set to night	已切换到夜晚
-840	Night	夜晚
-841	Cleared the weather	已设为晴天
-842	Clear	晴天
-843	Made it rain	已设为下雨
-844	Rain	下雨
-845	Made it thunder	已设为雷暴
-846	Thunder	雷暴
-847	Keep inventory, PvP, etc.	死亡不掉落、PvP 等
-848	Changes the game mode of everyone online now and anyone who joins later.	当前在线和之后进入的所有人的游戏模式都会改变。
-849	Changed everyone to {0} mode	已将所有人切换为{0}模式
-850	Ban {0}?	封禁 {0}？
-851	Banning kicks them from the server and they can't rejoin. You can unban them later from the ban list.	封禁后会被踢出服务器且无法再进入。之后可以在封禁列表中解除。
-852	Ban	封禁
-853	Banned {0}	已封禁 {0}
-854	Relevance	相关度
-855	Downloads	下载量
-856	Follows	关注数
-857	Newest	最新
-858	Updated	更新
-859	Challenging	挑战
-860	Combat	战斗
-861	Kitchen sink	综合
-862	Lightweight	轻量
-863	Magic	魔法
-864	Multiplayer	多人
-865	Optimization	优化
-866	Quests	任务
-867	Technology	科技
-868	Utility	实用
-869	today	今天
-870	{0} d ago	{0} 天前
-871	{0} mo ago	{0} 个月前
-872	{0} y ago	{0} 年前
-873	Modpack server	整合包服务器
-874	Loading versions	正在加载版本
-875	No versions available	没有可用的版本
-876	Beta	Beta
-877	Alpha	Alpha
-878	Choose	选择
-879	Not supported	不支持
-880	Choose again	重新选择
-881	Create server	创建服务器
-882	Minecraft	Minecraft
-883	Loader	加载器
-884	Server pack mods	服务端包模组
-885	Files to download to the server	下载到服务器的文件
-886	Creates the server from the server pack the author bundled for servers. Required mods and settings are already set up.	使用作者专门为服务器打包的服务端包创建。服务器所需的模组和设置已配置好。
-887	Client-only	仅玩家电脑需要的
-888	mods (minimaps, shaders, etc.) are skipped.	个模组（小地图、光影等）将跳过不下载。
-889	⚠ Mods the author blocked from other apps	⚠ 作者禁止在其他应用中下载的模组
-890	can't be downloaded. After creating the server, put them in the mods folder yourself:	个无法下载。创建服务器后请手动放入 mods 文件夹：
-891	and {0} more	等 {0} 个
-892	Server name	服务器名称
-893	A server with the same name exists	已有同名服务器
-894	Players also need to install the same modpack to join.	玩家也需要安装相同的整合包才能进入。
-895	Back	返回
-896	Search modpacks	搜索整合包
-897	Sort: {0}	排序：{0}
-898	🌐 Client & server	🌐 客户端·服务器
-899	🖥 Server	🖥 服务器
-900	No modpacks match	没有符合条件的整合包
-901	Try changing the search or filters.	试试更改搜索词或筛选条件。
-902	Site	网站
-903	Game version	游戏版本
-904	All versions	所有版本
-905	Modrinth shows only modpacks that run on servers.	Modrinth 只显示可在服务器上运行的整合包。
-906	Reading modpack…	正在读取整合包…
-907	Import modpack	导入整合包
-908	Choose or drag in a .mrpack, CurseForge modpack .zip, or server pack .zip	选择或拖入 .mrpack、CurseForge 整合包 .zip 或服务端包 .zip
-909	Export player modpack	导出玩家用整合包
-910	Saved the mod bundle. Players just extract it into their mods folder	已保存模组包。玩家解压后放入 mods 文件夹即可
-911	Saved the player modpack. Send this file to your players	已保存玩家用整合包。把这个文件发给玩家吧
-912	Not deleted because the server is running. Stop the server and delete again.	服务器正在运行，未删除。请关闭服务器后再删除。
-913	Installed {0} and {2} required {1}	已安装 {0} 及所需的 {2} 个{1}
-914	Installed {0}	已安装 {0}
-915	Couldn't install some required {0}: {1}	部分必需的{0}未能安装：{1}
-917	Also removed {0} that were installed with it and are no longer needed	同时删除了一起安装、现已不需要的 {0} 个
-918	{1} {0} have new versions	有 {1} 个{0}有新版本
-920	All {0} are up to date	所有{0}都是最新的
-921	Update {0}	更新{0}
-922	Update all {0}	全部更新{0}
-923	Updated	已更新
-924	Updated {0}	已更新 {0} 个
-925	Some couldn't be updated: {0}	有未能更新的项目：{0}
-926	Can't change {0} while the server is running	服务器运行中，无法更改{0}
-927	Available after the other task finishes	其他任务完成后可用
-928	Added {0}	已添加 {0} 个
-929	Added {0}	已添加 {0}
-930	Drop to add {0} (jar files)	松开以添加{0}（jar 文件）
-931	The server is running, so	服务器正在运行，
-932	can't be changed. Stop the server first.	无法更改。请先关闭服务器。
-933	Search by {0} name	按{0}名称搜索
-934	Required	必需的
-936	will be installed too.	也会一起安装。
-937	Players joining the server must also install this on their computers	进入服务器的玩家也需要在自己电脑上安装
-938	Players need it too	玩家也需安装
-939	No search results	没有搜索结果
-940	Installed	已安装的
-941	Show only mods players joining the server must also install	只显示进入服务器的玩家也需要安装的模组
-942	Players need it	玩家需安装
-943	Show only mods the app disabled because they're client-only or crash on servers	只显示因仅客户端或在服务器上崩溃而被应用禁用的模组
-944	Disabled by app	被应用禁用
-945	Update all	全部更新
-946	Look for new versions on Modrinth and CurseForge	在 Modrinth 和 CurseForge 上查找新版本
-947	Check for updates	检查更新
-948	Find installed {0}	查找已安装的{0}
-949	No {0} installed yet	还没有安装{0}
-950	Find and install on the left, or drag a jar file here.	在左侧查找并安装，或把 jar 文件拖到这里。
-951	No {1} matching '{0}'	没有与"{0}"匹配的{1}
-952	It's a mod for the game screen, so the server doesn't need it. The app disabled it.	这是游戏画面用的模组，服务器不需要。应用已将其禁用。
-953	Client only	仅客户端
-954	This version crashes when loaded on a server (a mod bug). It's fine in-game. The app disabled it.	此版本在服务器上加载会崩溃（模组的 bug）。游戏中没有问题。应用已将其禁用。
-955	Crashes on server	服务器上崩溃
-956	· needed by {0}	· {0} 需要
-957	Update only this	只更新这个
-958	Updating…	正在更新…
-959	New version {0} ↑	新版本 {0} ↑
-960	When disabled, the file stays but the server won't load it	禁用后文件保留，但服务器不会加载
-961	This file was added manually, so its version can't be changed	这是手动添加的文件，无法更改版本
-962	Includes only mods needed on players' computers. Server-only and disabled mods are left out.	只包含玩家电脑需要的模组。仅服务器端和已禁用的模组不包含在内。
-963	Import into Modrinth App or Prism Launcher to install the version, loader, and mods at once (small file)	导入 Modrinth App 或 Prism Launcher 即可一次装好版本、加载器和模组（文件较小）
-964	A bundle of mod files. Players extract it and put the files into their mods folder (works with any launcher)	模组文件包。玩家解压后直接放入 mods 文件夹（任何启动器都可用）
-965	Creating…	正在创建…
-966	A {1} with the same name as '{0}' was downloaded from another site. Installing the same thing twice stops the server from starting. Install only if you're sure it's different.	已从其他网站下载了与"{0}"同名的{1}。同一个东西装两次会导致服务器无法启动。确定不同时再安装。
-967	Changed {0} to version {1}	已将 {0} 更改为 {1} 版本
-968	Some couldn't be downloaded: {0}	部分未能下载：{0}
-969	Only versions for this server are shown.	只显示适用于此服务器的版本。
-970	No other versions for this server	没有适用于此服务器的其他版本
-971	Current version	当前版本
-972	Use this version	使用此版本
-973	Disabled {0} mods	已禁用 {0} 个模组
-974	Some mods couldn't be restored: {0}	有未能恢复的模组：{0}
-975	Some mods don't suit the server	有不适合服务器的模组
-976	The mods below aren't needed on the server or may crash it. Choose which to disable. They're only disabled, not deleted, so you can re-enable them later in the Mods tab.	下面的模组服务器不需要，或在服务器上启用可能崩溃。请选择要禁用的模组。只是禁用而非删除，之后可以在模组页重新启用。
-977	It's a mod for the game screen, so the server doesn't need it	这是游戏画面用的模组，服务器不需要
-978	This version crashes when loaded on a server (a mod bug). It's fine in-game	此版本在服务器上加载会崩溃（模组的 bug）。游戏中没有问题
-979	The server is running, so mods can't be disabled. Stop the server first.	服务器正在运行，无法禁用模组。请先关闭服务器。
-980	Leave as is for now; ask again next time the server starts or this server is opened	暂时保持不变，下次启动服务器或打开此服务器时再询问
-981	Later	稍后
-982	Keep all enabled regardless of the selection, and don't ask again	无论选择如何都全部保持启用，不再询问
-983	Keep all enabled	全部保持启用
-984	Disable {0}	禁用 {0} 个
-985	Choose mods to disable	请选择要禁用的模组
-986	💎 Diamond	💎 钻石
-987	⛓️ Iron ingot	⛓️ 铁锭
-988	🪙 Gold ingot	🪙 金锭
-989	💚 Emerald	💚 绿宝石
-990	🥩 Steak	🥩 牛排
-991	🍎 Golden apple	🍎 金苹果
-992	🔥 Torch	🔥 火把
-993	🪵 Oak log	🪵 橡木原木
-994	🗡️ Diamond sword	🗡️ 钻石剑
-995	⛏️ Diamond pickaxe	⛏️ 钻石镐
-996	🪽 Elytra	🪽 鞘翅
-997	🟣 Ender pearl	🟣 末影珍珠
-998	✏️ Enter manually	✏️ 手动输入
-999	Under 1 min	不到 1 分钟
-1000	{0} h {1} min	{0} 小时 {1} 分钟
-1001	{0} d {1} h	{0} 天 {1} 小时
-1002	{0} min ago	{0} 分钟前
-1003	{0} h ago	{0} 小时前
-1004	Last seen {0}	最后在线 {0}
-1005	Total playtime	总游戏时间
-1006	Joins	登录次数
-1007	times	次
-1008	First joined	首次登录
-1009	e.g. minecraft:netherite_ingot	例如 minecraft:netherite_ingot
-1010	Gave an item to {0}	已给 {0} 物品
-1011	Give	给予
-1012	Send them next to whom?	传送到谁的身边？
-1013	Sent {0} next to {1}	已将 {0} 传送到 {1} 身边
-1014	You can teleport them next to others when someone else is online	有其他人在线时可以传送到他们身边
-1015	Fully restores health and hunger	完全恢复生命值和饥饿值
-1016	Healed {0}	已治疗 {0}
-1017	Heal	治疗
-1018	While they're online you can give items, teleport, and heal.	在线时可以给予物品、传送和治疗。
-1019	{0} and {1} more	{0} 等 {1} 个
-1020	Please check before starting	启动前请确认
-1021	Starting like this may crash the server or make it slow.	直接启动可能导致服务器崩溃或变慢。
-1022	(disabled)	（已禁用）
-1023	Needs disabled mod "{0}"	需要已禁用的模组"{0}"
-1024	Mod "{0}" is missing	缺少模组"{0}"
-1025	needs it.	需要它。
-1026	Search in the Mods tab	在模组页查找
-1027	Find	查找
-1028	" mod has	"模组有
-1029	copies	个
-1030	The server won't start if the same mod is present two or more times:	同一模组有两个以上时服务器无法启动：
-1031	Not enough memory	内存不足
-1032	Start anyway	仍然启动
-1033	Please choose	请选择
-1034	Search	搜索
-1035	No matching items	没有匹配的项目
-1036	Snapshot	快照
-1037	on the server	在服务器上
-1038	Moved server {0} to the Recycle Bin	已将服务器 {0} 移到回收站
-1039	Click to rename	点击重命名
-1040	Server settings	服务器设置
-1041	Busy: {0}. Can't duplicate now	正在{0}，无法复制
-1042	Stop the server before duplicating	请先关闭服务器再复制
-1043	Open server folder	打开服务器文件夹
-1044	Busy: {0}. Can't delete now	正在{0}，无法删除
-1045	Stop the server before deleting	请先关闭服务器再删除
-1046	Stops immediately without saving	不保存立即关闭
-1047	Force stop	强制关闭
-1048	Stopping…	正在关闭…
-1049	Busy: {0}. You can start it when it's done	正在{0}。完成后可以启动
-1050	Checking…	正在检查…
-1051	Preparing…	正在准备…
-1052	{0}…	{0}中…
-1053	Console	控制台
-1054	Manage	管理
-1055	Data packs	数据包
-1056	Config files	配置文件
-1057	Search log	搜索日志
-1058	Clear search	清除搜索
-1059	Warnings & errors only	仅警告和错误
-1060	Follow to the bottom when new logs appear	有新日志时自动滚到底部
-1061	Follow bottom	跟随底部
-1062	lines	行
-1063	To bottom	到底部
-1064	Tab to select · ↑↓ move · Esc close	Tab 选择 · ↑↓ 移动 · Esc 关闭
-1065	Enter a command (e.g. say hi, op nickname, list)	输入命令（例如 say 你好、op 昵称、list）
-1066	Commands can be used while the server is running	服务器运行时可以使用命令
-1067	Rename server	重命名服务器
-1068	Only the name shown in the app changes.	只更改应用中显示的名称。
-1069	Copies the world, mods, and settings into a new server.	复制世界、模组和设置来创建新服务器。
-1070	{0} copy	{0} 副本
-1071	Duplicate	复制
-1072	Created server {0}	已创建服务器 {0}
-1073	Delete server {0}?	删除服务器 {0}？
-1074	The world, settings, and mods all go to the Recycle Bin. You can restore them from there if needed.	世界、设置和模组都会移到回收站。需要时可以从回收站恢复。
-1075	Delete	删除
-1076	{0} s	{0} 秒
-1077	{0} min {1} s	{0} 分 {1} 秒
-1078
-1079	Version	版本
-1080	Game	游戏
-1081	Server description (MOTD)	服务器描述
-1082	The text shown under the server name in the Minecraft server list. Color codes like §a work too.	在 Minecraft 服务器列表中显示在服务器名称下方的文字。也可以使用 §a 等颜色代码。
-1083	Our server	我们的服务器
-1084	Allow flight	允许飞行
-1085	Turn on when using mods/plugins with flight. When off, the server kicks people who fly.	使用带飞行功能的模组或插件时请开启。关闭后服务器会踢出飞行的人。
-1086	Enable command blocks	启用命令方块
-1087	Command blocks can be placed and used.	可以放置和使用命令方块。
-1088	Spawn animals	生成动物
-1089	Spawn villagers	生成村民
-1090	Advancement announcements	进度通知
-1091	Announces completed advancements in chat.	完成进度时在聊天中通知。
-1092	Operator permission level	管理员权限等级
-1093	The range of commands admins (OP) can use. Usually leave it at 4 (all).	管理员（OP）可以使用的命令范围。通常设为 4（全部）即可。
-1094	1 · Bypass spawn protection	1 · 忽略出生点保护
-1095	2 · Cheat commands	2 · 作弊命令
-1096	3 · Player management	3 · 玩家管理
-1097	4 · Everything (incl. stopping the server)	4 · 全部（包括关闭服务器）
-1098	Allow Nether	允许下界
-1099	View distance	视距
+이름순	Name	名称
+CurseForge 맵을 받으려면	To download CurseForge maps	要下载 CurseForge 地图
+API 키	API key	API 密钥
+가 한 번 필요해요. console.curseforge.com에 로그인해서	is needed once. Log in to console.curseforge.com and	需要一次。登录 console.curseforge.com 并
+에 있는 키를 붙여 넣어 주세요.	paste the key found there.	粘贴其中的密钥。
+CurseForge 콘솔 열기	Open CurseForge console	打开 CurseForge 控制台
+API 키 붙여 넣기	Paste API key	粘贴 API 密钥
+맵 받기를 취소했어요	Map download cancelled	已取消下载地图
+목록으로	Back to list	返回列表
+받는 중…	Downloading…	正在下载…
+· 다 받으면 압축을 풀어요	· extracts when done	· 下载完成后解压
+파일 목록을 불러오고 있어요	Loading file list	正在加载文件列表
+받을 수 있는 zip 파일이 없어요	No zip files available	没有可下载的 zip 文件
+버전 정보 없음	No version info	无版本信息
+⚠ 서버(	⚠ Version differs from the server (	⚠ 与服务器（
+)와 버전이 달라요	)	）版本不同
+받기	Download	下载
+맵 검색 (예: parkour, 탈출, skyblock)	Search maps (e.g. parkour, escape, skyblock)	搜索地图（例如 parkour、逃脱、skyblock）
+찾는 맵이 없어요	No maps found	没有找到地图
+새 월드 만들기	New world	新建世界
+내 월드·zip	My world / zip	我的世界 / zip
+맵 다운로드	Map download	地图下载
+다른 월드 고르기	Choose another world	选择其他世界
+· 눌러서 바꾸기	· click to change	· 点击更改
+이 월드는	This world is for	此世界适用于
+용이에요. 서버(	. Worlds from a version newer than the server (	。比服务器（
+)보다 새 버전의 월드는 열리지 않을 수 있어요.	) may not open.	）更新版本的世界可能无法打开。
+지우기	Clear	清除
+같은 와이파이에서는 {0} · 이 컴퓨터에서는 localhost	On the same Wi-Fi: {0} · On this PC: localhost	同一 Wi-Fi 下：{0} · 本机：localhost
+이 컴퓨터에서는 localhost	On this PC: localhost	本机：localhost
+밖에서 접속할 수 없어요	Not reachable from outside	外部无法连接
+접속 주소 준비 중…	Preparing connection address…	正在准备连接地址…
+접속 주소 {0}	Connection address {0}	连接地址 {0}
+주소를 복사했어요. 플레이어에게 보내 주세요!	Address copied. Send it to your players!	已复制地址，发给玩家吧！
+주소 복사	Copy address	复制地址
+밖에서 접속되는지 확인	Check outside access	检查外部能否连接
+평화로움	Peaceful	和平
+쉬움	Easy	简单
+보통	Normal	普通
+어려움	Hard	困难
+서바이벌	Survival	生存
+자원을 모으고 살아남아요	Gather resources and survive	收集资源，活下去
+크리에이티브	Creative	创造
+블록 무한, 날 수 있어요	Unlimited blocks, can fly	方块无限，可以飞行
+모험	Adventure	冒险
+블록을 부술 수 없어요	Can't break blocks	无法破坏方块
+관전	Spectator	旁观
+벽을 통과하며 구경만 해요	Pass through walls and just watch	穿墙观看
+서버가 켜져 있을 때 관리할 수 있어요.	You can manage this while the server is running.	服务器运行时可以管理。
+공지 보내기	Send announcement	发送公告
+공지를 보냈어요	Announcement sent	已发送公告
+모두에게 보낼 메시지	Message to everyone	发给所有人的消息
+서버가 켜져 있을 때 보낼 수 있어요	Can send while the server is running	服务器运行时可以发送
+보내기	Send	发送
+접속 중 {0}명	{0} online	{0} 人在线
+아직 아무도 없어요	No one here yet	还没有人
+서버가 꺼져 있어요	The server is stopped	服务器已关闭
+플레이어가 들어오면 여기에 보여요.	Players appear here when they join.	玩家进入后会显示在这里。
+{0} 정보 보기	View {0}'s info	查看 {0} 的信息
+관리자	Admin	管理员
+게임 모드	Game mode	游戏模式
+{0}님을 {1} 모드로 바꿨어요	Changed {0} to {1} mode	已将 {0} 切换为{1}模式
+관리자 권한 빼기	Remove admin rights	取消管理员权限
+관리자로 만들기	Make admin	设为管理员
+{0}님의 관리자 권한을 뺐어요	Removed {0}'s admin rights	已取消 {0} 的管理员权限
+{0}님을 관리자로 만들었어요	Made {0} an admin	已将 {0} 设为管理员
+{0}님을 내보냈어요	Kicked {0}	已踢出 {0}
+차단한 사람 {0}명	{0} banned	已封禁 {0} 人
+{0}님의 차단을 풀었어요	Unbanned {0}	已解除 {0} 的封禁
+차단 풀기	Unban	解除封禁
+난이도	Difficulty	难度
+난이도를 {0}(으)로 바꿨어요	Changed difficulty to {0}	已将难度改为{0}
+모두의 게임 모드 바꾸기	Change everyone's game mode	更改所有人的游戏模式
+지금	Now	当前
+시간 · 날씨	Time · Weather	时间 · 天气
+아침으로 바꿨어요	Set to morning	已切换到早晨
+아침	Morning	早晨
+낮으로 바꿨어요	Set to day	已切换到白天
+낮	Day	白天
+밤으로 바꿨어요	Set to night	已切换到夜晚
+밤	Night	夜晚
+날씨를 맑게 했어요	Cleared the weather	已设为晴天
+맑음	Clear	晴天
+비가 내리게 했어요	Made it rain	已设为下雨
+비	Rain	下雨
+천둥이 치게 했어요	Made it thunder	已设为雷暴
+천둥	Thunder	雷暴
+죽어도 아이템 유지, PvP 등	Keep inventory, PvP, etc.	死亡不掉落、PvP 等
+지금 접속한 모든 사람과, 앞으로 들어올 사람의 게임 모드가 바뀌어요.	Changes the game mode of everyone online now and anyone who joins later.	当前在线和之后进入的所有人的游戏模式都会改变。
+모두 {0} 모드로 바꿨어요	Changed everyone to {0} mode	已将所有人切换为{0}模式
+{0}님을 차단할까요?	Ban {0}?	封禁 {0}？
+차단하면 서버에서 내보내지고 다시 들어올 수 없어요. 나중에 차단 목록에서 풀 수 있어요.	Banning kicks them from the server and they can't rejoin. You can unban them later from the ban list.	封禁后会被踢出服务器且无法再进入。之后可以在封禁列表中解除。
+차단하기	Ban	封禁
+{0}님을 차단했어요	Banned {0}	已封禁 {0}
+관련도	Relevance	相关度
+다운로드	Downloads	下载量
+팔로우	Follows	关注数
+최신	Newest	最新
+업데이트	Updated	更新
+도전	Challenging	挑战
+전투	Combat	战斗
+종합	Kitchen sink	综合
+가벼움	Lightweight	轻量
+마법	Magic	魔法
+멀티플레이	Multiplayer	多人
+최적화	Optimization	优化
+퀘스트	Quests	任务
+기술	Technology	科技
+편의	Utility	实用
+오늘	today	今天
+{0}일 전	{0} d ago	{0} 天前
+{0}달 전	{0} mo ago	{0} 个月前
+{0}년 전	{0} y ago	{0} 年前
+모드팩 서버	Modpack server	整合包服务器
+버전을 불러오고 있어요	Loading versions	正在加载版本
+받을 수 있는 버전이 없어요	No versions available	没有可用的版本
+베타	Beta	Beta
+알파	Alpha	Alpha
+고르기	Choose	选择
+지원 안 함	Not supported	不支持
+다시 고르기	Choose again	重新选择
+서버 만들기	Create server	创建服务器
+마인크래프트	Minecraft	Minecraft
+로더	Loader	加载器
+서버 팩의 모드	Server pack mods	服务端包模组
+서버에 받을 파일	Files to download to the server	下载到服务器的文件
+제작자가 서버용으로 따로 묶어 둔 서버 팩으로 만들어요. 서버에 필요한 모드와 설정이 이미 맞춰져 있어요.	Creates the server from the server pack the author bundled for servers. Required mods and settings are already set up.	使用作者专门为服务器打包的服务端包创建。服务器所需的模组和设置已配置好。
+게임하는 사람 컴퓨터에만 필요한	Client-only	仅玩家电脑需要的
+개(미니맵·셰이더 등)는 빼고 받아요.	mods (minimaps, shaders, etc.) are skipped.	个模组（小地图、光影等）将跳过不下载。
+⚠ 제작자가 다른 앱에서 받는 것을 막아 둔 모드	⚠ Mods the author blocked from other apps	⚠ 作者禁止在其他应用中下载的模组
+개는 받을 수 없어요. 서버를 만든 뒤 mods 폴더에 직접 넣어 주세요:	can't be downloaded. After creating the server, put them in the mods folder yourself:	个无法下载。创建服务器后请手动放入 mods 文件夹：
+외 {0}개	and {0} more	等 {0} 个
+서버 이름	Server name	服务器名称
+같은 이름의 서버가 있어요	A server with the same name exists	已有同名服务器
+플레이어들도 같은 모드팩을 설치해야 들어올 수 있어요.	Players also need to install the same modpack to join.	玩家也需要安装相同的整合包才能进入。
+뒤로	Back	返回
+모드팩 검색	Search modpacks	搜索整合包
+정렬: {0}	Sort: {0}	排序：{0}
+🌐 클라이언트·서버	🌐 Client & server	🌐 客户端·服务器
+🖥 서버	🖥 Server	🖥 服务器
+조건에 맞는 모드팩이 없어요	No modpacks match	没有符合条件的整合包
+검색어나 필터를 바꿔 보세요.	Try changing the search or filters.	试试更改搜索词或筛选条件。
+사이트	Site	网站
+게임 버전	Game version	游戏版本
+모든 버전	All versions	所有版本
+Modrinth는 서버에서 돌아가는 모드팩만 보여 드려요.	Modrinth shows only modpacks that run on servers.	Modrinth 只显示可在服务器上运行的整合包。
+모드팩을 읽는 중…	Reading modpack…	正在读取整合包…
+모드팩 가져오기	Import modpack	导入整合包
+.mrpack, CurseForge 모드팩 .zip, 서버 팩 .zip을 고르거나 끌어다 놓으세요	Choose or drag in a .mrpack, CurseForge modpack .zip, or server pack .zip	选择或拖入 .mrpack、CurseForge 整合包 .zip 或服务端包 .zip
+플레이어용 모드팩 내보내기	Export player modpack	导出玩家用整合包
+모드 묶음을 저장했어요. 플레이어는 풀어서 mods 폴더에 넣으면 돼요	Saved the mod bundle. Players just extract it into their mods folder	已保存模组包。玩家解压后放入 mods 文件夹即可
+플레이어용 모드팩을 저장했어요. 이 파일을 플레이어에게 보내 주세요	Saved the player modpack. Send this file to your players	已保存玩家用整合包。把这个文件发给玩家吧
+서버가 켜져서 지우지 않았어요. 서버를 끈 뒤 다시 지워 주세요.	Not deleted because the server is running. Stop the server and delete again.	服务器正在运行，未删除。请关闭服务器后再删除。
+{0}와(과) 필요한 {1} {2}개를 설치했어요	Installed {0} and {2} required {1}	已安装 {0} 及所需的 {2} 个{1}
+{0}을(를) 설치했어요	Installed {0}	已安装 {0}
+일부 필수 {0} 설치하지 못했어요: {1}	Couldn't install some required {0}: {1}	部分必需的{0}未能安装：{1}
+같이 설치됐던 {0}개도 이제 필요 없어서 지웠어요	Also removed {0} that were installed with it and are no longer needed	同时删除了一起安装、现已不需要的 {0} 个
+새 버전이 있는 {0} {1}개 있어요	{1} {0} have new versions	有 {1} 个{0}有新版本
+모든 {0} 최신이에요	All {0} are up to date	所有{0}都是最新的
+{0} 업데이트	Update {0}	更新{0}
+{0} 모두 업데이트	Update all {0}	全部更新{0}
+업데이트했어요	Updated	已更新
+{0}개를 업데이트했어요	Updated {0}	已更新 {0} 个
+업데이트하지 못한 것이 있어요: {0}	Some couldn't be updated: {0}	有未能更新的项目：{0}
+서버가 켜져 있어서 {0} 바꿀 수 없어요	Can't change {0} while the server is running	服务器运行中，无法更改{0}
+다른 작업이 끝나면 할 수 있어요	Available after the other task finishes	其他任务完成后可用
+{0}개를 넣었어요	Added {0}	已添加 {0} 个
+{0}을(를) 넣었어요	Added {0}	已添加 {0}
+놓으면 {0} 추가해요 (jar 파일)	Drop to add {0} (jar files)	松开以添加{0}（jar 文件）
+서버가 켜져 있어서	The server is running, so	服务器正在运行，
+바꿀 수 없어요. 먼저 서버를 꺼 주세요.	can't be changed. Stop the server first.	无法更改。请先关闭服务器。
+{0} 이름으로 검색해 보세요	Search by {0} name	按{0}名称搜索
+필요한	Required	必需的
+같이 설치돼요.	will be installed too.	也会一起安装。
+서버에 들어오는 플레이어도 자기 컴퓨터에 설치해야 해요	Players joining the server must also install this on their computers	进入服务器的玩家也需要在自己电脑上安装
+플레이어도 설치	Players need it too	玩家也需安装
+검색 결과가 없어요	No search results	没有搜索结果
+설치된	Installed	已安装的
+서버에 들어오는 플레이어도 자기 컴퓨터에 설치해야 하는 모드만 보여 줘요	Show only mods players joining the server must also install	只显示进入服务器的玩家也需要安装的模组
+플레이어 설치 필요	Players need it	玩家需安装
+클라이언트 전용이거나 서버에서 튕겨서 앱이 꺼 둔 모드만 보여 줘요	Show only mods the app disabled because they're client-only or crash on servers	只显示因仅客户端或在服务器上崩溃而被应用禁用的模组
+앱이 꺼 둔 모드	Disabled by app	被应用禁用
+모두 업데이트	Update all	全部更新
+Modrinth·CurseForge에서 새 버전을 찾아봐요	Look for new versions on Modrinth and CurseForge	在 Modrinth 和 CurseForge 上查找新版本
+업데이트 확인	Check for updates	检查更新
+설치된 {0} 찾기	Find installed {0}	查找已安装的{0}
+아직 설치한 {0} 없어요	No {0} installed yet	还没有安装{0}
+왼쪽에서 찾아 설치하거나, jar 파일을 여기로 끌어다 놓아요.	Find and install on the left, or drag a jar file here.	在左侧查找并安装，或把 jar 文件拖到这里。
+'{0}'에 맞는 {1} 없어요	No {1} matching '{0}'	没有与"{0}"匹配的{1}
+게임 화면용 모드라서 서버에서는 필요 없어요. 앱이 꺼 뒀어요.	It's a mod for the game screen, so the server doesn't need it. The app disabled it.	这是游戏画面用的模组，服务器不需要。应用已将其禁用。
+클라이언트 전용	Client only	仅客户端
+이 버전은 서버에서 켜면 튕겨요 (모드 쪽 버그). 게임에서는 문제없어요. 앱이 꺼 뒀어요.	This version crashes when loaded on a server (a mod bug). It's fine in-game. The app disabled it.	此版本在服务器上加载会崩溃（模组的 bug）。游戏中没有问题。应用已将其禁用。
+서버에서 튕김	Crashes on server	服务器上崩溃
+· {0}에 필요	· needed by {0}	· {0} 需要
+이것만 업데이트	Update only this	只更新这个
+업데이트 중…	Updating…	正在更新…
+새 버전 {0} ↑	New version {0} ↑	新版本 {0} ↑
+끄면 파일은 남기고 서버가 불러오지 않아요	When disabled, the file stays but the server won't load it	禁用后文件保留，但服务器不会加载
+직접 넣은 파일이라 버전을 바꿀 수 없어요	This file was added manually, so its version can't be changed	这是手动添加的文件，无法更改版本
+플레이어 컴퓨터에 필요한 모드만 담아요. 서버 전용 모드와 꺼 둔 모드는 빠져요.	Includes only mods needed on players' computers. Server-only and disabled mods are left out.	只包含玩家电脑需要的模组。仅服务器端和已禁用的模组不包含在内。
+Modrinth App·Prism Launcher에 넣으면 버전·로더·모드가 한 번에 깔려요 (파일이 작아요)	Import into Modrinth App or Prism Launcher to install the version, loader, and mods at once (small file)	导入 Modrinth App 或 Prism Launcher 即可一次装好版本、加载器和模组（文件较小）
+모드 파일 묶음이에요. 플레이어가 풀어서 mods 폴더에 직접 넣어요 (어떤 런처든 돼요)	A bundle of mod files. Players extract it and put the files into their mods folder (works with any launcher)	模组文件包。玩家解压后直接放入 mods 文件夹（任何启动器都可用）
+만드는 중…	Creating…	正在创建…
+'{0}'과(와) 이름이 같은 {1} 다른 사이트에서 받아져 있어요. 같은 것을 두 번 넣으면 서버가 켜지지 않아요. 다른 것이 확실할 때만 설치해 주세요.	A {1} with the same name as '{0}' was downloaded from another site. Installing the same thing twice stops the server from starting. Install only if you're sure it's different.	已从其他网站下载了与"{0}"同名的{1}。同一个东西装两次会导致服务器无法启动。确定不同时再安装。
+{0}을(를) {1} 버전으로 바꿨어요	Changed {0} to version {1}	已将 {0} 更改为 {1} 版本
+일부를 받지 못했어요: {0}	Some couldn't be downloaded: {0}	部分未能下载：{0}
+이 서버에 맞는 버전만 보여 드려요.	Only versions for this server are shown.	只显示适用于此服务器的版本。
+이 서버에 맞는 다른 버전이 없어요	No other versions for this server	没有适用于此服务器的其他版本
+지금 버전	Current version	当前版本
+이 버전으로	Use this version	使用此版本
+모드 {0}개를 껐어요	Disabled {0} mods	已禁用 {0} 个模组
+되돌리지 못한 모드가 있어요: {0}	Some mods couldn't be restored: {0}	有未能恢复的模组：{0}
+서버에 맞지 않는 모드가 있어요	Some mods don't suit the server	有不适合服务器的模组
+아래 모드는 서버에서 필요 없거나, 서버에서 켜면 튕길 수 있어요. 끌 모드를 골라 주세요. 지우지 않고 꺼 두기만 해서 나중에 모드 탭에서 다시 켤 수 있어요.	The mods below aren't needed on the server or may crash it. Choose which to disable. They're only disabled, not deleted, so you can re-enable them later in the Mods tab.	下面的模组服务器不需要，或在服务器上启用可能崩溃。请选择要禁用的模组。只是禁用而非删除，之后可以在模组页重新启用。
+게임 화면용 모드라서 서버에서는 필요 없어요	It's a mod for the game screen, so the server doesn't need it	这是游戏画面用的模组，服务器不需要
+이 버전은 서버에서 켜면 튕겨요 (모드 쪽 버그). 게임에서는 문제없어요	This version crashes when loaded on a server (a mod bug). It's fine in-game	此版本在服务器上加载会崩溃（模组的 bug）。游戏中没有问题
+서버가 켜져 있어서 모드를 끌 수 없어요. 먼저 서버를 꺼 주세요.	The server is running, so mods can't be disabled. Stop the server first.	服务器正在运行，无法禁用模组。请先关闭服务器。
+지금은 그대로 두고, 다음에 서버를 켜거나 이 서버를 열 때 다시 물어봐요	Leave as is for now; ask again next time the server starts or this server is opened	暂时保持不变，下次启动服务器或打开此服务器时再询问
+나중에	Later	稍后
+고른 것과 상관없이 모두 켜 두고, 다시 묻지 않아요	Keep all enabled regardless of the selection, and don't ask again	无论选择如何都全部保持启用，不再询问
+모두 켜 두기	Keep all enabled	全部保持启用
+{0}개 끄기	Disable {0}	禁用 {0} 个
+끌 모드를 골라 주세요	Choose mods to disable	请选择要禁用的模组
+💎 다이아몬드	💎 Diamond	💎 钻石
+⛓️ 철 주괴	⛓️ Iron ingot	⛓️ 铁锭
+🪙 금 주괴	🪙 Gold ingot	🪙 金锭
+💚 에메랄드	💚 Emerald	💚 绿宝石
+🥩 스테이크	🥩 Steak	🥩 牛排
+🍎 황금 사과	🍎 Golden apple	🍎 金苹果
+🔥 횃불	🔥 Torch	🔥 火把
+🪵 참나무 원목	🪵 Oak log	🪵 橡木原木
+🗡️ 다이아몬드 검	🗡️ Diamond sword	🗡️ 钻石剑
+⛏️ 다이아몬드 곡괭이	⛏️ Diamond pickaxe	⛏️ 钻石镐
+🪽 겉날개	🪽 Elytra	🪽 鞘翅
+🟣 엔더 진주	🟣 Ender pearl	🟣 末影珍珠
+✏️ 직접 입력	✏️ Enter manually	✏️ 手动输入
+1분 미만	Under 1 min	不到 1 分钟
+{0}시간 {1}분	{0} h {1} min	{0} 小时 {1} 分钟
+{0}일 {1}시간	{0} d {1} h	{0} 天 {1} 小时
+{0}분 전	{0} min ago	{0} 分钟前
+{0}시간 전	{0} h ago	{0} 小时前
+마지막 접속 {0}	Last seen {0}	最后在线 {0}
+총 플레이	Total playtime	总游戏时间
+접속 횟수	Joins	登录次数
+번	times	次
+처음 접속	First joined	首次登录
+예: minecraft:netherite_ingot	e.g. minecraft:netherite_ingot	例如 minecraft:netherite_ingot
+{0}님에게 아이템을 줬어요	Gave an item to {0}	已给 {0} 物品
+주기	Give	给予
+누구 옆으로 보낼까요?	Send them next to whom?	传送到谁的身边？
+{0}님을 {1}님 옆으로 보냈어요	Sent {0} next to {1}	已将 {0} 传送到 {1} 身边
+다른 사람이 접속하면 그 옆으로 순간이동시킬 수 있어요	You can teleport them next to others when someone else is online	有其他人在线时可以传送到他们身边
+체력과 배고픔을 가득 채워요	Fully restores health and hunger	完全恢复生命值和饥饿值
+{0}님을 회복시켰어요	Healed {0}	已治疗 {0}
+회복	Heal	治疗
+접속 중일 때 아이템 주기, 순간이동, 회복을 할 수 있어요.	While they're online you can give items, teleport, and heal.	在线时可以给予物品、传送和治疗。
+{0} 외 {1}개	{0} and {1} more	{0} 等 {1} 个
+켜기 전에 확인해 주세요	Please check before starting	启动前请确认
+이대로 켜면 서버가 튕기거나 느릴 수 있어요.	Starting like this may crash the server or make it slow.	直接启动可能导致服务器崩溃或变慢。
+(꺼져 있음)	(disabled)	（已禁用）
+꺼 둔 모드 "{0}"이(가) 필요해요	Needs disabled mod "{0}"	需要已禁用的模组"{0}"
+"{0}" 모드가 없어요	Mod "{0}" is missing	缺少模组"{0}"
+에 필요해요.	needs it.	需要它。
+모드 탭에서 찾아요	Search in the Mods tab	在模组页查找
+찾기	Find	查找
+" 모드가	" mod has	"模组有
+개 들어 있어요	copies	个
+같은 모드가 두 개 이상 있으면 서버가 켜지지 않아요:	The server won't start if the same mod is present two or more times:	同一模组有两个以上时服务器无法启动：
+메모리가 모자라요	Not enough memory	内存不足
+그래도 켜기	Start anyway	仍然启动
+선택해 주세요	Please choose	请选择
+검색	Search	搜索
+찾는 항목이 없어요	No matching items	没有匹配的项目
+스냅샷	Snapshot	快照
+서버에	on the server	在服务器上
+{0} 서버를 휴지통으로 옮겼어요	Moved server {0} to the Recycle Bin	已将服务器 {0} 移到回收站
+눌러서 이름 바꾸기	Click to rename	点击重命名
+서버 설정	Server settings	服务器设置
+{0} 중이라 복제할 수 없어요	Busy: {0}. Can't duplicate now	正在{0}，无法复制
+서버를 끈 다음에 복제할 수 있어요	Stop the server before duplicating	请先关闭服务器再复制
+서버 폴더 열기	Open server folder	打开服务器文件夹
+{0} 중이라 삭제할 수 없어요	Busy: {0}. Can't delete now	正在{0}，无法删除
+서버를 끈 다음에 삭제할 수 있어요	Stop the server before deleting	请先关闭服务器再删除
+저장하지 않고 바로 꺼요	Stops immediately without saving	不保存立即关闭
+강제 종료	Force stop	强制关闭
+끄는 중…	Stopping…	正在关闭…
+{0} 중이에요. 끝나면 켤 수 있어요	Busy: {0}. You can start it when it's done	正在{0}。完成后可以启动
+점검 중…	Checking…	正在检查…
+준비 중…	Preparing…	正在准备…
+{0} 중…	{0}…	{0}中…
+콘솔	Console	控制台
+관리	Manage	管理
+데이터팩	Data packs	数据包
+설정 파일	Config files	配置文件
+로그 검색	Search log	搜索日志
+검색 지우기	Clear search	清除搜索
+경고·오류만	Warnings & errors only	仅警告和错误
+새 로그가 나오면 맨 아래로 따라 내려가요	Follow to the bottom when new logs appear	有新日志时自动滚到底部
+아래로 따라가기	Follow bottom	跟随底部
+줄	lines	行
+맨 아래로	To bottom	到底部
+Tab으로 고르기 · ↑↓ 이동 · Esc 닫기	Tab to select · ↑↓ move · Esc close	Tab 选择 · ↑↓ 移动 · Esc 关闭
+명령어를 입력해 주세요 (예: say 안녕, op 닉네임, list)	Enter a command (e.g. say hi, op nickname, list)	输入命令（例如 say 你好、op 昵称、list）
+서버가 켜져 있을 때 명령어를 쓸 수 있어요	Commands can be used while the server is running	服务器运行时可以使用命令
+서버 이름 바꾸기	Rename server	重命名服务器
+앱에 보이는 이름만 바뀌어요.	Only the name shown in the app changes.	只更改应用中显示的名称。
+월드, 모드, 설정을 모두 복사해서 새 서버를 만들어요.	Copies the world, mods, and settings into a new server.	复制世界、模组和设置来创建新服务器。
+{0} 복사본	{0} copy	{0} 副本
+복제하기	Duplicate	复制
+{0} 서버를 만들었어요	Created server {0}	已创建服务器 {0}
+{0} 서버를 삭제할까요?	Delete server {0}?	删除服务器 {0}？
+월드, 설정, 모드가 모두 휴지통으로 옮겨져요. 필요하면 휴지통에서 되살릴 수 있어요.	The world, settings, and mods all go to the Recycle Bin. You can restore them from there if needed.	世界、设置和模组都会移到回收站。需要时可以从回收站恢复。
+삭제하기	Delete	删除
+{0}초	{0} s	{0} 秒
+{0}분 {1}초	{0} min {1} s	{0} 分 {1} 秒
+째
+버전	Version	版本
+게임	Game	游戏
+서버 설명	Server description (MOTD)	服务器描述
+마인크래프트 서버 목록에서 서버 이름 아래에 보이는 문구예요. §a 같은 색 코드도 쓸 수 있어요.	The text shown under the server name in the Minecraft server list. Color codes like §a work too.	在 Minecraft 服务器列表中显示在服务器名称下方的文字。也可以使用 §a 等颜色代码。
+우리들의 서버	Our server	我们的服务器
+비행 허용	Allow flight	允许飞行
+비행 기능이 있는 모드·플러그인을 쓸 때 켜 주세요. 끄면 날아다니는 사람을 서버가 내보내요.	Turn on when using mods/plugins with flight. When off, the server kicks people who fly.	使用带飞行功能的模组或插件时请开启。关闭后服务器会踢出飞行的人。
+명령 블록 사용	Enable command blocks	启用命令方块
+명령 블록을 설치하고 작동시킬 수 있어요.	Command blocks can be placed and used.	可以放置和使用命令方块。
+동물 생성	Spawn animals	生成动物
+주민 생성	Spawn villagers	生成村民
+업적 알림	Advancement announcements	进度通知
+업적을 달성하면 채팅에 알려 줘요.	Announces completed advancements in chat.	完成进度时在聊天中通知。
+관리자 권한 단계	Operator permission level	管理员权限等级
+관리자(OP)가 쓸 수 있는 명령어 범위예요. 보통 4(전부)로 두면 돼요.	The range of commands admins (OP) can use. Usually leave it at 4 (all).	管理员（OP）可以使用的命令范围。通常设为 4（全部）即可。
+1 · 스폰 보호 무시	1 · Bypass spawn protection	1 · 忽略出生点保护
+2 · 치트 명령어	2 · Cheat commands	2 · 作弊命令
+3 · 플레이어 관리	3 · Player management	3 · 玩家管理
+4 · 전부 (서버 끄기 포함)	4 · Everything (incl. stopping the server)	4 · 全部（包括关闭服务器）
+네더 허용	Allow Nether	允许下界
+보이는 거리	View distance	视距
