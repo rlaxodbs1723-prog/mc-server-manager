@@ -1,7 +1,7 @@
 {
   "name": "mc-server-manager",
   "version": "1.0.3",
-  "description": "MC CraftDeck",
+  "description": "MC CubePanel",
   "main": "out/main/index.js",
   "private": true,
   "scripts": {
@@ -41,11 +41,11 @@
   "allowScripts": {
     "electron@44.4.5": true
   },
-  "productName": "MC CraftDeck",
+  "productName": "MC CubePanel",
   "author": "Ora1ph",
   "build": {
     "appId": "com.mcservermanager.app",
-    "productName": "MC CraftDeck",
+    "productName": "MC CubePanel",
     "directories": {
       "output": "dist",
       "buildResources": "resources"
@@ -81,10 +81,10 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "MC CraftDeck",
+      "shortcutName": "MC CubePanel",
       "installerIcon": "resources/icon.ico",
       "uninstallerIcon": "resources/icon.ico",
-      "artifactName": "MC-CraftDeck-Setup-${version}.${ext}",
+      "artifactName": "MC-CubePanel-Setup-${version}.${ext}",
       "deleteAppDataOnUninstall": false,
       "include": "build-tools/uninstall.nsh",
       "multiLanguageInstaller": true,
