@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: http://craftpanel.kro.kr/sitemap.xml
+Sitemap: https://craftpanel.kro.kr/sitemap.xml
