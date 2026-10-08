@@ -24,12 +24,11 @@ function hook(): string {
   return /^https:\/\/(discord|discordapp)\.com\/api\/webhooks\//.test(url) ? url : ''
 }
 
-// 디스코드에 보낼 글 (제목·설명·연락처·앱 정보). 길이는 디스코드 한도에 맞춰 자른다
-export function bugMessage(title: string, details: string, contact: string, fileNames: string[] = []): Record<string, unknown> {
+// 디스코드에 보낼 글 (제목·설명·앱 정보). 길이는 디스코드 한도에 맞춰 자른다
+export function bugMessage(title: string, details: string, fileNames: string[] = []): Record<string, unknown> {
   const cut = (s: string, n: number): string => (s.length > n ? s.slice(0, n - 1) + '…' : s)
   const t = String(title ?? '').trim()
   const d = String(details ?? '').trim()
-  const c = String(contact ?? '').trim()
   return {
     username: 'MC CubePanel Bug Report',
     allowed_mentions: { parse: [] }, // @everyone 같은 걸 적어도 아무도 부르지 않게
@@ -42,7 +41,6 @@ export function bugMessage(title: string, details: string, contact: string, file
           { name: 'App', value: `MC CubePanel ${app.getVersion()}`, inline: true },
           { name: 'Windows', value: `${os.release()} (${process.arch})`, inline: true },
           { name: 'Language', value: getAppSettings().language, inline: true },
-          ...(c ? [{ name: 'Contact', value: cut(c, 200) }] : []),
           ...(fileNames.length ? [{ name: 'Attachments', value: cut(fileNames.join('\n'), 1000) }] : [])
         ],
         timestamp: new Date().toISOString()
@@ -84,7 +82,7 @@ async function post(url: string, body: FormData | string): Promise<void> {
   if (!res.ok) throw new Error(`제보를 보내지 못했어요. (${res.status})`)
 }
 
-export async function sendBugReport(title: string, details: string, contact: string, files: string[] = []): Promise<void> {
+export async function sendBugReport(title: string, details: string, files: string[] = []): Promise<void> {
   if (!String(title ?? '').trim() && !String(details ?? '').trim()) throw new Error('무슨 문제인지 적어 주세요.')
   const url = hook()
   if (!url) throw new Error('이 버전에서는 제보를 보낼 수 없어요. 앱을 업데이트해 주세요.')
@@ -93,7 +91,7 @@ export async function sendBugReport(title: string, details: string, contact: str
   const list = files.slice(0, BUG_MAX_FILES).map(bugFileInfo)
   lastSent = Date.now()
   try {
-    await post(url, JSON.stringify(bugMessage(title, details, contact, list.map((f) => f.name))))
+    await post(url, JSON.stringify(bugMessage(title, details, list.map((f) => f.name))))
     // 파일은 한 개씩 (여러 개를 한 번에 보내면 합친 크기 한도에 걸린다)
     for (const f of list) {
       const form = new FormData()

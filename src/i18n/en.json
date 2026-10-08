@@ -1427,7 +1427,6 @@
  "제보를 보내는 데 너무 오래 걸려요. 인터넷 연결을 확인해 주세요.": "Sending the report is taking too long. Check your internet connection.",
  "제보를 보내지 못했어요. 인터넷 연결을 확인해 주세요.": "Couldn't send the report. Check your internet connection.",
  "제보를 보냈어요. 고마워요!": "Report sent. Thank you!",
- "답장받을 곳 (선택, 예: 디스코드 아이디나 이메일)": "Where to reply (optional, e.g. Discord ID or email)",
  "앱 버전과 윈도우 정보가 같이 보내져요. 사진·영상은 파일당 10MB까지예요.": "The app version and Windows info are sent along. Images/videos up to 10 MB each.",
  "보내는 중…": "Sending…"
 }

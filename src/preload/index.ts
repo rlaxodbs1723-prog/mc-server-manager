@@ -74,7 +74,7 @@ const api: Api = {
   // 끌어다 놓은 파일의 실제 경로 (sandbox에서는 File.path가 없어서 webUtils로 얻는다)
   openDroppedWorld: (file) => ipcRenderer.invoke('openDroppedWorld', webUtils.getPathForFile(file)),
   openExternal: (url) => ipcRenderer.invoke('openExternal', url),
-  sendBugReport: (title, details, contact, files) => ipcRenderer.invoke('sendBugReport', title, details, contact, files),
+  sendBugReport: (title, details, files) => ipcRenderer.invoke('sendBugReport', title, details, files),
   pickBugFiles: () => ipcRenderer.invoke('pickBugFiles'),
   bugFileInfo: (file) => ipcRenderer.invoke('bugFileInfo', webUtils.getPathForFile(file)),
   openCrashReport: (folderPath, reportPath) => ipcRenderer.invoke('openCrashReport', folderPath, reportPath),

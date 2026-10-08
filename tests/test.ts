@@ -130,15 +130,15 @@ async function quick(): Promise<void> {
   await i18nChecks()
   await check('버그 제보: 디스코드 메시지 (앱 정보 자동, 길이 자르기, 아무도 안 부르기, 파일 검사)', async () => {
     type Embed = { title: string; description: string; fields: { name: string; value: string }[] }
-    const m = bugMessage('모드 & 설치 @everyone', '설명\n둘째 줄', 'me#1', ['a.png'])
+    const m = bugMessage('모드 & 설치 @everyone', '설명\n둘째 줄', ['a.png'])
     const e = (m.embeds as Embed[])[0]
     expect(e.title === '모드 & 설치 @everyone' && e.description === '설명\n둘째 줄', `글이 바뀌었어요: ${e.title} / ${e.description}`)
     expect(JSON.stringify(m.allowed_mentions) === '{"parse":[]}', '@everyone을 막지 않아요')
     const names = e.fields.map((f) => f.name).join(',')
-    expect(names === 'App,Windows,Language,Contact,Attachments' && /MC CubePanel /.test(e.fields[0].value), `앱 정보가 빠졌어요: ${names}`)
-    const long = (bugMessage('t'.repeat(500), '가'.repeat(9000), '', []).embeds as Embed[])[0]
+    expect(names === 'App,Windows,Language,Attachments' && /MC CubePanel /.test(e.fields[0].value), `앱 정보가 빠졌어요: ${names}`)
+    const long = (bugMessage('t'.repeat(500), '가'.repeat(9000), []).embeds as Embed[])[0]
     expect(long.title.length <= 250 && long.description.length <= 4000, '디스코드 한도보다 길어요')
-    expect(!(bugMessage('', '', '', []).embeds as Embed[])[0].fields.some((f) => f.name === 'Contact'), '연락처가 없는데 칸이 생겼어요')
+    expect(!(bugMessage('', '', []).embeds as Embed[])[0].fields.some((f) => f.name === 'Attachments'), '첨부가 없는데 칸이 생겼어요')
     // 파일 검사: 사진·영상만, 10MB 이하
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcsm-bug-'))
     fs.writeFileSync(path.join(dir, 'ok.png'), Buffer.alloc(10))
@@ -150,8 +150,8 @@ async function quick(): Promise<void> {
     expect(await throws(() => bugFileInfo(path.join(dir, 'none.png'))), '없는 파일을 받아들였어요')
     fs.rmSync(dir, { recursive: true, force: true })
     // 웹훅이 없는 빌드(테스트)에서는 보내지 않고 알려 준다. 빈 제보도 막는다
-    expect(await throws(() => sendBugReport('', '', '', [])), '빈 제보를 받아들였어요')
-    expect(await throws(() => sendBugReport('x', 'y', '', [])), '웹훅이 없는데 보냈어요')
+    expect(await throws(() => sendBugReport('', '', [])), '빈 제보를 받아들였어요')
+    expect(await throws(() => sendBugReport('x', 'y', [])), '웹훅이 없는데 보냈어요')
   })
 }
 

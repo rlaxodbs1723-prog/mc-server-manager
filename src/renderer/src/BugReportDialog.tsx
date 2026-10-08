@@ -13,7 +13,6 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
   const toast = useToast()
   const [title, setTitle] = useState('')
   const [details, setDetails] = useState('')
-  const [contact, setContact] = useState('')
   const [files, setFiles] = useState<BugFile[]>([])
   const [sending, setSending] = useState(false)
 
@@ -51,7 +50,6 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
       await window.api.sendBugReport(
         title,
         details,
-        contact,
         files.map((f) => f.path)
       )
       toast('제보를 보냈어요. 고마워요!')
@@ -77,7 +75,6 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
             maxLength={4000}
             placeholder={'무엇을 하다가 어떻게 됐는지 적어 주세요.\n예: Fabric 1.21 서버에서 모드를 설치하니 서버가 켜지지 않아요.'}
           />
-          <input className="input" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="답장받을 곳 (선택, 예: 디스코드 아이디나 이메일)" maxLength={200} />
           <div className="bug-files">
             {files.map((f) => (
               <span key={f.path} className="bug-file">

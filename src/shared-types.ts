@@ -421,7 +421,7 @@ export interface Api {
   // CurseForge 페이지만 브라우저로 연다
   openExternal: (url: string) => Promise<void>
   // 버그 제보: 디스코드로 바로 보낸다 (버전·윈도우·언어는 앱이 붙인다). files는 사진·영상 경로
-  sendBugReport: (title: string, details: string, contact: string, files: string[]) => Promise<void>
+  sendBugReport: (title: string, details: string, files: string[]) => Promise<void>
   pickBugFiles: () => Promise<BugFile[]>
   bugFileInfo: (file: File) => Promise<BugFile> // 끌어다 놓은 파일
   // 크래시 보고서를 메모장 등으로 연다

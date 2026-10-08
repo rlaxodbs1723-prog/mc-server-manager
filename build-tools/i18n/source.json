@@ -467,7 +467,6 @@
  "놓으면 첨부해요 (사진·영상)": "renderer/src/BugReportDialog.tsx",
  "한 줄 요약 (예: 모드 설치가 안 돼요)": "renderer/src/BugReportDialog.tsx",
  "무엇을 하다가 어떻게 됐는지 적어 주세요. 예: Fabric 1.21 서버에서 모드를 설치하니 서버가 켜지지 않아요.": "renderer/src/BugReportDialog.tsx",
- "답장받을 곳 (선택, 예: 디스코드 아이디나 이메일)": "renderer/src/BugReportDialog.tsx",
  "빼기": "renderer/src/BugReportDialog.tsx",
  "사진·영상 첨부": "renderer/src/BugReportDialog.tsx",
  "앱 버전과 윈도우 정보가 같이 보내져요. 사진·영상은 파일당 10MB까지예요.": "renderer/src/BugReportDialog.tsx",

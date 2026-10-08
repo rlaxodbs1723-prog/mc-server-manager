@@ -385,8 +385,8 @@ ipcMain.handle('openExternal', (_event, url: string) => {
   // 화면이 아무 주소나 열지 못하게 CurseForge 주소만 연다
   if (/^https:\/\/([a-z0-9-]+\.)*curseforge\.com\//i.test(String(url))) return shell.openExternal(String(url))
 })
-ipcMain.handle('sendBugReport', (_event, title: string, details: string, contact: string, files: string[]) =>
-  sendBugReport(String(title ?? ''), String(details ?? ''), String(contact ?? ''), Array.isArray(files) ? files.slice(0, 10).map(String) : [])
+ipcMain.handle('sendBugReport', (_event, title: string, details: string, files: string[]) =>
+  sendBugReport(String(title ?? ''), String(details ?? ''), Array.isArray(files) ? files.slice(0, 10).map(String) : [])
 )
 ipcMain.handle('pickBugFiles', (event) => pickBugFiles(BrowserWindow.fromWebContents(event.sender)))
 ipcMain.handle('bugFileInfo', (_event, file: string) => bugFileInfo(String(file)))
