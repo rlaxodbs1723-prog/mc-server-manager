@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://craftpanel.kro.kr/sitemap.xml
+Sitemap: https://cubepanel.netlify.app/sitemap.xml
