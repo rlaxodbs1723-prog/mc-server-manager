@@ -151,6 +151,13 @@ export interface DirEntry {
   editable: boolean // 글자로 된 설정 파일이라 편집기로 열 수 있는지
 }
 
+// 버그 제보 첨부 파일 (사진·영상)
+export interface BugFile {
+  path: string
+  name: string
+  size: number
+}
+
 // 앱 전체 설정 (타이틀바 톱니바퀴)
 export interface AppSettings {
   launchAtLogin: boolean // 윈도우를 켤 때 앱도 켜기
@@ -413,8 +420,10 @@ export interface Api {
   openDroppedWorld: (file: File) => Promise<SaveWorld>
   // CurseForge 페이지만 브라우저로 연다
   openExternal: (url: string) => Promise<void>
-  // 버그 제보: GitHub 새 이슈 화면을 연다 (버전·윈도우·언어는 앱이 채운다)
-  openBugReport: (title: string, details: string) => Promise<void>
+  // 버그 제보: 디스코드로 바로 보낸다 (버전·윈도우·언어는 앱이 붙인다). files는 사진·영상 경로
+  sendBugReport: (title: string, details: string, contact: string, files: string[]) => Promise<void>
+  pickBugFiles: () => Promise<BugFile[]>
+  bugFileInfo: (file: File) => Promise<BugFile> // 끌어다 놓은 파일
   // 크래시 보고서를 메모장 등으로 연다
   openCrashReport: (folderPath: string, reportPath: string) => Promise<void>
   // 데이터팩을 datapacks-disabled로 옮겨서 끈다

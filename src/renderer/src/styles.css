@@ -933,3 +933,9 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .bug-report textarea { resize: vertical; min-height: 120px; font-family: inherit; line-height: 1.5; }
 .bug-btn { -webkit-app-region: no-drag; height: 28px; padding: 0 12px; margin-right: 4px; border: 1px solid var(--line-strong); border-radius: 999px; background: transparent; color: var(--text-2); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
 .bug-btn:hover { background: var(--surface-2); color: var(--text); }
+.bug-files { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.bug-file { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 4px 6px 4px 10px; border-radius: 8px; background: var(--surface-2); font-size: 12.5px; }
+.bug-file .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+.bug-file .size { color: var(--text-3); }
+.bug-file button { display: grid; place-items: center; width: 20px; height: 20px; border: 0; border-radius: 6px; background: none; color: var(--text-3); cursor: pointer; }
+.bug-file button:hover { background: var(--line-strong); color: var(--text); }

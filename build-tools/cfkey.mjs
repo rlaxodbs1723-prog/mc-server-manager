@@ -6,18 +6,23 @@ import path from 'path'
 
 const MASK = 'mc-server-manager/cf'
 
-// .env의 CURSEFORGE_KEY (\$는 글자 $)
-export function readCfKey(root) {
+// .env의 값 하나 (\$는 글자 $, 앞에 MAIN_VITE_가 붙어 있어도 된다)
+export function readEnv(root, name) {
   try {
     const line = fs
       .readFileSync(path.join(root, '.env'), 'utf8')
       .split(/\r?\n/)
-      .find((l) => /^(MAIN_VITE_)?CURSEFORGE_KEY=/.test(l))
+      .find((l) => new RegExp(`^(MAIN_VITE_)?${name}=`).test(l))
     return line?.slice(line.indexOf('=') + 1).trim().split('\\$').join('$') || ''
   } catch {
     return ''
   }
 }
+
+// .env의 CURSEFORGE_KEY
+export const readCfKey = (root) => readEnv(root, 'CURSEFORGE_KEY')
+// .env의 BUG_WEBHOOK (버그 제보를 받는 디스코드 웹훅 주소). 섞는 방법은 CurseForge 키와 같다
+export const readBugHook = (root) => readEnv(root, 'BUG_WEBHOOK')
 
 export const encodeCfKey = (key) =>
   key ? Buffer.from([...Buffer.from(key, 'utf8')].map((b, i) => b ^ MASK.charCodeAt(i % MASK.length))).reverse().toString('base64') : ''

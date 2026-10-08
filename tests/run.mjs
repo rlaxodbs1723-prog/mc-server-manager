@@ -22,7 +22,7 @@ await build({
   target: 'node20',
   outfile: out,
   alias: { electron: path.join(root, 'tests', 'electron-stub', 'index.js') },
-  define: { __CF_KEY_ENC__: JSON.stringify(cfKey) },
+  define: { __CF_KEY_ENC__: JSON.stringify(cfKey), __BUG_HOOK_ENC__: JSON.stringify('') }, // 테스트는 제보를 실제로 보내지 않는다
   logLevel: 'warning'
 })
 
