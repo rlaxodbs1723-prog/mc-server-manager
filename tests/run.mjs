@@ -43,5 +43,7 @@ process.on('exit', () => fs.rmSync(lock, { force: true }))
 fs.rmSync(path.join(home, 'servers'), { recursive: true, force: true })
 fs.rmSync(path.join(home, 'backups'), { recursive: true, force: true })
 fs.mkdirSync(home, { recursive: true })
-const r = spawnSync(process.execPath, [out, ...(full ? ['--full'] : [])], { stdio: 'inherit', env: { ...process.env, TEST_HOME: home } })
+// --only=purpur,forge 처럼 주면 그 서버 종류만 만들어 본다
+const only = process.argv.filter((a) => a.startsWith('--only='))
+const r = spawnSync(process.execPath, [out, ...(full ? ['--full'] : []), ...only], { stdio: 'inherit', env: { ...process.env, TEST_HOME: home } })
 process.exit(r.status ?? 1)

@@ -41,6 +41,8 @@ import enTable from '../src/i18n/en.json'
 import zhTable from '../src/i18n/zh.json'
 
 const full = process.argv.includes('--full')
+// --only=purpur,forge: 그 서버 종류만 만들고 켜 본다 (느린 사이트 때문에 실패한 것만 다시 확인할 때)
+const only = process.argv.find((a) => a.startsWith('--only='))?.slice(7).split(',').filter(Boolean) ?? []
 let passed = 0
 const failed: string[] = []
 
@@ -799,7 +801,7 @@ async function modpackServers(): Promise<void> {
 async function otherSoftware(): Promise<void> {
   console.log(`\n[다른 서버 종류: 바닐라·Quilt·Purpur·Forge·NeoForge ${MC}]`)
   let port = 25590
-  for (const software of ['vanilla', 'quilt', 'purpur', 'forge', 'neoforge'] as const) {
+  for (const software of (['vanilla', 'quilt', 'purpur', 'forge', 'neoforge'] as const).filter((s) => !only.length || only.includes(s))) {
     let folder = ''
     const ok = await check(`${software} 서버 만들기 → 켜기 → 끄기`, async () => {
       const loader = software === 'vanilla' ? undefined : ((await getLoaderVersions(software, MC)).find((v) => v.stable) ?? (await getLoaderVersions(software, MC))[0])?.version
@@ -1056,6 +1058,12 @@ async function paperServer(): Promise<void> {
 
 async function main(): Promise<void> {
   const t = Date.now()
+  if (only.length) {
+    await otherSoftware()
+    console.log(`
+결과: ${passed}개 통과, ${failed.length}개 실패 (${Math.round((Date.now() - t) / 1000)}초)`)
+    process.exit(failed.length ? 1 : 0)
+  }
   await quick()
   if (full) {
     await real()
