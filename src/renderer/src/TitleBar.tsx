@@ -1,4 +1,4 @@
-import { Bug, Copy, Download, Minus, Settings, Square, WifiOff, X } from 'lucide-react'
+import { Copy, Download, Minus, Settings, Square, WifiOff, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import AppSettingsDialog from './AppSettingsDialog'
 import BugReportDialog from './BugReportDialog'
@@ -89,8 +89,8 @@ export default function TitleBar() {
           document.body
         )}
       <TaskButton />
-      <button className="task-btn app-settings-btn" onClick={() => setShowBug(true)} title="버그 제보" onDoubleClick={(e) => e.stopPropagation()}>
-        <Bug size={16} />
+      <button className="bug-btn" onClick={() => setShowBug(true)} onDoubleClick={(e) => e.stopPropagation()}>
+        버그 제보
       </button>
       {showBug &&
         createPortal(

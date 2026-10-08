@@ -1,4 +1,3 @@
-import { Bug } from 'lucide-react'
 import { useState } from 'react'
 import { Modal, useToast } from './ui'
 import { cleanError } from './util'
@@ -38,7 +37,6 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
           취소
         </button>
         <button className="btn primary" onClick={send} disabled={!title.trim() && !details.trim()}>
-          <Bug size={15} />
           제보 화면 열기
         </button>
       </div>
