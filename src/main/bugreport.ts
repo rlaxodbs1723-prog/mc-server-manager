@@ -100,6 +100,7 @@ export async function sendBugReport(title: string, details: string, files: strin
       await post(url, form)
     }
   } catch (e) {
+    lastSent = 0 // 못 보냈으면 1분 기다리지 않고 바로 다시 보낼 수 있게
     if (e instanceof Error && e.name === 'TimeoutError') throw new Error('제보를 보내는 데 너무 오래 걸려요. 인터넷 연결을 확인해 주세요.')
     if (e instanceof TypeError) throw new Error('제보를 보내지 못했어요. 인터넷 연결을 확인해 주세요.')
     throw e
