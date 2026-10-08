@@ -413,6 +413,8 @@ export interface Api {
   openDroppedWorld: (file: File) => Promise<SaveWorld>
   // CurseForge 페이지만 브라우저로 연다
   openExternal: (url: string) => Promise<void>
+  // 버그 제보: GitHub 새 이슈 화면을 연다 (버전·윈도우·언어는 앱이 채운다)
+  openBugReport: (title: string, details: string) => Promise<void>
   // 크래시 보고서를 메모장 등으로 연다
   openCrashReport: (folderPath: string, reportPath: string) => Promise<void>
   // 데이터팩을 datapacks-disabled로 옮겨서 끈다

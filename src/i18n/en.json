@@ -1410,5 +1410,11 @@
  "모드는": "mods",
  "플러그인을": "plugins",
  "플러그인이": "plugins",
- "플러그인은": "plugins"
+ "플러그인은": "plugins",
+ "브라우저에서 제보 화면을 열었어요. 내용을 확인하고 제출을 눌러 주세요": "Opened the report page in your browser. Check it and click Submit",
+ "버그 제보": "Report a bug",
+ "한 줄 요약 (예: 모드 설치가 안 돼요)": "One-line summary (e.g. Mods won't install)",
+ "무엇을 하다가 어떻게 됐는지 적어 주세요. 예: Fabric 1.21 서버에서 모드를 설치하니 서버가 켜지지 않아요.": "Describe what you were doing and what happened. e.g. After installing a mod on a Fabric 1.21 server, it won't start.",
+ "GitHub 제보 화면이 브라우저로 열려요. 앱 버전과 윈도우 정보는 자동으로 들어가요. 제출하려면 GitHub 계정이 필요해요.": "The GitHub report page opens in your browser. The app version and Windows info are filled in automatically. You need a GitHub account to submit.",
+ "제보 화면 열기": "Open report page"
 }

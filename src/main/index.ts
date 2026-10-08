@@ -13,6 +13,7 @@ import { getLoaderVersions } from './loaders'
 import * as mods from './mods'
 import { CancelledError, cancelTask, runCancellable, throwIfCancelled } from './cancel'
 import { notify } from './notify'
+import { openBugReport } from './bugreport'
 import { browseModpacks, cleanModpackTemp, gameVersions, modpackVersions, prepareFromCurseForge, prepareFromModrinth, prepareFromUpload } from './modpack'
 import * as datapacks from './datapacks'
 import { getStats, stopAllSamplers } from './stats'
@@ -384,6 +385,7 @@ ipcMain.handle('openExternal', (_event, url: string) => {
   // 화면이 아무 주소나 열지 못하게 CurseForge 주소만 연다
   if (/^https:\/\/([a-z0-9-]+\.)*curseforge\.com\//i.test(String(url))) return shell.openExternal(String(url))
 })
+ipcMain.handle('openBugReport', (_event, title: string, details: string) => openBugReport(String(title ?? ''), String(details ?? '')))
 ipcMain.handle('openCrashReport', (_event, folderPath: string, reportPath: string) => {
   const dir = join(checkServerFolder(folderPath), 'crash-reports')
   const file = resolve(String(reportPath))

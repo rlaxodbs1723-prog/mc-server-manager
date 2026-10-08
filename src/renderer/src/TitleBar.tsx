@@ -1,6 +1,7 @@
-import { Copy, Download, Minus, Settings, Square, WifiOff, X } from 'lucide-react'
+import { Bug, Copy, Download, Minus, Settings, Square, WifiOff, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import AppSettingsDialog from './AppSettingsDialog'
+import BugReportDialog from './BugReportDialog'
 import type { SiteStatus, UpdateState } from '../../shared-types'
 import { Confirm, useToast } from './ui'
 import { cleanError } from './util'
@@ -11,6 +12,7 @@ import { TaskButton } from './tasks'
 export default function TitleBar() {
   const [maximized, setMaximized] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showBug, setShowBug] = useState(false)
   const [sites, setSites] = useState<SiteStatus>({ modrinth: true, curseforge: true })
   const toast = useToast()
   const [update, setUpdate] = useState<UpdateState>({ state: 'none' })
@@ -87,6 +89,16 @@ export default function TitleBar() {
           document.body
         )}
       <TaskButton />
+      <button className="task-btn app-settings-btn" onClick={() => setShowBug(true)} title="버그 제보" onDoubleClick={(e) => e.stopPropagation()}>
+        <Bug size={16} />
+      </button>
+      {showBug &&
+        createPortal(
+          <div onDoubleClick={(e) => e.stopPropagation()}>
+            <BugReportDialog onClose={() => setShowBug(false)} />
+          </div>,
+          document.body
+        )}
       <button className="task-btn app-settings-btn" onClick={() => setShowSettings(true)} title="앱 설정" onDoubleClick={(e) => e.stopPropagation()}>
         <Settings size={16} />
       </button>

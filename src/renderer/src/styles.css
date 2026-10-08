@@ -927,3 +927,7 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 /* 새 버전이 준비됐을 때 타이틀바의 업데이트 버튼 */
 .update-btn { -webkit-app-region: no-drag; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; margin: 0 4px 0 14px; border: 0; border-radius: 999px; background: rgba(53, 208, 127, 0.16); color: #35d07f; font-size: 12.5px; font-weight: 700; cursor: pointer; animation: tab-in 0.25s var(--ease); }
 .update-btn:hover { background: rgba(53, 208, 127, 0.26); }
+
+/* 버그 제보 */
+.bug-report { display: flex; flex-direction: column; gap: 10px; }
+.bug-report textarea { resize: vertical; min-height: 120px; font-family: inherit; line-height: 1.5; }

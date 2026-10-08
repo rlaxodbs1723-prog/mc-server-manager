@@ -36,6 +36,7 @@ import { analyzeCrash } from '../src/main/crash'
 import { execFileSync } from 'child_process'
 import { langFromLocale, translator } from '../src/i18n'
 import { tr as mainTr } from '../src/main/i18n'
+import { bugReportUrl } from '../src/main/bugreport'
 import enTable from '../src/i18n/en.json'
 import zhTable from '../src/i18n/zh.json'
 
@@ -127,6 +128,16 @@ async function quick(): Promise<void> {
     fs.rmSync(dir, { recursive: true, force: true })
   })
   await i18nChecks()
+  await check('버그 제보: GitHub 이슈 주소 (버전·윈도우 자동, 너무 길면 자르기, 다른 주소로 못 감)', () => {
+    const u = new URL(bugReportUrl('모드 & 설치 #1', '설명\n둘째 줄'))
+    expect(u.origin === 'https://github.com' && u.pathname === '/rlaxodbs1723-prog/mc-server-manager/issues/new', `주소가 달라요: ${u.href}`)
+    expect(u.searchParams.get('title') === '모드 & 설치 #1', `제목이 깨졌어요: ${u.searchParams.get('title')}`)
+    const body = u.searchParams.get('body') ?? ''
+    expect(body.startsWith('설명\n둘째 줄') && /App: MC CubePanel /.test(body) && /Windows: /.test(body), `본문이 이상해요: ${body}`)
+    expect(new URL(bugReportUrl('', '')).searchParams.get('title') === 'Bug report', '빈 제목일 때 기본 제목이 없어요')
+    const long = bugReportUrl('x', '가'.repeat(20000))
+    expect(long.length <= 7000 && decodeURIComponent(long).includes('Windows: '), `긴 글을 자르지 않았거나 환경 정보가 빠졌어요 (${long.length})`)
+  })
 }
 
 // ---------- 언어 (영어·중국어) ----------
