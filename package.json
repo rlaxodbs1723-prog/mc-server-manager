@@ -9,6 +9,8 @@
     "start": "electron-vite dev",
     "build": "electron-vite build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "predist": "node build-tools/clean-dist.mjs",
+    "prerelease": "node build-tools/clean-dist.mjs",
     "dist": "electron-vite build && electron-builder --win --publish never",
     "test": "node tests/run.mjs",
     "test:full": "node tests/run.mjs --full",
