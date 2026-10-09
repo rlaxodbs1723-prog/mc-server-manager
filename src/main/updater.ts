@@ -9,6 +9,7 @@ import { autoUpdater } from 'electron-updater'
 import fs from 'fs'
 import path from 'path'
 import type { UpdateState } from '../shared-types'
+import { notify } from './notify'
 
 let state: UpdateState = { state: 'none' }
 const CHECK_EVERY_MS = 6 * 60 * 60 * 1000 // 6시간마다 다시 확인 (앱을 며칠씩 켜 두는 사람이 많다)
@@ -52,6 +53,7 @@ export function initUpdater(): void {
   autoUpdater.on('update-downloaded', (info) => {
     log(`새 버전 ${info.version} 준비됨`)
     set({ state: 'ready', version: info.version })
+    notify('업데이트가 준비됐어요', `새 버전 ${info.version}이 준비됐어요. 앱에서 "업데이트"를 누르거나, 앱을 끄면 설치돼요.`)
     if (process.env.MCSM_UPDATE_AUTOINSTALL === '1') {
       log('테스트: 바로 설치')
       autoUpdater.quitAndInstall(true, true)

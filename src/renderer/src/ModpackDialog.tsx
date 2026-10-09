@@ -22,7 +22,7 @@ const SORTS: { value: ModpackSort; label: string }[] = [
   { value: 'downloads', label: '다운로드' },
   { value: 'follows', label: '팔로우' },
   { value: 'newest', label: '최신' },
-  { value: 'updated', label: '업데이트' }
+  { value: 'updated', label: '최근 업데이트' }
 ]
 // Modrinth 분류 이름 → 한국어
 const TAG_KO: Record<string, string> = {

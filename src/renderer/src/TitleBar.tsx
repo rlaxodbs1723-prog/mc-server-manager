@@ -20,7 +20,11 @@ export default function TitleBar() {
   const [running, setRunning] = useState(0) // 업데이트하면 꺼지는 서버 수 (확인 창에 보여 준다)
   useEffect(() => {
     window.api.getUpdate().then(setUpdate).catch(() => undefined)
-    return window.api.onUpdate(setUpdate)
+    return window.api.onUpdate((u) => {
+      // 버튼만 생기면 못 보고 지나치기 쉬워서, 준비된 순간에 한 번 알려 준다
+      if (u.state === 'ready') toast(`새 버전 ${u.version}이 준비됐어요. 오른쪽 위 "업데이트"를 누르면 설치돼요.`)
+      setUpdate(u)
+    })
   }, [])
   useEffect(() => {
     window.api.getSiteStatus().then(setSites).catch(() => undefined)

@@ -48,11 +48,17 @@ function ssdpFrom(localIp: string, timeoutMs: number): Promise<string[]> {
       const m = /^location:\s*(\S+)/im.exec(msg.toString('utf8'))
       if (m) found.add(m[1])
     })
-    sock.bind(0, localIp, () => {
+    const search = (): void => {
       for (const st of SEARCH_TARGETS) {
         const req = `M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nMAN: "ssdp:discover"\r\nMX: 2\r\nST: ${st}\r\n\r\n`
         sock.send(req, 1900, '239.255.255.250', () => {})
       }
+    }
+    sock.bind(0, localIp, () => {
+      search()
+      // UDP라 묻는 신호가 사라질 수 있어서 1초 뒤에 한 번 더 묻는다
+      const again = setTimeout(search, 1000)
+      sock.on('close', () => clearTimeout(again))
     })
   })
 }
@@ -73,14 +79,17 @@ async function describe(location: string): Promise<{ service: string; controlUrl
 
 async function findGateway(): Promise<Gateway | null> {
   if (gatewayCache && Date.now() - gatewayCache.at < CACHE_MS) return gatewayCache
-  const found = await Promise.all(localIPv4().map(async (ip) => ({ ip, locations: await ssdpFrom(ip, 2500) })))
-  for (const { ip, locations } of found) {
-    for (const loc of locations) {
-      try {
-        const gw = await describe(loc)
-        if (gw) return (gatewayCache = { ...gw, localIp: ip, at: Date.now() })
-      } catch {
-        // 다음 후보로
+  // 늦게 답하는 공유기도 있어서, 못 찾으면 더 길게 한 번 더 찾는다
+  for (const timeoutMs of [3500, 6000]) {
+    const found = await Promise.all(localIPv4().map(async (ip) => ({ ip, locations: await ssdpFrom(ip, timeoutMs) })))
+    for (const { ip, locations } of found) {
+      for (const loc of locations) {
+        try {
+          const gw = await describe(loc)
+          if (gw) return (gatewayCache = { ...gw, localIp: ip, at: Date.now() })
+        } catch {
+          // 다음 후보로
+        }
       }
     }
   }
@@ -138,7 +147,7 @@ export type OpenResult =
 
 export async function openPort(port: number, description: string): Promise<OpenResult> {
   const gw = await findGateway().catch(() => null)
-  if (!gw) return { ok: false, reason: 'no-upnp', message: '공유기가 자동 포트 열기(UPnP)를 지원하지 않거나 꺼져 있어요.' }
+  if (!gw) return { ok: false, reason: 'no-upnp', message: '공유기를 찾지 못해서 포트를 자동으로 열 수 없었어요. 공유기의 자동 포트 열기(UPnP)가 꺼져 있거나, 윈도우 방화벽이 막고 있거나, 공유기가 여러 개일 수 있어요.' }
 
   let externalIp: string | null = null
   try {

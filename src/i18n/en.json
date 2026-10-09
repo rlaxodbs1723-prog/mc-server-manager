@@ -855,7 +855,7 @@
  "다운로드": "Downloads",
  "팔로우": "Follows",
  "최신": "Newest",
- "업데이트": "Updated",
+ "업데이트": "Update",
  "도전": "Challenging",
  "전투": "Combat",
  "종합": "Kitchen sink",
@@ -1432,5 +1432,10 @@
  "눌러서 원인과 해결법 보기": "Click to see the cause and how to fix it",
  "해결법": "How to fix",
  "같은 와이파이의 플레이어는 지금도 {0}(으)로 접속할 수 있어요.": "Players on the same Wi-Fi can still join at {0}.",
- "공유기에서 포트 포워딩을 직접 해 주세요. (포트 {0}, TCP)": "Set up port forwarding manually on your router. (port {0}, TCP)"
+ "공유기에서 포트 포워딩을 직접 해 주세요. (포트 {0}, TCP)": "Set up port forwarding manually on your router. (port {0}, TCP)",
+ "공유기를 찾지 못해서 포트를 자동으로 열 수 없었어요. 공유기의 자동 포트 열기(UPnP)가 꺼져 있거나, 윈도우 방화벽이 막고 있거나, 공유기가 여러 개일 수 있어요.": "Couldn't find your router, so the port couldn't be opened automatically. Automatic port opening (UPnP) may be off on your router, Windows Firewall may be blocking it, or there may be more than one router.",
+ "새 버전 {0}이 준비됐어요. 앱에서 \"업데이트\"를 누르거나, 앱을 끄면 설치돼요.": "Version {0} is ready. Click \"Update\" in the app, or it will install when you close the app.",
+ "새 버전 {0}이 준비됐어요. 오른쪽 위 \"업데이트\"를 누르면 설치돼요.": "Version {0} is ready. Click \"Update\" at the top right to install.",
+ "최근 업데이트": "Recently updated",
+ "업데이트가 준비됐어요": "Update ready"
 }
