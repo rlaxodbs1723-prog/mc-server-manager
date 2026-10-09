@@ -574,7 +574,11 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .invite-inline button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.08); }
 .invite-inline .spinner { width: 12px; height: 12px; }
 .invite-inline.muted { background: var(--surface-2); color: var(--text-3); gap: 6px; padding-right: 10px; }
-.invite-inline.failed { background: var(--danger-soft); color: var(--danger); gap: 6px; padding-right: 10px; cursor: help; }
+.invite-inline.failed { border: 0; background: var(--danger-soft); color: var(--danger); gap: 6px; padding-right: 10px; font: inherit; font-size: 13px; cursor: pointer; }
+.invite-inline.failed:hover { filter: brightness(1.15); }
+.invite-help h3 { font-size: 14px; margin: 12px 0 6px; color: var(--text-2); }
+.invite-help h3:first-child { margin-top: 0; }
+.invite-help .hint { margin-top: 10px; }
 .world-source { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
 .world-source .save-item { width: 100%; }
 .reset-fields[hidden] { display: none; }

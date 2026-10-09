@@ -1,7 +1,7 @@
 import { AlertTriangle, Copy, Radar } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { InviteStatus } from '../../shared-types'
-import { useToast } from './ui'
+import { Modal, useToast } from './ui'
 import { cleanError } from './util'
 
 // 서버 이름 아래 줄에 접속 주소를 작게 보여 준다 (복사·접속 확인 버튼 포함)
@@ -9,6 +9,7 @@ export default function InviteBox({ folderPath }: { folderPath: string }) {
   const toast = useToast()
   const [invite, setInvite] = useState<InviteStatus>({ state: 'off' })
   const [checking, setChecking] = useState(false)
+  const [help, setHelp] = useState(false)
 
   useEffect(() => {
     window.api.getInvite(folderPath).then(setInvite)
@@ -34,10 +35,13 @@ export default function InviteBox({ folderPath }: { folderPath: string }) {
 
   if (invite.state === 'failed')
     return (
-      <span className="invite-inline failed" title={`${invite.message}\n${lanHint}`}>
-        <AlertTriangle size={14} />
-        밖에서 접속할 수 없어요
-      </span>
+      <>
+        <button className="invite-inline failed" onClick={() => setHelp(true)} title="눌러서 원인과 해결법 보기">
+          <AlertTriangle size={14} />
+          밖에서 접속할 수 없어요
+        </button>
+        {help && <InviteHelp invite={invite} onClose={() => setHelp(false)} />}
+      </>
     )
   if (invite.state === 'opening')
     return (
@@ -63,5 +67,26 @@ export default function InviteBox({ folderPath }: { folderPath: string }) {
         {checking ? <span className="spinner" /> : <Radar size={14} />}
       </button>
     </span>
+  )
+}
+
+// 빨간 "밖에서 접속할 수 없어요"를 누르면 뜨는 창: 원인과, 포트 포워딩을 직접 해야 한다는 안내
+function InviteHelp({ invite, onClose }: { invite: Extract<InviteStatus, { state: 'failed' }>; onClose: () => void }) {
+  return (
+    <Modal onClose={onClose}>
+      <h2>밖에서 접속할 수 없어요</h2>
+      <div className="invite-help">
+        <h3>원인</h3>
+        <p>{invite.message}</p>
+        <h3>해결법</h3>
+        <p>{`공유기에서 포트 포워딩을 직접 해 주세요. (포트 ${invite.port}, TCP)`}</p>
+        {invite.lan.length > 0 && <p className="hint">{`같은 와이파이의 플레이어는 지금도 ${invite.lan.join(', ')}(으)로 접속할 수 있어요.`}</p>}
+      </div>
+      <div className="actions">
+        <button className="btn primary" onClick={onClose}>
+          확인
+        </button>
+      </div>
+    </Modal>
   )
 }
