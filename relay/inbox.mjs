@@ -18,7 +18,7 @@ async function channelPosts(raw, bot) {
       const [first, ...rest] = (m.content || '').trim().split('\n')
       return {
         id: m.id,
-        date: String(m.timestamp).slice(0, 10),
+        date: String(m.timestamp), // 앱이 사용자 시간대로 바꿔 보여 준다
         title: (first || '').slice(0, 200),
         body: rest.join('\n').trim().slice(0, 4000),
         files: (m.attachments || []).slice(0, 10).map((a) => ({ url: a.url, name: a.filename, type: a.content_type || '' }))

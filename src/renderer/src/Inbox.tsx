@@ -25,6 +25,12 @@ const writeSeen = (ids: string[]): void => {
 const idsOf = (box: Inbox): string[] => [...box.notices, ...box.patches].map((p) => p.id)
 const unreadReplies = (list: MyBugReport[]): number => list.reduce((n, r) => n + Math.max(0, r.replies.length - r.seen), 0)
 
+// 디스코드 시간(UTC)을 이 컴퓨터 시간대 날짜로
+const shortDate = (at: string): string => {
+  const d = new Date(at)
+  return Number.isNaN(d.getTime()) ? at : d.toLocaleDateString()
+}
+
 type Tab = 'notices' | 'patches' | 'replies'
 
 // 타이틀바의 알림함 버튼: 누르면 버튼 아래에 공지, 패치노트, 버그 제보 답장 패널이 열린다. 새 글이 있으면 빨간 점
@@ -137,7 +143,7 @@ function InboxPanel(props: {
     <button key={p.id} className={`bug-mine-item ${isNew(p.id) ? 'new' : ''}`} onClick={() => setOpenPost(p)}>
       <div className="bug-mine-head">
         <b>{p.title || '📎'}</b>
-        <span className="hint">{p.date}</span>
+        <span className="hint">{shortDate(p.date)}</span>
       </div>
       {(p.body || p.files.length > 0) && <div className="inbox-line hint">{p.body.split('\n')[0] || `📎 ${p.files.length}`}</div>}
     </button>
@@ -220,7 +226,7 @@ function PostDetail({ post, onClose }: { post: InboxPost; onClose: () => void })
     <Modal onClose={onClose}>
       <div className="post-detail">
         <h2>{post.title}</h2>
-        <span className="hint">{post.date}</span>
+        <span className="hint">{new Date(post.date).toLocaleString()}</span>
         {post.body && <p>{post.body}</p>}
         {post.files.length > 0 && <AttachedFiles files={post.files} />}
       </div>
