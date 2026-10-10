@@ -96,7 +96,7 @@ export default function TitleBar() {
       <TaskButton />
       <InboxButton />
       <button className="bug-btn" onClick={() => setShowBug(true)} onDoubleClick={(e) => e.stopPropagation()}>
-        버그 제보
+        문의/버그 제보
       </button>
       {showBug &&
         createPortal(

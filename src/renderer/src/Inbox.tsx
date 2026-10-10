@@ -209,7 +209,7 @@ function InboxPanel(props: {
                 </button>
               ))
             ) : (
-              <Empty title="보낸 제보가 없어요" hint="오른쪽 위 버그 제보로 보내면 답장을 여기서 볼 수 있어요." />
+              <Empty title="보낸 제보가 없어요" hint="오른쪽 위 문의/버그 제보로 보내면 답장을 여기서 볼 수 있어요." />
             ))}
         </div>
       </div>

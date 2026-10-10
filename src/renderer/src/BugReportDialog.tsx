@@ -81,7 +81,7 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Modal onClose={sending ? undefined : onClose}>
-      <h2>버그 제보</h2>
+      <h2>문의/버그 제보</h2>
       {mine.length > 0 && (
         <div className="seg bug-tabs">
           <button className={tab === 'new' ? 'active' : ''} onClick={() => setTab('new')}>

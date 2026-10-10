@@ -158,7 +158,7 @@ export async function checkBugReplies(onChange: () => void): Promise<void> {
       r.replies = replies.map((x) => ({ id: String(x.id), text: String(x.text), at: String(x.at), files: files(x) }))
       changed = true
       if (!isNew) continue
-      notify('버그 제보에 답장이 왔어요', `${r.title}: ${r.replies[r.replies.length - 1].text.slice(0, 100) || '📎'}`, true) // 답장은 드물고 중요해서 앱을 보고 있어도 알린다
+      notify('문의/버그 제보에 답장이 왔어요', `${r.title}: ${r.replies[r.replies.length - 1].text.slice(0, 100) || '📎'}`, true) // 답장은 드물고 중요해서 앱을 보고 있어도 알린다
     } catch {
       // 인터넷이 안 되면 다음에 다시 묻는다
     }
