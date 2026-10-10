@@ -330,7 +330,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
             <Row title="정품 인증" hint="끄면 정품이 아닌 계정도 들어올 수 있지만 위험해요">
               <Switch checked={onlineMode} onChange={setOnlineMode} />
             </Row>
-            <Row title="화이트리스트" hint="허락한 사람만 들어오게 해요. 목록은 서버 설정에서 관리해요">
+            <Row title="화이트리스트" hint="허락한 사람만 들어오게 해요. 목록은 서버의 관리 탭에서 바꿔요">
               <Switch checked={whitelist} onChange={setWhitelist} />
             </Row>
           </div>

@@ -1,11 +1,10 @@
-import { ChevronRight, Cpu, Layers, Globe2, MessageSquare, Package, RotateCcw, Save, Swords, Timer, Users, Wrench, X, Zap } from 'lucide-react'
+import { Cpu, Layers, Globe2, MessageSquare, Package, RotateCcw, Save, Swords, Timer, Users, Wrench, X, Zap } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useLeaveAnimation } from './leave'
-import { PAPER_FIELDS, type PaperField, type ServerAutomation, type ServerSettings, type Software, type WhitelistInfo } from '../../shared-types'
+import { PAPER_FIELDS, type PaperField, type ServerAutomation, type ServerSettings, type Software } from '../../shared-types'
 import Select from './Select'
 import { Confirm, Loading, Modal, useToast } from './ui'
 import WorldResetDialog from './WorldResetDialog'
-import WhitelistDialog from './WhitelistDialog'
 import VersionSection, { versionLabel, type PickedVersion } from './VersionSection'
 import { useTasks } from './tasks'
 import { cleanError } from './util'
@@ -18,7 +17,6 @@ type Field =
   // 숫자 값이지만 켜기/끄기만 고르는 설정 (끄면 0)
   | { key: string; label: string; desc?: string; type: 'toggle'; def: string; onValue: string; legacy?: boolean }
   // 누르면 따로 관리 창이 뜨는 설정
-  | { key: string; label: string; desc?: string; type: 'whitelist'; def: string; legacy?: boolean }
   // 비밀번호처럼 가려서 보여 주는 글자
   | { key: string; label: string; desc?: string; type: 'password'; def: string; legacy?: boolean }
 
@@ -72,16 +70,13 @@ const SECTIONS: Section[] = [
     icon: <Users size={18} />,
     fields: [
       { key: 'max-players', label: '최대 인원', type: 'number', def: 20, min: 1, max: 500, unit: '명' },
-      { key: 'white-list', label: '화이트리스트', desc: '허락한 사람만 들어올 수 있게 해요. 눌러서 목록을 관리할 수 있어요.', type: 'whitelist', def: 'false' },
-      { key: 'enforce-whitelist', label: '화이트리스트 바로 적용', desc: '켜면 목록에서 뺀 사람이 접속해 있어도 바로 내보내요.', type: 'bool', def: false },
       { key: 'online-mode', label: '정품 인증', desc: '끄면 정품이 아닌 계정도 들어올 수 있지만, 다른 사람 닉네임으로 들어올 수 있어서 위험해요.', type: 'bool', def: true },
       { key: 'prevent-proxy-connections', label: 'VPN·프록시 접속 막기', desc: '정품 인증 서버와 접속 주소가 다르면 들어오지 못하게 해요.', type: 'bool', def: false },
       { key: 'pause-when-empty-seconds', label: '아무도 없을 때 멈추기', desc: '모두 나가고 1분이 지나면 월드 시간이 멈춰서 컴퓨터가 덜 힘들어요.', type: 'toggle', def: '60', onValue: '60' },
       { key: 'enable-status', label: '서버 목록에 정보 보이기', desc: '끄면 서버 목록에서 인원·설명이 안 보이고 "연결할 수 없음"처럼 보여요. 들어오는 건 돼요.', type: 'bool', def: true },
       { key: 'accepts-transfers', label: '다른 서버에서 넘어오기 허용', desc: '다른 서버가 플레이어를 이 서버로 보내는 것(/transfer)을 받아들여요.', type: 'bool', def: false },
       { key: 'log-ips', label: '접속 IP 기록', desc: '로그에 접속한 사람의 IP 주소를 남겨요.', type: 'bool', def: true },
-      { key: 'server-port', label: '서버 포트 (접속 주소)', desc: '플레이어가 들어오는 포트예요. 서버를 여러 개 동시에 켤 때만 바꾸세요.', type: 'number', def: 25565, min: 1024, max: 65535 },
-      { key: 'server-ip', label: '서버 IP 고정', desc: '이 컴퓨터에 네트워크가 여러 개일 때 한 곳에서만 받아요. 모르면 비워 두세요.', type: 'text', def: '', placeholder: '비우면 전부' }
+      { key: 'server-port', label: '서버 포트 (접속 주소)', desc: '플레이어가 들어오는 포트예요. 서버를 여러 개 동시에 켤 때만 바꾸세요.', type: 'number', def: 25565, min: 1024, max: 65535 }
     ]
   },
   { title: '자동', icon: <Timer size={18} />, fields: [] },
@@ -111,9 +106,17 @@ const SECTIONS: Section[] = [
     icon: <Cpu size={18} />,
     fields: [
       { key: 'entity-broadcast-range-percentage', label: '몹이 보이는 거리', desc: '멀리 있는 몹·아이템을 얼마나 멀리서 보여 줄지예요. 낮추면 가벼워져요.', type: 'number', def: 100, min: 10, max: 1000, unit: '%' },
-      { key: 'network-compression-threshold', label: '네트워크 압축 기준', desc: '이 크기(바이트)보다 큰 데이터를 압축해요. 256이면 충분해요. -1이면 압축하지 않아요.', type: 'number', def: 256, min: -1, max: 65535, unit: '바이트' },
       { key: 'max-tick-time', label: '멈춤 감지 시간', desc: '서버가 이 시간(밀리초) 동안 멈추면 강제로 꺼요. 무거운 모드 서버에서 자꾸 꺼지면 늘리세요. -1이면 끄기.', type: 'number', def: 60000, min: -1, max: 600000, unit: 'ms' },
-      { key: 'sync-chunk-writes', label: '월드 안전 저장', desc: '켜면 조금 느려도 갑자기 꺼졌을 때 월드가 덜 망가져요.', type: 'bool', def: true },
+      { key: 'sync-chunk-writes', label: '월드 안전 저장', desc: '켜면 조금 느려도 갑자기 꺼졌을 때 월드가 덜 망가져요.', type: 'bool', def: true }
+    ]
+  },
+  {
+    title: '고급',
+    icon: <Wrench size={18} />,
+    fields: [
+      { key: 'server-ip', label: '서버 IP 고정', desc: '이 컴퓨터에 네트워크가 여러 개일 때 한 곳에서만 받아요. 모르면 비워 두세요.', type: 'text', def: '', placeholder: '비우면 전부' },
+      { key: 'enforce-whitelist', label: '화이트리스트 바로 적용', desc: '켜면 목록에서 뺀 사람이 접속해 있어도 바로 내보내요.', type: 'bool', def: false },
+      { key: 'network-compression-threshold', label: '네트워크 압축 기준', desc: '이 크기(바이트)보다 큰 데이터를 압축해요. 256이면 충분해요. -1이면 압축하지 않아요.', type: 'number', def: 256, min: -1, max: 65535, unit: '바이트' },
       {
         key: 'region-file-compression', label: '월드 파일 압축 방식', desc: '보통은 deflate를 쓰세요. lz4는 빠르지만 용량이 커요.', type: 'select', def: 'deflate',
         options: [
@@ -122,13 +125,7 @@ const SECTIONS: Section[] = [
           { value: 'none', label: '압축 안 함' }
         ]
       },
-      { key: 'use-native-transport', label: '빠른 네트워크 사용', desc: '가능하면 운영체제의 빠른 네트워크 기능을 써요.', type: 'bool', def: true }
-    ]
-  },
-  {
-    title: '고급',
-    icon: <Wrench size={18} />,
-    fields: [
+      { key: 'use-native-transport', label: '빠른 네트워크 사용', desc: '가능하면 운영체제의 빠른 네트워크 기능을 써요.', type: 'bool', def: true },
       { key: 'enable-rcon', label: '원격 콘솔(RCON)', desc: '다른 프로그램이 이 서버에 명령을 보낼 수 있게 해요. 필요할 때만 켜세요.', type: 'bool', def: false },
       { key: 'rcon.port', label: 'RCON 포트 (원격 콘솔용)', type: 'number', def: 25575, min: 1024, max: 65535 },
       { key: 'rcon.password', label: 'RCON 비밀번호', desc: 'RCON을 켰다면 꼭 어려운 비밀번호를 정해 주세요.', type: 'password', def: '' },
@@ -193,14 +190,11 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
   const [paperEdit, setPaperEdit] = useState<Record<string, string>>({}) // 바꾼 Paper 설정 (파일에 쓸 값)
   const [saving, setSaving] = useState(false)
   const [tab, setTab] = useState(SECTIONS[1].title) // 처음에는 게임 탭
-  const [showWhitelist, setShowWhitelist] = useState(false)
   const [askReset, setAskReset] = useState(false)
   const [askDiscard, setAskDiscard] = useState(false)
   const [focusKey, setFocusKey] = useState<string | null>(null) // 이 설정 칸으로 데려가서 반짝 표시
-  const [wl, setWl] = useState<WhitelistInfo | null>(null)
 
   const load = () => {
-    window.api.getWhitelist(folderPath).then(setWl)
     window.api.getHardcore(folderPath).then((h) => setHardcore(h.hardcore))
     setHardcoreEdit(null)
     return window.api.getSettings(folderPath).then((s) => {
@@ -216,11 +210,10 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
     })
   }
 
-  // 화이트리스트·월드 리셋 창은 바로 저장하므로, 닫을 때 파일 값만 다시 읽고 아직 저장 안 한 다른 변경은 그대로 둔다
+  // 월드 리셋 창은 바로 저장하므로, 닫을 때 파일 값만 다시 읽고 아직 저장 안 한 다른 변경은 그대로 둔다
   async function reloadKeepingEdits() {
-    const [s, w] = await Promise.all([window.api.getSettings(folderPath), window.api.getWhitelist(folderPath)])
+    const s = await window.api.getSettings(folderPath)
     setSettings((cur) => (cur ? { ...cur, properties: s.properties, worldExists: s.worldExists } : s))
-    setWl(w)
   }
 
   useEffect(() => {
@@ -239,7 +232,7 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       // 드롭다운이 Esc를 먼저 처리했으면(defaultPrevented) 창은 닫지 않는다
-      if (e.key !== 'Escape' || e.defaultPrevented || showWhitelist || askReset || askDiscard || askDowngrade) return
+      if (e.key !== 'Escape' || e.defaultPrevented || askReset || askDiscard || askDowngrade) return
       requestClose()
     }
     window.addEventListener('keydown', onKey)
@@ -480,20 +473,7 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
           </div>
         )}
         {fields.map((f) =>
-          f.type === 'whitelist' ? (
-            <div key={f.key} className="setting-row clickable" onClick={() => setShowWhitelist(true)}>
-              <div className="setting-text">
-                <div className="setting-label">{f.label}</div>
-                <div className="setting-desc">{f.desc}</div>
-              </div>
-              <span className="link-value">
-                {wl ? `${wl.enabled ? '켜짐' : '꺼짐'} · ${wl.players.length}명` : ''}
-                <ChevronRight size={18} />
-              </span>
-            </div>
-          ) : (
-            <FieldRow key={f.key} field={f} value={valueOf(f, props)} changed={f.key in edits} focus={focusKey === f.key} onChange={(v) => set(f.key, v)} />
-          )
+          <FieldRow key={f.key} field={f} value={valueOf(f, props)} changed={f.key in edits} focus={focusKey === f.key} onChange={(v) => set(f.key, v)} />
         )}
         {!fileExists && <p className="hint" style={{ padding: '14px 0' }}>서버를 한 번 켜면 설정 항목이 더 생겨요.</p>}
       </>
@@ -544,15 +524,6 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
           onClose={() => setAskReset(false)}
           onDone={() => {
             setAskReset(false)
-            reloadKeepingEdits()
-          }}
-        />
-      )}
-      {showWhitelist && (
-        <WhitelistDialog
-          folderPath={folderPath}
-          onClose={() => {
-            setShowWhitelist(false)
             reloadKeepingEdits()
           }}
         />

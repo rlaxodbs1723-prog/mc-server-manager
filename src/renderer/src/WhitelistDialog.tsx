@@ -1,11 +1,11 @@
-import { UserPlus, X } from 'lucide-react'
+import { UserPlus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { WhitelistInfo } from '../../shared-types'
-import { Confirm, Empty, Modal, useToast } from './ui'
+import { Confirm, Empty, useToast } from './ui'
 import { cleanError } from './util'
 
 // 화이트리스트 켜기/끄기와 목록 관리. 바꾸는 즉시 저장되고, 켜진 서버에는 바로 적용된다.
-// 설정 창(WhitelistDialog)과 관리 탭에서 같이 쓴다.
+// 관리 탭에서 쓴다.
 export function WhitelistPanel({ folderPath, autoFocus }: { folderPath: string; autoFocus?: boolean }) {
   const toast = useToast()
   const [info, setInfo] = useState<WhitelistInfo | null>(null)
@@ -133,19 +133,5 @@ export function WhitelistPanel({ folderPath, autoFocus }: { folderPath: string; 
         )}
       </div>
     </>
-  )
-}
-
-export default function WhitelistDialog({ folderPath, onClose }: { folderPath: string; onClose: () => void }) {
-  return (
-    <Modal onClose={onClose}>
-      <div className="wl-head">
-        <h2>화이트리스트</h2>
-        <button className="btn icon sm ghost" onClick={onClose} aria-label="닫기">
-          <X size={18} />
-        </button>
-      </div>
-      <WhitelistPanel folderPath={folderPath} autoFocus />
-    </Modal>
   )
 }

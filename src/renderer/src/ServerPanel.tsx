@@ -100,7 +100,6 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
   const [sugIndex, setSugIndex] = useState(0)
   const [sugHidden, setSugHidden] = useState(false)
   const stickToBottom = useRef(true)
-  const [follow, setFollow] = useStored('consoleFollow', true) // 새 줄을 따라 맨 아래로 내려갈지
   const [atBottom, setAtBottom] = useState(true)
   const [checking, setChecking] = useState(false) // 켜기 전 점검 중
   const [preflight, setPreflight] = useState<PreflightResult | null>(null)
@@ -182,9 +181,9 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
   useLayoutEffect(() => {
     const el = consoleRef.current
     if (!el) return
-    if (jumpOnce.current || (follow && stickToBottom.current)) el.scrollTop = el.scrollHeight
+    if (jumpOnce.current || stickToBottom.current) el.scrollTop = el.scrollHeight
     if (log.length) jumpOnce.current = false
-  }, [log, tab, follow])
+  }, [log, tab])
 
   const scrollToBottom = (): void => {
     const el = consoleRef.current
@@ -446,16 +445,6 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
               </div>
               <button className={`console-chip ${onlyProblems ? 'on' : ''}`} onClick={() => setOnlyProblems((v) => !v)}>
                 경고·오류만
-              </button>
-              <button
-                className={`console-chip ${follow ? 'on' : ''}`}
-                onClick={() => {
-                  setFollow(!follow)
-                  if (!follow) scrollToBottom()
-                }}
-                title="새 로그가 나오면 맨 아래로 따라 내려가요"
-              >
-                아래로 따라가기
               </button>
               {(query || onlyProblems) && <span className="hint">{shownLog.length}줄</span>}
             </div>
