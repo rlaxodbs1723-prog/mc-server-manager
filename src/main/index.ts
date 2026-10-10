@@ -25,7 +25,7 @@ import { curseForgeKeySource, hasCurseForgeKey, mapFiles, removeCurseForgeKey, s
 import { applyLoginItem, getAppSettings, setAppSettings, startedHidden } from './appsettings'
 import { createEntry, listDir, readConfigFile, renameEntry, revealEntry, trashEntries, writeConfigFile } from './configfiles'
 import { cleanWorldTemp } from './worldzip'
-import { getServerIcon, pickServerIcon, removeServerIcon, setServerIconFrom } from './icon'
+import { getServerIcon, pickIconImage, pickServerIcon, removeServerIcon, setServerIconFrom } from './icon'
 import { disableDatapack } from './crash'
 import * as whitelist from './whitelist'
 import { getManageInfo, runAction } from './manage'
@@ -378,6 +378,7 @@ ipcMain.handle('deleteBackup', (_event, folderPath: string, id: string) => {
 })
 ipcMain.handle('getServerIcon', (_event, folderPath: string) => getServerIcon(checkServerFolder(folderPath)))
 ipcMain.handle('pickServerIcon', (event, folderPath: string) => pickServerIcon(checkServerFolder(folderPath), BrowserWindow.fromWebContents(event.sender)))
+ipcMain.handle('pickIconImage', (event) => pickIconImage(BrowserWindow.fromWebContents(event.sender)))
 ipcMain.handle('setServerIconFile', (_event, folderPath: string, file: string) => setServerIconFrom(checkServerFolder(folderPath), String(file)))
 ipcMain.handle('removeServerIcon', (_event, folderPath: string) => removeServerIcon(checkServerFolder(folderPath)))
 ipcMain.handle('getBackupSettings', (_event, folderPath: string) => getBackupSettings(checkServerFolder(folderPath)))

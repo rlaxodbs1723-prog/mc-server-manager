@@ -24,3 +24,5 @@ playit 연결을 끊었어요	Disconnected from playit	已断开 playit 连接
 "Claim Agent" 화면에서 승인 버튼을 눌러요.	On the "Claim Agent" page, click the approve button.	在"Claim Agent"页面点击授权按钮。
 앱으로 돌아오면 접속 주소가 떠요. 다음부터는 알아서 열려요.	Back in the app, the address appears. From then on it opens automatically.	回到应用后会显示连接地址。之后会自动开放。
 허락한 사람만 들어오게 해요. 목록은 서버의 관리 탭에서 바꿔요	Only let in people you allow. Edit the list in the server’s Manage tab	只允许你许可的人进入。名单在服务器的"管理"标签中修改
+아이콘 바꾸기 (오른쪽 클릭: 지우기)	Change icon (right-click: remove)	更换图标（右键：删除）
+서버 아이콘 고르기	Choose server icon	选择服务器图标

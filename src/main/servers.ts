@@ -26,7 +26,7 @@ import { autoBackupBeforeStart, backupRoot, createBackup, listBackups } from './
 import { assertFree } from './lock'
 import { assertWorldFits, importWorld } from './worldimport'
 import { installModpack } from './modpack'
-import { getServerIcon } from './icon'
+import { getServerIcon, setServerIconFrom } from './icon'
 import { notify } from './notify'
 import { analyzeCrash } from './crash'
 import { readYamlValue, writeYamlValue } from './yamlvalue'
@@ -85,7 +85,7 @@ function defaultMemoryMb(): number {
 }
 
 export async function createServer(
-  { name, software, mcVersion, loaderVersion, properties, importWorldFrom, modpackId }: CreateServerOptions,
+  { name, software, mcVersion, loaderVersion, properties, importWorldFrom, modpackId, iconFrom }: CreateServerOptions,
   report: (p: Progress) => void
 ): Promise<ServerInfo> {
   if (!SOFTWARE_INFO[software]) throw new Error('지원하지 않는 서버 종류예요.')
@@ -154,6 +154,13 @@ export async function createServer(
   if (importWorldFrom) {
     report({ message: '싱글플레이 월드를 복사하고 있어요' })
     await importWorld(folderPath, importWorldFrom, mcVersion)
+  }
+  if (iconFrom) {
+    try {
+      setServerIconFrom(folderPath, iconFrom)
+    } catch {
+      // 그림을 못 읽어도 서버는 만든다 (나중에 설정에서 바꿀 수 있다)
+    }
   }
   fs.rmSync(path.join(folderPath, CREATING_FILE), { force: true })
   report({ message: '완료' })

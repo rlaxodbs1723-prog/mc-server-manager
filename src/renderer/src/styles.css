@@ -945,3 +945,6 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .bug-file .size { color: var(--text-3); }
 .bug-file button { display: grid; place-items: center; width: 20px; height: 20px; border: 0; border-radius: 6px; background: none; color: var(--text-3); cursor: pointer; }
 .bug-file button:hover { background: var(--line-strong); color: var(--text); }
+.wizard-icon { position: relative; padding: 0; border: 0; background: none; cursor: pointer; flex-shrink: 0; border-radius: 14px; }
+.wizard-icon:hover { filter: brightness(1.15); }
+.wizard-icon-edit { position: absolute; right: -4px; bottom: -4px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--primary); color: #fff; border: 2px solid var(--surface); }

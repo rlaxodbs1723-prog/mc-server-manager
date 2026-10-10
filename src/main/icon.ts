@@ -13,22 +13,37 @@ export function getServerIcon(folderPath: string): string | null {
   return `data:image/png;base64,${fs.readFileSync(p).toString('base64')}`
 }
 
-export function setServerIconFrom(folderPath: string, source: string): string {
+// 가운데를 정사각형으로 잘라 64×64로 줄인다
+function makeIcon(source: string): Electron.NativeImage {
   const img = nativeImage.createFromPath(path.resolve(String(source)))
   if (img.isEmpty()) throw new Error('그림 파일(png, jpg 등)을 넣어 주세요.')
   const { width, height } = img.getSize()
   const side = Math.min(width, height)
   const square = img.crop({ x: Math.floor((width - side) / 2), y: Math.floor((height - side) / 2), width: side, height: side })
-  const icon = square.resize({ width: 64, height: 64, quality: 'best' })
+  return square.resize({ width: 64, height: 64, quality: 'best' })
+}
+
+export function setServerIconFrom(folderPath: string, source: string): string {
+  const icon = makeIcon(source)
   fs.writeFileSync(path.join(folderPath, FILE), icon.toPNG())
   return icon.toDataURL()
 }
 
-export async function pickServerIcon(folderPath: string, win: BrowserWindow | null): Promise<string | null> {
+async function pickImage(win: BrowserWindow | null): Promise<string | null> {
   const opts = { title: tr('서버 아이콘으로 쓸 그림을 골라 주세요'), properties: ['openFile' as const], filters: [{ name: tr('그림'), extensions: ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'] }] }
   const res = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts)
-  if (res.canceled || !res.filePaths[0]) return null
-  return setServerIconFrom(folderPath, res.filePaths[0])
+  return res.canceled || !res.filePaths[0] ? null : res.filePaths[0]
+}
+
+export async function pickServerIcon(folderPath: string, win: BrowserWindow | null): Promise<string | null> {
+  const file = await pickImage(win)
+  return file ? setServerIconFrom(folderPath, file) : null
+}
+
+// 서버를 만들기 전(폴더가 없을 때): 고른 파일과 미리보기만 돌려주고, 만들 때 저장한다
+export async function pickIconImage(win: BrowserWindow | null): Promise<{ path: string; preview: string } | null> {
+  const file = await pickImage(win)
+  return file ? { path: file, preview: makeIcon(file).toDataURL() } : null
 }
 
 export function removeServerIcon(folderPath: string): void {

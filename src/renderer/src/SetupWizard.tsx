@@ -1,4 +1,4 @@
-import { AlertCircle, ArrowLeft, Check } from 'lucide-react'
+import { AlertCircle, ArrowLeft, Check, ImagePlus } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useMouseBack } from './mouseback'
 import { SOFTWARE_INFO, type LoaderVersion, type McVersion, type SaveWorld, type Software } from '../../shared-types'
@@ -77,6 +77,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
   const [name, setName] = useState('')
   const [nameTouched, setNameTouched] = useState(false) // 직접 고쳤으면 버전을 바꿔도 이름을 덮어쓰지 않는다
   const [loadError, setLoadError] = useState('')
+  const [icon, setIcon] = useState<{ path: string; preview: string } | null>(null) // 고른 서버 아이콘
 
   // 2~4단계
   const [gamemode, setGamemode] = useState('survival')
@@ -148,6 +149,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
       software,
       mcVersion: version,
       loaderVersion: software === 'vanilla' ? undefined : loaderVersion,
+      iconFrom: icon?.path,
       properties: {
         gamemode,
         difficulty: hardcore ? 'hard' : difficulty, // 하드코어는 어려움으로 고정된다
@@ -180,7 +182,25 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
       {step === 0 && (
         <>
           <div className="wizard-title">
-            <SoftwareBadge software={software} size={44} name={name} />
+            {/* 눌러서 서버 아이콘(멀티플레이 목록에 보이는 그림) 고르기 */}
+            <button
+              type="button"
+              className="wizard-icon"
+              title={icon ? '아이콘 바꾸기 (오른쪽 클릭: 지우기)' : '서버 아이콘 고르기'}
+              onClick={async () => {
+                const picked = await window.api.pickIconImage().catch(() => null)
+                if (picked) setIcon(picked)
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault()
+                setIcon(null)
+              }}
+            >
+              <SoftwareBadge software={software} size={44} name={name} icon={icon?.preview} />
+              <span className="wizard-icon-edit">
+                <ImagePlus size={12} />
+              </span>
+            </button>
             <div>
               {/* 입력하는 이름을 바로 보여 준다. 비어 있으면 종류 이름으로 */}
               <h2 className="wizard-name">{name.trim() || `${info.label} 서버`}</h2>

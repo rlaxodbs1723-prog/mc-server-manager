@@ -36,6 +36,7 @@ export interface CreateServerOptions {
   properties?: Record<string, string> // 초기 설정 창에서 고른 server.properties 값
   importWorldFrom?: string // 싱글플레이 월드 폴더 (고르면 새 월드 대신 이 월드로 시작)
   modpackId?: string // 모드팩으로 만들 때 (prepareModpack으로 미리 풀어 둔 것)
+  iconFrom?: string // 서버 아이콘으로 쓸 그림 파일 (만들기 창에서 고른 것)
 }
 
 export interface ServerInfo {
@@ -414,6 +415,8 @@ export interface Api {
   // 서버 아이콘 (멀티플레이 목록의 그림). data URL을 돌려준다
   getServerIcon: (folderPath: string) => Promise<string | null>
   pickServerIcon: (folderPath: string) => Promise<string | null>
+  // 서버를 만들기 전에 아이콘 그림 고르기: 파일 경로와 미리보기(64×64)
+  pickIconImage: () => Promise<{ path: string; preview: string } | null>
   setServerIconFile: (folderPath: string, file: File) => Promise<string>
   removeServerIcon: (folderPath: string) => Promise<void>
   setBackupSettings: (folderPath: string, s: BackupSettings) => Promise<void>

@@ -1472,5 +1472,7 @@
  "브라우저에 playit.gg가 열리면 로그인하거나 회원가입해요.": "When playit.gg opens in your browser, log in or sign up.",
  "\"Claim Agent\" 화면에서 승인 버튼을 눌러요.": "On the \"Claim Agent\" page, click the approve button.",
  "앱으로 돌아오면 접속 주소가 떠요. 다음부터는 알아서 열려요.": "Back in the app, the address appears. From then on it opens automatically.",
- "허락한 사람만 들어오게 해요. 목록은 서버의 관리 탭에서 바꿔요": "Only let in people you allow. Edit the list in the server’s Manage tab"
+ "허락한 사람만 들어오게 해요. 목록은 서버의 관리 탭에서 바꿔요": "Only let in people you allow. Edit the list in the server’s Manage tab",
+ "아이콘 바꾸기 (오른쪽 클릭: 지우기)": "Change icon (right-click: remove)",
+ "서버 아이콘 고르기": "Choose server icon"
 }

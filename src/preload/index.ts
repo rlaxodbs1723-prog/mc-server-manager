@@ -67,6 +67,7 @@ const api: Api = {
   getBackupSettings: (folderPath) => ipcRenderer.invoke('getBackupSettings', folderPath),
   getServerIcon: (folderPath) => ipcRenderer.invoke('getServerIcon', folderPath),
   pickServerIcon: (folderPath) => ipcRenderer.invoke('pickServerIcon', folderPath),
+  pickIconImage: () => ipcRenderer.invoke('pickIconImage'),
   setServerIconFile: (folderPath, file) => ipcRenderer.invoke('setServerIconFile', folderPath, webUtils.getPathForFile(file)),
   removeServerIcon: (folderPath) => ipcRenderer.invoke('removeServerIcon', folderPath),
   setBackupSettings: (folderPath, s) => ipcRenderer.invoke('setBackupSettings', folderPath, s),
