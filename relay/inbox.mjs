@@ -39,7 +39,8 @@ export async function handleInbox(req, env) {
     const res = new Response(JSON.stringify({ notices, patches }), {
       headers: { 'Content-Type': 'application/json', 'Cache-Control': `public, max-age=${CACHE_SEC}` }
     })
-    if (cache) await cache.put(key, res.clone())
+    // 비어 있으면 (설정 중이거나 아직 글이 없으면) 기억하지 않아서 바로 다시 물을 수 있게 한다
+    if (cache && (notices.length || patches.length)) await cache.put(key, res.clone())
     return res
   } catch {
     return new Response('discord error', { status: 502 })
