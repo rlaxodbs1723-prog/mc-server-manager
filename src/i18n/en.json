@@ -1466,5 +1466,10 @@
  "0이면 비어 있는 포트를 알아서 골라요.": "0 picks a free port automatically.",
  "목록이 비어 있어요": "The list is empty",
  "이대로 켜면 아무도(방장도) 들어올 수 없어요. 먼저 닉네임을 추가하는 게 좋아요.": "If you turn it on now, nobody (not even the host) can join. Add names first.",
- "먼저 추가하기": "Add first"
+ "먼저 추가하기": "Add first",
+ "해결법: 터널로 열기": "Fix: open with a tunnel",
+ "아래 \"터널로 열기\"를 눌러요.": "Click \"Open with tunnel\" below.",
+ "브라우저에 playit.gg가 열리면 로그인하거나 회원가입해요.": "When playit.gg opens in your browser, log in or sign up.",
+ "\"Claim Agent\" 화면에서 승인 버튼을 눌러요.": "On the \"Claim Agent\" page, click the approve button.",
+ "앱으로 돌아오면 접속 주소가 떠요. 다음부터는 알아서 열려요.": "Back in the app, the address appears. From then on it opens automatically."
 }

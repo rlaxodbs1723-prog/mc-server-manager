@@ -70,7 +70,7 @@ export default function InviteBox({ folderPath }: { folderPath: string }) {
   )
 }
 
-// 빨간 "밖에서 접속할 수 없어요"를 누르면 뜨는 창: 원인과 해결법 (포트 포워딩, 또는 playit 터널)
+// 빨간 "밖에서 접속할 수 없어요"를 누르면 뜨는 창: 원인과, playit 터널로 여는 순서
 function InviteHelp({
   folderPath,
   invite,
@@ -101,9 +101,13 @@ function InviteHelp({
       <div className="invite-help">
         <h3>원인</h3>
         <p>{invite.message}</p>
-        <h3>해결법</h3>
-        <p>{`공유기에서 포트 포워딩을 직접 해 주세요. (포트 ${invite.port}, TCP)`}</p>
-        <p>{'또는 playit.gg 터널로 열 수 있어요. 처음 한 번은 브라우저에서 playit 계정으로 승인해야 해요.'}</p>
+        <h3>해결법: 터널로 열기</h3>
+        <ol className="invite-steps">
+          <li>{'아래 "터널로 열기"를 눌러요.'}</li>
+          <li>{'브라우저에 playit.gg가 열리면 로그인하거나 회원가입해요.'}</li>
+          <li>{'"Claim Agent" 화면에서 승인 버튼을 눌러요.'}</li>
+          <li>{'앱으로 돌아오면 접속 주소가 떠요. 다음부터는 알아서 열려요.'}</li>
+        </ol>
         {linking && <p className="hint">{'브라우저에서 승인을 기다리고 있어요…'}</p>}
         {invite.lan.length > 0 && <p className="hint">{`같은 와이파이의 플레이어는 지금도 ${invite.lan.join(', ')}(으)로 접속할 수 있어요.`}</p>}
       </div>
