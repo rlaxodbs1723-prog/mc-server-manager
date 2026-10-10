@@ -1,4 +1,4 @@
-import { FolderOpen, KeyRound } from 'lucide-react'
+import { FolderOpen } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { AppInfo, AppSettings } from '../../shared-types'
 import { Loading, Modal, useToast } from './ui'
@@ -9,8 +9,6 @@ import { LANGS } from '../../i18n'
 export default function AppSettingsDialog({ onClose }: { onClose: () => void }) {
   const toast = useToast()
   const [info, setInfo] = useState<AppInfo | null>(null)
-  const [key, setKey] = useState('')
-  const [savingKey, setSavingKey] = useState(false)
 
   const load = () => window.api.getAppInfo().then(setInfo).catch((e) => toast(cleanError(e), 'error'))
   useEffect(() => {
@@ -27,20 +25,6 @@ export default function AppSettingsDialog({ onClose }: { onClose: () => void }) 
     } catch (e) {
       toast(cleanError(e), 'error')
       load()
-    }
-  }
-
-  async function saveKey() {
-    setSavingKey(true)
-    try {
-      await window.api.setCurseForgeKey(key)
-      setKey('')
-      toast('CurseForge에 연결했어요')
-      load()
-    } catch (e) {
-      toast(cleanError(e), 'error')
-    } finally {
-      setSavingKey(false)
     }
   }
 
@@ -146,36 +130,18 @@ export default function AppSettingsDialog({ onClose }: { onClose: () => void }) 
             </label>
           </section>
 
-          <section>
-            <div className="label">CurseForge</div>
-            {info.curseForgeKey === 'built' ? (
-              <p className="hint">기본으로 연결돼 있어요. 따로 할 일은 없어요.</p>
-            ) : info.curseForgeKey === 'user' ? (
+          {/* 예전에 직접 넣은 CurseForge 키가 있을 때만: 끊으면 기본 연결로 돌아간다 */}
+          {info.curseForgeKey === 'user' && (
+            <section>
+              <div className="label">CurseForge</div>
               <div className="key-row">
                 <span className="hint">내가 넣은 API 키로 연결돼 있어요.</span>
                 <button className="btn sm ghost" onClick={removeKey}>
                   연결 끊기
                 </button>
               </div>
-            ) : (
-              <>
-                <p className="hint">연결하면 CurseForge의 모드·모드팩·맵도 찾을 수 있어요. API 키는 console.curseforge.com에서 받을 수 있어요.</p>
-                <form
-                  className="key-row"
-                  onSubmit={(e) => {
-                    e.preventDefault()
-                    if (key.trim()) void saveKey()
-                  }}
-                >
-                  <input className="input" type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder="CurseForge API 키" />
-                  <button className="btn primary" disabled={!key.trim() || savingKey}>
-                    {savingKey ? <span className="spinner" /> : <KeyRound size={15} />}
-                    연결
-                  </button>
-                </form>
-              </>
-            )}
-          </section>
+            </section>
+          )}
 
           {info.tunnelLinked && (
             <section>
