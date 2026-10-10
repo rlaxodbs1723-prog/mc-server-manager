@@ -30,6 +30,17 @@ export async function handleInbox(req, env) {
   if (req.method !== 'GET') return new Response('method not allowed', { status: 405 })
   const bot = env.DISCORD_BOT_TOKEN
   if (!bot) return Response.json({ notices: [], patches: [] })
+  // 설정 확인용: 채널 번호를 읽었는지와 디스코드 응답만 알려 준다 (비밀값은 보여 주지 않는다)
+  if (new URL(req.url).searchParams.has('check')) {
+    const look = async (raw) => {
+      const id = String(raw ?? '').trim().match(/(\d{5,25})\/?$/)?.[1]
+      if (!id) return { set: !!raw, id: false }
+      const r = await fetch(`${DISCORD}/channels/${id}/messages?limit=5`, { headers: { Authorization: `Bot ${bot}` } })
+      const list = r.ok ? await r.json() : []
+      return { set: true, id: true, status: r.status, count: list.length, human: list.filter((m) => !m.author?.bot).length, withText: list.filter((m) => m.content?.trim()).length }
+    }
+    return Response.json({ notice: await look(env.NOTICE_CHANNEL_ID), patch: await look(env.PATCH_CHANNEL_ID) })
+  }
   const cache = typeof caches !== 'undefined' ? caches.default : null
   const key = new Request(new URL('/api/inbox', req.url).toString())
   const hit = cache && (await cache.match(key))
