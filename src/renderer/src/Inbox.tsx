@@ -136,8 +136,7 @@ function InboxPanel(props: {
         <b>{p.title || '📎'}</b>
         <span className="hint">{p.date}</span>
       </div>
-      {(p.body || p.files.length > 0) && <div className="inbox-line hint">{p.body.split('
-')[0] || `📎 ${p.files.length}`}</div>}
+      {(p.body || p.files.length > 0) && <div className="inbox-line hint">{p.body.split('\n')[0] || `📎 ${p.files.length}`}</div>}
     </button>
   )
 
