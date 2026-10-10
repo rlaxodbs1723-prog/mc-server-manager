@@ -2,6 +2,8 @@
 
 A free Windows desktop app that lets Minecraft players create and run their own server in a few clicks — no command line, no config-file hunting.
 
+**Download: https://cubepanel.kr** (마인크래프트 서버 1분 만에 만들기, 한국어 지원)
+
 ## Features
 
 - **Create a server** — Vanilla, Paper, Fabric, Forge, NeoForge. Java is downloaded automatically.
@@ -31,8 +33,8 @@ npm run dev      # run in development
 npm run dist     # build the Windows installer
 ```
 
-CurseForge requests and bug reports go through small relay functions on the website (`netlify/functions`).
-The CurseForge API key and the Discord webhook live only in the Netlify environment variables `CURSEFORGE_KEY` and `BUG_WEBHOOK`, never in the app.
+CurseForge requests, bug reports and the in-app inbox go through small relay functions on the website (`relay/`, served by Cloudflare Pages `functions/` and the older Netlify `netlify/functions`).
+The CurseForge API key, the Discord webhook and the Discord bot token live only in the hosting environment variables (`CURSEFORGE_KEY`, `BUG_WEBHOOK`, `DISCORD_BOT_TOKEN`), never in the app.
 
 ## Note
 
