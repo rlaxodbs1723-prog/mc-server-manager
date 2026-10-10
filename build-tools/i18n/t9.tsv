@@ -26,3 +26,10 @@ playit 연결을 끊었어요	Disconnected from playit	已断开 playit 连接
 허락한 사람만 들어오게 해요. 목록은 서버의 관리 탭에서 바꿔요	Only let in people you allow. Edit the list in the server’s Manage tab	只允许你许可的人进入。名单在服务器的"管理"标签中修改
 아이콘 바꾸기 (오른쪽 클릭: 지우기)	Change icon (right-click: remove)	更换图标（右键：删除）
 서버 아이콘 고르기	Choose server icon	选择服务器图标
+버그 제보에 답장이 왔어요	You got a reply to your bug report	你的问题反馈收到了回复
+새 제보	New report	新反馈
+내 제보 ({0})	My reports ({0})	我的反馈 ({0})
+개발자 답장	Reply from the developer	开发者回复
+아직 답장이 없어요. 답장이 오면 알려 드려요.	No reply yet. We'll let you know when one arrives.	还没有回复。收到回复时会通知你。
+앱 버전과 윈도우 정보가 같이 보내져요. 사진·영상은 파일당 4MB까지예요. 답장이 오면 알려 드려요.	The app version and Windows info are sent too. Photos and videos up to 4MB each. We'll let you know when you get a reply.	会同时发送应用版本和 Windows 信息。图片和视频每个最多 4MB。收到回复时会通知你。
+답장 {0}개	{0} replies	{0} 条回复

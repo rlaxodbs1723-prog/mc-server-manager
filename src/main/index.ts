@@ -15,7 +15,7 @@ import { getLoaderVersions } from './loaders'
 import * as mods from './mods'
 import { CancelledError, cancelTask, runCancellable, throwIfCancelled } from './cancel'
 import { notify } from './notify'
-import { bugFileInfo, pickBugFiles, sendBugReport } from './bugreport'
+import { bugFileInfo, checkBugReplies, getMyBugReports, markBugRepliesSeen, pickBugFiles, sendBugReport } from './bugreport'
 import { browseModpacks, cleanModpackTemp, gameVersions, modpackVersions, prepareFromCurseForge, prepareFromModrinth, prepareFromUpload } from './modpack'
 import * as datapacks from './datapacks'
 import { getStats, stopAllSamplers } from './stats'
@@ -391,6 +391,8 @@ ipcMain.handle('openExternal', (_event, url: string) => {
   // 화면이 아무 주소나 열지 못하게 CurseForge 주소만 연다
   if (/^https:\/\/([a-z0-9-]+\.)*curseforge\.com\//i.test(String(url))) return shell.openExternal(String(url))
 })
+ipcMain.handle('getMyBugReports', () => getMyBugReports())
+ipcMain.handle('markBugRepliesSeen', () => markBugRepliesSeen())
 ipcMain.handle('sendBugReport', (_event, title: string, details: string, files: string[]) =>
   sendBugReport(String(title ?? ''), String(details ?? ''), Array.isArray(files) ? files.slice(0, 10).map(String) : [])
 )
@@ -575,6 +577,10 @@ app.whenReady().then(() => {
   cleanModpackTemp() // 지난번에 만들다 만 서버 폴더 정리
   createWindow()
   trackUsage('open')
+  // 버그 제보 답장: 켜고 1분 뒤, 그 뒤로 30분마다 묻는다
+  const replies = (): void => void checkBugReplies(() => BrowserWindow.getAllWindows().forEach((w) => w.webContents.send('bugReplies')))
+  setTimeout(replies, 60_000)
+  setInterval(replies, 30 * 60_000).unref()
   void autoStartServers() // "앱을 켜면 이 서버도 켜기"를 켠 서버 (하나씩 차례로)
   initUpdater() // 새 버전 확인 (설치한 앱에서만)
   app.on('activate', () => {

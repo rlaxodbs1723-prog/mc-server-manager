@@ -948,3 +948,14 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .wizard-icon { position: relative; padding: 0; border: 0; background: none; cursor: pointer; flex-shrink: 0; border-radius: 14px; }
 .wizard-icon:hover { filter: brightness(1.15); }
 .wizard-icon-edit { position: absolute; right: -4px; bottom: -4px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--primary); color: #fff; border: 2px solid var(--surface); }
+
+.bug-tabs { margin-bottom: 12px; }
+.bug-mine { display: grid; gap: 10px; max-height: 420px; overflow: auto; }
+.bug-mine-item { padding: 12px 14px; border-radius: 12px; background: var(--surface-2); }
+.bug-mine-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.bug-mine-head b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bug-reply { margin-top: 6px; padding: 8px 10px; border-radius: 8px; background: var(--primary-soft); white-space: pre-wrap; word-break: break-word; }
+.bug-reply.new { outline: 1px solid var(--primary); }
+.bug-reply-from { display: block; font-size: 12px; color: var(--primary); margin-bottom: 2px; }
+.bug-btn { position: relative; }
+.bug-dot { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }

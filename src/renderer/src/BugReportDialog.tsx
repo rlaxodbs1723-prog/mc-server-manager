@@ -1,6 +1,6 @@
 import { Paperclip, X } from 'lucide-react'
-import { useState } from 'react'
-import type { BugFile } from '../../shared-types'
+import { useEffect, useState } from 'react'
+import type { BugFile, MyBugReport } from '../../shared-types'
 import DropZone from './DropZone'
 import { Modal, useToast } from './ui'
 import { cleanError } from './util'
@@ -15,6 +15,22 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
   const [details, setDetails] = useState('')
   const [files, setFiles] = useState<BugFile[]>([])
   const [sending, setSending] = useState(false)
+  const [mine, setMine] = useState<MyBugReport[]>([])
+  const [tab, setTab] = useState<'new' | 'mine'>('new')
+
+  // 내가 보낸 제보와 답장. 답장이 안 읽은 게 있으면 처음부터 그쪽을 보여 준다
+  useEffect(() => {
+    const load = () =>
+      window.api.getMyBugReports().then((list) => {
+        setMine(list)
+        if (list.some((r) => r.replies.length > r.seen)) setTab('mine')
+      })
+    load()
+    return window.api.onBugReplies(load)
+  }, [])
+  useEffect(() => {
+    if (tab === 'mine') void window.api.markBugRepliesSeen()
+  }, [tab, mine])
 
   const add = (more: BugFile[]) =>
     setFiles((cur) => {
@@ -64,6 +80,46 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
   return (
     <Modal onClose={sending ? undefined : onClose}>
       <h2>버그 제보</h2>
+      {mine.length > 0 && (
+        <div className="seg bug-tabs">
+          <button className={tab === 'new' ? 'active' : ''} onClick={() => setTab('new')}>
+            새 제보
+          </button>
+          <button className={tab === 'mine' ? 'active' : ''} onClick={() => setTab('mine')}>
+            {`내 제보 (${mine.length})`}
+          </button>
+        </div>
+      )}
+      {tab === 'mine' ? (
+        <>
+          <div className="bug-mine">
+            {mine.map((r) => (
+              <div key={r.id} className="bug-mine-item">
+                <div className="bug-mine-head">
+                  <b>{r.title}</b>
+                  <span className="hint">{new Date(r.sentAt).toLocaleDateString()}</span>
+                </div>
+                {r.replies.length ? (
+                  r.replies.map((x, i) => (
+                    <div key={x.id} className={`bug-reply ${i >= r.seen ? 'new' : ''}`}>
+                      <span className="bug-reply-from">{'개발자 답장'}</span>
+                      {x.text}
+                    </div>
+                  ))
+                ) : (
+                  <p className="hint">{'아직 답장이 없어요. 답장이 오면 알려 드려요.'}</p>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="actions">
+            <button className="btn primary" onClick={onClose}>
+              닫기
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
       <DropZone label="놓으면 첨부해요 (사진·영상)" onFiles={dropped} disabled={sending}>
         <div className="bug-report">
           <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="한 줄 요약 (예: 모드 설치가 안 돼요)" autoFocus maxLength={200} />
@@ -90,7 +146,7 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
               사진·영상 첨부
             </button>
           </div>
-          <p className="hint">앱 버전과 윈도우 정보가 같이 보내져요. 사진·영상은 파일당 4MB까지예요.</p>
+          <p className="hint">앱 버전과 윈도우 정보가 같이 보내져요. 사진·영상은 파일당 4MB까지예요. 답장이 오면 알려 드려요.</p>
         </div>
       </DropZone>
       <div className="actions">
@@ -102,6 +158,8 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
           {sending ? '보내는 중…' : '보내기'}
         </button>
       </div>
+        </>
+      )}
     </Modal>
   )
 }

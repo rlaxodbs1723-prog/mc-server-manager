@@ -13,6 +13,7 @@
 - 배포: `npm run dist` → dist/의 exe·blockmap·latest.yml을 GitHub 릴리즈에 올리고 Publish (자동 업데이트가 latest.yml을 읽음).
 - 사이트: docs/ (cubepanel.netlify.app, Netlify가 GitHub에서 자동 배포). 방문·버튼 클릭 수는 GoatCounter(cubepanel.goatcounter.com).
 - 비밀값: CurseForge 키와 버그 제보 디스코드 웹훅은 앱에 넣지 않는다. Netlify 함수(netlify/functions/cf.mjs, bug.mjs)가 Netlify 환경 변수 CURSEFORGE_KEY, BUG_WEBHOOK으로 중계한다.
+- 버그 제보 답장: 디스코드에서 제보 메시지에 "답장"하면 앱이 30분마다 /api/bug/replies로 받아 간다. Netlify 환경 변수 DISCORD_BOT_TOKEN(봇: 메시지 기록 읽기 + Message Content Intent)이 필요하다.
   .env는 절대 커밋하지 말 것. 올리기 전에 .env의 값이 HEAD에 없는지 확인.
 
 ## 완료 (사용자가 확인함)

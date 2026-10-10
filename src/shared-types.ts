@@ -153,6 +153,15 @@ export interface DirEntry {
 }
 
 // 버그 제보 첨부 파일 (사진·영상)
+// 내가 보낸 버그 제보와 받은 답장 (디스코드에서 그 제보에 답장한 것)
+export interface MyBugReport {
+  id: string
+  ticket: string // 이 제보의 답장을 볼 수 있는 표
+  title: string
+  sentAt: number
+  replies: { id: string; text: string; at: string }[]
+  seen: number // 읽은 답장 수
+}
 export interface BugFile {
   path: string
   name: string
@@ -430,6 +439,9 @@ export interface Api {
   // 버그 제보: 디스코드로 바로 보낸다 (버전·윈도우·언어는 앱이 붙인다). files는 사진·영상 경로
   sendBugReport: (title: string, details: string, files: string[]) => Promise<void>
   pickBugFiles: () => Promise<BugFile[]>
+  getMyBugReports: () => Promise<MyBugReport[]>
+  markBugRepliesSeen: () => Promise<void>
+  onBugReplies: (cb: () => void) => () => void // 새 답장이 오면
   bugFileInfo: (file: File) => Promise<BugFile> // 끌어다 놓은 파일
   // 크래시 보고서를 메모장 등으로 연다
   openCrashReport: (folderPath: string, reportPath: string) => Promise<void>

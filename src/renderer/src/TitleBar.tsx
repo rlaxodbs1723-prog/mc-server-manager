@@ -13,6 +13,7 @@ export default function TitleBar() {
   const [maximized, setMaximized] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showBug, setShowBug] = useState(false)
+  const [unread, setUnread] = useState(0) // 안 읽은 버그 제보 답장
   const [sites, setSites] = useState<SiteStatus>({ modrinth: true, curseforge: true })
   const toast = useToast()
   const [update, setUpdate] = useState<UpdateState>({ state: 'none' })
@@ -32,6 +33,12 @@ export default function TitleBar() {
   }, [])
   // 응답하지 않는 사이트 (다시 되면 알아서 사라진다)
   const down = [!sites.modrinth && 'Modrinth', !sites.curseforge && 'CurseForge'].filter(Boolean).join(', ')
+
+  useEffect(() => {
+    const load = () => window.api.getMyBugReports().then((l) => setUnread(l.reduce((n, r) => n + Math.max(0, r.replies.length - r.seen), 0))).catch(() => undefined)
+    load()
+    return window.api.onBugReplies(load)
+  }, [showBug])
 
   useEffect(() => {
     window.api.isMaximized().then(setMaximized)
@@ -95,6 +102,7 @@ export default function TitleBar() {
       <TaskButton />
       <button className="bug-btn" onClick={() => setShowBug(true)} onDoubleClick={(e) => e.stopPropagation()}>
         버그 제보
+        {unread > 0 && <span className="bug-dot" title={`답장 ${unread}개`} />}
       </button>
       {showBug &&
         createPortal(

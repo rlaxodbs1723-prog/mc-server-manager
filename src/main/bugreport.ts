@@ -6,7 +6,8 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { getAppSettings } from './appsettings'
-import type { BugFile } from '../shared-types'
+import type { BugFile, MyBugReport } from '../shared-types'
+import { notify } from './notify'
 
 export const BUG_MAX_BYTES = 4 * 1024 * 1024 // 중계 서버(Netlify 함수) 요청 한도 안에 들어가게 (파일당 4MB)
 export const BUG_MAX_FILES = 10
@@ -65,7 +66,7 @@ export async function pickBugFiles(win: BrowserWindow | null): Promise<BugFile[]
   return res.canceled ? [] : res.filePaths.map(bugFileInfo)
 }
 
-async function post(url: string, body: FormData | string): Promise<void> {
+async function post(url: string, body: FormData | string): Promise<string> {
   const res = await fetch(url, {
     method: 'POST',
     body,
@@ -74,6 +75,7 @@ async function post(url: string, body: FormData | string): Promise<void> {
   })
   if (res.status === 429) throw new Error('제보가 너무 많이 몰렸어요. 잠시 뒤에 다시 보내 주세요.')
   if (!res.ok) throw new Error(`제보를 보내지 못했어요. (${res.status})`)
+  return res.text()
 }
 
 export async function sendBugReport(title: string, details: string, files: string[] = []): Promise<void> {
@@ -85,7 +87,8 @@ export async function sendBugReport(title: string, details: string, files: strin
   const list = files.slice(0, BUG_MAX_FILES).map(bugFileInfo)
   lastSent = Date.now()
   try {
-    await post(url, JSON.stringify(bugMessage(title, details, list.map((f) => f.name))))
+    const sent = await post(url, JSON.stringify(bugMessage(title, details, list.map((f) => f.name))))
+    remember(sent, String(title ?? '').trim() || String(details ?? '').trim().slice(0, 60))
     // 파일은 한 개씩 (여러 개를 한 번에 보내면 합친 크기 한도에 걸린다)
     for (const f of list) {
       const form = new FormData()
@@ -98,5 +101,63 @@ export async function sendBugReport(title: string, details: string, files: strin
     if (e instanceof Error && e.name === 'TimeoutError') throw new Error('제보를 보내는 데 너무 오래 걸려요. 인터넷 연결을 확인해 주세요.')
     if (e instanceof TypeError) throw new Error('제보를 보내지 못했어요. 인터넷 연결을 확인해 주세요.')
     throw e
+  }
+}
+
+// ---------- 답장 ----------
+// 보낸 제보의 번호와 표를 기억해 두고, 가끔 중계 서버에 답장이 왔는지 묻는다 (디스코드에서 제보 메시지에 "답장"한 것)
+const KEEP_DAYS = 60 // 이보다 오래된 제보는 더 묻지 않는다
+const reportsFile = (): string => path.join(app.getPath('userData'), 'bug-reports.json')
+
+function readReports(): MyBugReport[] {
+  try {
+    const list = JSON.parse(fs.readFileSync(reportsFile(), 'utf8'))
+    return Array.isArray(list) ? list : []
+  } catch {
+    return []
+  }
+}
+const writeReports = (list: MyBugReport[]): void => fs.writeFileSync(reportsFile(), JSON.stringify(list, null, 2))
+
+function remember(response: string, title: string): void {
+  try {
+    const r = JSON.parse(response) as { id?: string; ticket?: string }
+    if (!r.id || !r.ticket) return // 예전 중계 서버는 번호를 주지 않는다
+    writeReports([{ id: r.id, ticket: r.ticket, title: title || 'Bug report', sentAt: Date.now(), replies: [], seen: 0 }, ...readReports()].slice(0, 50))
+  } catch {
+    // 번호가 없으면 답장만 못 받는다
+  }
+}
+
+export const getMyBugReports = (): MyBugReport[] => readReports()
+
+// 버그 제보 창을 열어 답장을 봤으면 새 답장 표시를 지운다
+export function markBugRepliesSeen(): void {
+  writeReports(readReports().map((r) => ({ ...r, seen: r.replies.length })))
+}
+
+export async function checkBugReplies(onChange: () => void): Promise<void> {
+  const url = hook()
+  if (!url) return
+  const list = readReports()
+  let changed = false
+  for (const r of list) {
+    if (Date.now() - r.sentAt > KEEP_DAYS * 86_400_000) continue
+    try {
+      const q = new URLSearchParams({ id: r.id, ticket: r.ticket })
+      const res = await fetch(`${url}/replies?${q}`, { signal: AbortSignal.timeout(20_000) })
+      if (!res.ok) continue
+      const { replies } = (await res.json()) as { replies: MyBugReport['replies'] }
+      if (!Array.isArray(replies) || replies.length <= r.replies.length) continue
+      r.replies = replies.map((x) => ({ id: String(x.id), text: String(x.text), at: String(x.at) }))
+      changed = true
+      notify('버그 제보에 답장이 왔어요', `${r.title}: ${r.replies[r.replies.length - 1].text.slice(0, 100)}`)
+    } catch {
+      // 인터넷이 안 되면 다음에 다시 묻는다
+    }
+  }
+  if (changed) {
+    writeReports(list)
+    onChange()
   }
 }

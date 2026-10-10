@@ -1474,5 +1474,12 @@
  "앱으로 돌아오면 접속 주소가 떠요. 다음부터는 알아서 열려요.": "Back in the app, the address appears. From then on it opens automatically.",
  "허락한 사람만 들어오게 해요. 목록은 서버의 관리 탭에서 바꿔요": "Only let in people you allow. Edit the list in the server’s Manage tab",
  "아이콘 바꾸기 (오른쪽 클릭: 지우기)": "Change icon (right-click: remove)",
- "서버 아이콘 고르기": "Choose server icon"
+ "서버 아이콘 고르기": "Choose server icon",
+ "버그 제보에 답장이 왔어요": "You got a reply to your bug report",
+ "새 제보": "New report",
+ "내 제보 ({0})": "My reports ({0})",
+ "개발자 답장": "Reply from the developer",
+ "아직 답장이 없어요. 답장이 오면 알려 드려요.": "No reply yet. We'll let you know when one arrives.",
+ "앱 버전과 윈도우 정보가 같이 보내져요. 사진·영상은 파일당 4MB까지예요. 답장이 오면 알려 드려요.": "The app version and Windows info are sent too. Photos and videos up to 4MB each. We'll let you know when you get a reply.",
+ "답장 {0}개": "{0} replies"
 }
