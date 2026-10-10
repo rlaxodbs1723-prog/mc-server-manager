@@ -950,8 +950,8 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .wizard-icon-edit { position: absolute; right: -4px; bottom: -4px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--primary); color: #fff; border: 2px solid var(--surface); }
 
 .bug-tabs { margin-bottom: 12px; }
-.bug-mine { display: grid; gap: 10px; max-height: 420px; overflow: auto; }
-.bug-mine-item { display: block; width: 100%; text-align: left; font: inherit; color: inherit; border: 0; cursor: pointer; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); }
+.bug-mine { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; max-height: 420px; overflow: auto; } /* 긴 제목이 칸을 넓히지 않고 …로 줄게 */
+.bug-mine-item { display: block; width: 100%; min-width: 0; text-align: left; font: inherit; color: inherit; border: 0; cursor: pointer; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); }
 .bug-mine-item:hover { filter: brightness(1.1); }
 .bug-mine-item .bug-reply { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bug-detail { max-height: 460px; overflow: auto; display: grid; gap: 8px; }
@@ -966,3 +966,4 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .bug-btn { position: relative; }
 .bug-dot { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
 .bug-detail-title { word-break: break-all; }
+.bug-count { align-self: flex-end; margin-top: -6px; font-size: 12px; }

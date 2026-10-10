@@ -124,6 +124,7 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
       <DropZone label="놓으면 첨부해요 (사진·영상)" onFiles={dropped} disabled={sending}>
         <div className="bug-report">
           <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="한 줄 요약 (예: 모드 설치가 안 돼요)" autoFocus maxLength={200} />
+          <span className="hint bug-count">{`${title.length}/200`}</span>
           <textarea
             className="input"
             value={details}
@@ -132,6 +133,7 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
             maxLength={4000}
             placeholder={'무엇을 하다가 어떻게 됐는지 적어 주세요.\n예: Fabric 1.21 서버에서 모드를 설치하니 서버가 켜지지 않아요.'}
           />
+          <span className="hint bug-count">{`${details.length}/4000`}</span>
           <div className="bug-files">
             {files.map((f) => (
               <span key={f.path} className="bug-file">
