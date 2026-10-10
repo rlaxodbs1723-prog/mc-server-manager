@@ -5,8 +5,10 @@ const DISCORD = 'https://discord.com/api/v10'
 const CACHE_SEC = 600
 const LIMIT = 30
 
-async function channelPosts(channel, bot) {
-  if (!channel || !/^\d{5,25}$/.test(channel)) return []
+async function channelPosts(raw, bot) {
+  // 복사할 때 딸려 온 공백·줄바꿈은 떼고, 채널 링크를 통째로 넣었으면 마지막 번호를 쓴다
+  const channel = String(raw ?? '').trim().match(/(\d{5,25})\/?$/)?.[1]
+  if (!channel) return []
   const res = await fetch(`${DISCORD}/channels/${channel}/messages?limit=${LIMIT}`, { headers: { Authorization: `Bot ${bot}` } })
   if (!res.ok) throw new Error(`discord ${res.status}`)
   const list = await res.json()
