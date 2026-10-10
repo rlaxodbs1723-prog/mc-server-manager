@@ -165,20 +165,31 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
       )}
       {open && (
         <Modal onClose={() => setOpen(null)}>
-          <h2 className="bug-detail-title">{open.title}</h2>
           <div className="bug-detail">
-            <span className="hint">{new Date(open.sentAt).toLocaleString()}</span>
-            {open.details && <div className="bug-question">{open.details}</div>}
-            {open.replies.length ? (
-              open.replies.map((x) => (
-                <div key={x.id} className="bug-reply">
-                  <span className="bug-reply-from">{'개발자 답장'}</span>
-                  {x.text}
-                </div>
-              ))
-            ) : (
-              <p className="hint">{'아직 답장이 없어요. 답장이 오면 알려 드려요.'}</p>
-            )}
+            {/* 왼쪽: 내가 보낸 질문 / 오른쪽: 개발자 답장 */}
+            <section>
+              <h3>{'내 질문'}</h3>
+              <div className="bug-scroll">
+                <b className="bug-detail-title">{open.title}</b>
+                <span className="hint">{new Date(open.sentAt).toLocaleString()}</span>
+                {open.details && <div className="bug-question">{open.details}</div>}
+              </div>
+            </section>
+            <section>
+              <h3>{'답장'}</h3>
+              <div className="bug-scroll">
+                {open.replies.length ? (
+                  open.replies.map((x) => (
+                    <div key={x.id} className="bug-reply">
+                      <span className="bug-reply-from">{new Date(x.at).toLocaleString()}</span>
+                      {x.text}
+                    </div>
+                  ))
+                ) : (
+                  <p className="hint">{'아직 답장이 없어요. 답장이 오면 알려 드려요.'}</p>
+                )}
+              </div>
+            </section>
           </div>
           <div className="actions">
             <button className="btn primary" onClick={() => setOpen(null)}>

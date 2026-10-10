@@ -1481,5 +1481,7 @@
  "개발자 답장": "Reply from the developer",
  "아직 답장이 없어요. 답장이 오면 알려 드려요.": "No reply yet. We'll let you know when one arrives.",
  "앱 버전과 윈도우 정보가 같이 보내져요. 사진·영상은 파일당 4MB까지예요. 답장이 오면 알려 드려요.": "The app version and Windows info are sent too. Photos and videos up to 4MB each. We'll let you know when you get a reply.",
- "답장 {0}개": "{0} replies"
+ "답장 {0}개": "{0} replies",
+ "내 질문": "My question",
+ "답장": "Replies"
 }
