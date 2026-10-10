@@ -972,10 +972,11 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .bug-files-in img, .bug-files-in video { max-width: 100%; max-height: 260px; border-radius: 6px; cursor: pointer; justify-self: start; }
 
 /* 알림함 */
-.inbox-btn { -webkit-app-region: no-drag; margin-right: 4px; }
-.modal:has(> .inbox) { width: min(620px, calc(100vw - 48px)); }
-.inbox .seg { margin: 4px 0 12px; }
-.inbox-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; max-height: min(520px, calc(100vh - 300px)); overflow: auto; }
+.inbox-anchor { margin-left: 0; margin-right: 4px; }
+.inbox-panel { width: 400px; }
+.inbox { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.inbox .seg { margin: 0; }
+.inbox-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; max-height: min(480px, calc(100vh - 200px)); overflow: auto; }
 .inbox-item { padding: 12px 14px; border-radius: 12px; background: var(--surface-2); }
 .inbox-item.new, .bug-mine-item.new { outline: 1px solid var(--primary); }
 .inbox-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; }

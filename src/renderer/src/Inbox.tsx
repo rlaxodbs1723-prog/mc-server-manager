@@ -1,9 +1,9 @@
 import { Mail } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Inbox, InboxPost, MyBugReport } from '../../shared-types'
 import { AttachedFiles, ReportDetail } from './BugReportDialog'
-import { Empty, Loading, Modal } from './ui'
+import { Empty, LeaveBox, Loading } from './ui'
 import { cleanError } from './util'
 
 // 읽은 공지·패치노트는 이 컴퓨터에만 기억한다 (못 읽으면 전부 새 글로 보일 뿐이다)
@@ -27,13 +27,30 @@ const unreadReplies = (list: MyBugReport[]): number => list.reduce((n, r) => n +
 
 type Tab = 'notices' | 'patches' | 'replies'
 
-// 타이틀바의 알림함 버튼: 공지, 패치노트, 버그 제보 답장을 한곳에서 본다. 새 글이 있으면 빨간 점
+// 타이틀바의 알림함 버튼: 누르면 버튼 아래에 공지, 패치노트, 버그 제보 답장 패널이 열린다. 새 글이 있으면 빨간 점
 export default function InboxButton() {
   const [show, setShow] = useState(false)
   const [box, setBox] = useState<Inbox | null>(null)
   const [error, setError] = useState('')
   const [reports, setReports] = useState<MyBugReport[]>([])
   const [seen, setSeen] = useState<string[]>(readSeen)
+  const ref = useRef<HTMLDivElement>(null)
+
+  // 패널 밖을 누르거나 Esc면 닫는다 (제보 자세히 보기 창 안을 누른 건 빼고)
+  useEffect(() => {
+    if (!show) return
+    const close = (e: MouseEvent) => {
+      const t = e.target as HTMLElement
+      if (!ref.current?.contains(t) && !t.closest?.('.backdrop')) setShow(false)
+    }
+    const key = (e: KeyboardEvent) => e.key === 'Escape' && !e.defaultPrevented && setShow(false)
+    window.addEventListener('mousedown', close)
+    window.addEventListener('keydown', key)
+    return () => {
+      window.removeEventListener('mousedown', close)
+      window.removeEventListener('keydown', key)
+    }
+  }, [show])
 
   const loadReports = () => window.api.getMyBugReports().then(setReports).catch(() => undefined)
   const loadBox = () =>
@@ -60,44 +77,38 @@ export default function InboxButton() {
   const unread = newPosts + unreadReplies(reports)
 
   return (
-    <>
-      <button className="task-btn inbox-btn" onClick={() => setShow(true)} title="알림함" onDoubleClick={(e) => e.stopPropagation()}>
+    <div className="task-anchor inbox-anchor" ref={ref} onDoubleClick={(e) => e.stopPropagation()}>
+      <button className={`task-btn ${show ? 'active' : ''}`} onClick={() => setShow((v) => !v)} title="알림함">
         <Mail size={16} />
         {unread > 0 && <span className="bug-dot" />}
       </button>
-      {show &&
-        createPortal(
-          <div onDoubleClick={(e) => e.stopPropagation()}>
-            <InboxDialog
-              box={box}
-              error={error}
-              reports={reports}
-              seen={seen}
-              onSeen={(ids) => {
-                const next = [...new Set([...seen, ...ids])]
-                setSeen(next)
-                writeSeen(next)
-              }}
-              onRepliesSeen={() => window.api.markBugRepliesSeen().then(loadReports)}
-              onClose={() => setShow(false)}
-            />
-          </div>,
-          document.body
-        )}
-    </>
+      {show && (
+        <InboxPanel
+          box={box}
+          error={error}
+          reports={reports}
+          seen={seen}
+          onSeen={(ids) => {
+            const next = [...new Set([...seen, ...ids])]
+            setSeen(next)
+            writeSeen(next)
+          }}
+          onRepliesSeen={() => window.api.markBugRepliesSeen().then(loadReports)}
+        />
+      )}
+    </div>
   )
 }
 
-function InboxDialog(props: {
+function InboxPanel(props: {
   box: Inbox | null
   error: string
   reports: MyBugReport[]
   seen: string[]
   onSeen: (ids: string[]) => void
   onRepliesSeen: () => void
-  onClose: () => void
 }) {
-  const { box, error, reports, seen, onSeen, onRepliesSeen, onClose } = props
+  const { box, error, reports, seen, onSeen, onRepliesSeen } = props
   // 안 읽은 답장이 있으면 답장부터, 아니면 공지부터
   const [tab, setTab] = useState<Tab>(() => (unreadReplies(reports) > 0 ? 'replies' : 'notices'))
   const [openId, setOpenId] = useState<string | null>(null)
@@ -129,9 +140,11 @@ function InboxDialog(props: {
   )
 
   return (
-    <Modal onClose={onClose}>
+    <LeaveBox className="task-panel inbox-panel">
       <div className="inbox">
-        <h2>알림함</h2>
+        <div className="task-panel-head">
+          <b>알림함</b>
+        </div>
         <div className="seg">
           <button className={tab === 'notices' ? 'active' : ''} onClick={() => setTab('notices')}>
             공지 {dot(newNotices)}
@@ -190,12 +203,8 @@ function InboxDialog(props: {
             ))}
         </div>
       </div>
-      <div className="actions">
-        <button className="btn primary" onClick={onClose}>
-          닫기
-        </button>
-      </div>
-      {open && <ReportDetail report={open} onClose={() => setOpenId(null)} />}
-    </Modal>
+      {/* 패널은 움직이는 효과가 있어서, 자세히 보기 창은 화면 맨 위(body)에 띄운다 */}
+      {open && createPortal(<ReportDetail report={open} onClose={() => setOpenId(null)} />, document.body)}
+    </LeaveBox>
   )
 }
