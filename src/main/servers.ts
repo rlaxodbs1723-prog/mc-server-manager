@@ -79,10 +79,9 @@ function freeFolder(name: string): string {
   }
 }
 
-// 모드 서버는 메모리를 많이 쓴다. 컴퓨터 메모리가 8GB 이상이면 4GB, 아니면 2GB로 시작한다.
-function defaultMemoryMb(software: Software): number {
-  const modded = software === 'fabric' || software === 'quilt' || software === 'forge' || software === 'neoforge'
-  return modded && os.totalmem() >= 8 * 1024 ** 3 ? 4096 : 2048
+// 컴퓨터 메모리가 8GB 이상이면 4GB, 아니면 윈도우가 쓸 자리를 남기려고 2GB로 시작한다.
+function defaultMemoryMb(): number {
+  return os.totalmem() >= 8 * 1024 ** 3 ? 4096 : 2048
 }
 
 export async function createServer(
@@ -139,7 +138,7 @@ export async function createServer(
     mcVersion,
     ...(software !== 'vanilla' && { loaderVersion }),
     javaComponent: javaComponentOf(meta),
-    memoryMb: defaultMemoryMb(software),
+    memoryMb: defaultMemoryMb(),
     ...(modpackOrigin && { modpack: modpackOrigin }),
     folderPath,
     createdAt: new Date().toISOString()
