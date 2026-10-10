@@ -108,11 +108,11 @@ function InviteHelp({
         {invite.lan.length > 0 && <p className="hint">{`같은 와이파이의 플레이어는 지금도 ${invite.lan.join(', ')}(으)로 접속할 수 있어요.`}</p>}
       </div>
       <div className="actions">
-        <button className="btn" onClick={tunnel} disabled={linking}>
+        <button className="btn primary" onClick={tunnel} disabled={linking}>
           {linking ? <span className="spinner" /> : null}
           터널로 열기
         </button>
-        <button className="btn primary" onClick={onClose}>
+        <button className="btn" onClick={onClose}>
           확인
         </button>
       </div>
