@@ -221,7 +221,7 @@
       h1: 'A <em>Minecraft server</em> for your players,<br />in just a few clicks',
       lead: 'No commands or config files needed. Create servers, install mods and modpacks, back up, and find crash causes, all in one app.',
       dl: 'Free download for Windows', meta: 'Windows 10 · 11 (64-bit) · Free',
-      mob: '📱 This is a PC (Windows) app.<br />Send the link to yourself and open it on your PC.', share: '📤 Send to myself (chat, email…)', mail: '✉️ Email the link', shareText: 'Open on your PC - Minecraft server app', copy: 'Copy link', copied: 'Copied!',
+      mob: '📱 This is a PC (Windows) app.<br />Send the link to yourself and open it on your PC.', share: '📤 Send to myself (chat, email…)', mail: '✉️ Email the link', chrome: '🌐 Open in Chrome (easier to send to yourself)', shareText: 'Open on your PC - Minecraft server app', copy: 'Copy link', copied: 'Copied!',
       fh: 'What you can do', fs: 'The app handles the hard parts and only asks what you need to choose.',
       c1t: 'Create servers', c1p: 'Vanilla, Paper, Fabric, Forge, NeoForge, Quilt, Purpur. Pick a version and the app even downloads Java.',
       c2t: 'Mods · Modpacks', c2p: 'Search and install from Modrinth and CurseForge at once. Required mods come along, and server packs are used automatically.',
@@ -247,7 +247,7 @@
       h1: '和玩家们一起玩的<em>Minecraft 服务器</em>，<br />点几下就搞定',
       lead: '不懂命令和配置文件也没关系。从创建服务器到安装模组和整合包、备份、查找崩溃原因，一个应用全搞定。',
       dl: 'Windows 免费下载', meta: 'Windows 10 · 11（64 位）· 免费',
-      mob: '📱 这是 PC（Windows）应用。<br />请把链接发给自己，在电脑上打开。', share: '📤 发给自己（聊天、邮件等）', mail: '✉️ 用邮件发送', shareText: '请在电脑上打开 - Minecraft 服务器程序', copy: '复制链接', copied: '已复制！',
+      mob: '📱 这是 PC（Windows）应用。<br />请把链接发给自己，在电脑上打开。', share: '📤 发给自己（聊天、邮件等）', mail: '✉️ 用邮件发送', chrome: '🌐 用 Chrome 打开（方便发给自己）', shareText: '请在电脑上打开 - Minecraft 服务器程序', copy: '复制链接', copied: '已复制！',
       fh: '可以做这些事', fs: '复杂的事交给应用，只问你需要选择的。',
       c1t: '创建服务器', c1p: '原版、Paper、Fabric、Forge、NeoForge、Quilt、Purpur。选好版本，连 Java 都会自动下载。',
       c2t: '模组 · 整合包', c2p: '同时搜索并安装 Modrinth 和 CurseForge 的内容。必需的模组一起安装，服务端包也会自动使用。',
@@ -269,7 +269,7 @@
       soon: '即将发布', version: '版本', bits: '（64 位）', changes: '更新内容'
     }
   }
-  const KO = { shareText: 'PC에서 열어 주세요 - 마인크래프트 서버 프로그램', copied: '복사했어요!', soon: '곧 공개돼요', version: '버전', bits: '(64비트)', changes: '바뀐 점' }
+  const KO = { chrome: '🌐 크롬으로 열기 (나에게 보내기 쉬워요)', shareText: 'PC에서 열어 주세요 - 마인크래프트 서버 프로그램', copied: '복사했어요!', soon: '곧 공개돼요', version: '버전', bits: '(64비트)', changes: '바뀐 점' }
   const original = {}
   document.querySelectorAll('[data-i18n]').forEach((el) => (original[el.dataset.i18n] = el.innerHTML))
   let lang = 'ko'
@@ -297,7 +297,7 @@
     document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang
     document.querySelectorAll('[data-i18n]').forEach((el) => {
       const k = el.dataset.i18n
-      const html = lang === 'ko' ? original[k] : T[lang][k]
+      const html = lang === 'ko' ? original[k] ?? KO[k] : T[lang][k]
       if (html == null) return
       const open = el.open
       el.innerHTML = html
@@ -327,17 +327,40 @@
   if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) {
     document.getElementById('mobile-note').hidden = false
     // 공유 창 (카톡 나에게 보내기, 메일 등을 고른다).
-    // 인스타·카톡 안의 브라우저는 공유 창(navigator.share)을 막아 두는데, 안드로이드에서는 휴대폰의 공유 창을 직접 불러올 수 있다
+    // 인스타·카톡 안의 브라우저는 공유 창(navigator.share)을 막아 둔다. 안드로이드면 크롬으로 열어 주고, 크롬에서 다시 누르면 공유 창이 뜬다
     const shareBtn = document.getElementById('share-link')
-    const android = /Android/i.test(navigator.userAgent)
-    const canShare = !!navigator.share || android
+    const toChrome = !navigator.share && /Android/i.test(navigator.userAgent)
+    const canShare = !!navigator.share || toChrome
     shareBtn.hidden = !canShare
+    if (toChrome) {
+      shareBtn.dataset.i18n = 'chrome'
+      shareBtn.innerHTML = word('chrome')
+      shareBtn.dataset.goatcounterClick = 'open-chrome'
+      shareBtn.dataset.goatcounterTitle = '크롬으로 열기 (인스타·카톡 안 브라우저)'
+    }
+    const url = 'https://cubepanel.netlify.app'
+    const openChrome = () => {
+      // 카톡 안 브라우저는 자기 방법(openExternal)이 있고, 나머지(인스타 등)는 안드로이드 인텐트로 크롬을 연다
+      location.href = /KAKAOTALK/i.test(navigator.userAgent)
+        ? `kakaotalk://web/openExternal?url=${encodeURIComponent(url)}`
+        : `intent://cubepanel.netlify.app/#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(url)};end`
+    }
     shareBtn.addEventListener('click', () => {
-      const url = 'https://cubepanel.netlify.app'
       if (navigator.share) return navigator.share({ title: 'MC CubePanel', text: word('shareText'), url }).catch(() => {})
-      const text = encodeURIComponent(`${word('shareText')} ${url}`)
-      location.href = `intent:#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.TEXT=${text};end`
+      openChrome()
     })
+    // 인스타·카톡 같은 앱 안 브라우저면 처음부터 크롬으로 한 번 열어 본다 (막히면 위 버튼으로 직접)
+    if (toChrome && /Instagram|KAKAOTALK|FBAN|FBAV|Line\/|NAVER/i.test(navigator.userAgent)) {
+      let tried = false
+      try {
+        tried = sessionStorage.getItem('chromeTried') === '1'
+        sessionStorage.setItem('chromeTried', '1')
+      } catch {}
+      if (!tried) {
+        window.goatcounter?.count?.({ path: 'auto-chrome', title: '처음부터 크롬으로 열기 시도', event: true })
+        openChrome()
+      }
+    }
     const copyBtn = document.getElementById('copy-link')
     if (!canShare) copyBtn.classList.add('main') // 공유 창이 없으면 링크 복사를 가장 눈에 띄게
     copyBtn.addEventListener('click', async () => {
