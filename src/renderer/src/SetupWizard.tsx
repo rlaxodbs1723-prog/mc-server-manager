@@ -314,7 +314,9 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
           <div className="reset-fields">
             <div className="form-row">
               <div>
-                <div className="label">최대 인원</div>
+                <div className="label">
+                  최대 인원 <span className="muted">{'1 ~ 500'}</span>
+                </div>
                 <div className="num-input">
                   <input type="number" className="input" style={{ width: '100%' }} value={maxPlayers} min={1} max={500} onChange={(e) => setMaxPlayers(e.target.value)} />
                   <span>명</span>

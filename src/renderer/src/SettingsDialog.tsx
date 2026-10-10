@@ -649,6 +649,7 @@ function FieldRow({ field: f, value, changed, focus, onChange }: { field: Field;
           {f.label}
         </div>
         {f.desc && <div className="setting-desc">{f.desc}</div>}
+        {f.type === 'number' && <div className="setting-desc">{rangeText(f.min, f.max)}</div>}
       </div>
       {control}
     </div>
@@ -836,6 +837,9 @@ function PaperRows({ values, edits, onChange }: { values: Record<string, string>
   )
 }
 
+// 숫자 칸 아래에 넣을 수 있는 범위를 보여 준다 (예: 3 ~ 32)
+const rangeText = (min: number, max: number): string => `${min.toLocaleString()} ~ ${max.toLocaleString()}`
+
 function PaperRow({ field: f, value, changed, onChange }: { field: PaperField; fileValue: string; value: string; changed: boolean; onChange: (v: string) => void }) {
   const scale = f.scale ?? 1
   const shown = f.type === 'number' ? String(Math.round((Number(value) / scale) * 100) / 100) : value
@@ -844,6 +848,7 @@ function PaperRow({ field: f, value, changed, onChange }: { field: PaperField; f
       <div className="setting-text">
         <div className="setting-label">{f.label}</div>
         <div className="setting-desc">{f.desc}</div>
+        {f.type === 'number' && f.min != null && f.max != null && <div className="setting-desc">{rangeText(f.min, f.max)}</div>}
       </div>
       {f.type === 'bool' ? (
         <label className="switch">

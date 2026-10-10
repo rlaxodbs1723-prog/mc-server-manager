@@ -98,6 +98,7 @@ export default function PlayerDialog({ record: r, others, running, act, onClose 
               min={1}
               max={999}
               value={count}
+              title="1 ~ 999"
               onChange={(e) => setCount(Math.min(999, Math.max(1, Number(e.target.value) || 1)))}
             />
             <button
