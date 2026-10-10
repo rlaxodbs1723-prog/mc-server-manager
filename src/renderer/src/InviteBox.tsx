@@ -40,7 +40,7 @@ export default function InviteBox({ folderPath }: { folderPath: string }) {
           <AlertTriangle size={14} />
           밖에서 접속할 수 없어요
         </button>
-        {help && <InviteHelp invite={invite} onClose={() => setHelp(false)} />}
+        {help && <InviteHelp folderPath={folderPath} invite={invite} onClose={() => setHelp(false)} />}
       </>
     )
   if (invite.state === 'opening')
@@ -70,8 +70,31 @@ export default function InviteBox({ folderPath }: { folderPath: string }) {
   )
 }
 
-// 빨간 "밖에서 접속할 수 없어요"를 누르면 뜨는 창: 원인과, 포트 포워딩을 직접 해야 한다는 안내
-function InviteHelp({ invite, onClose }: { invite: Extract<InviteStatus, { state: 'failed' }>; onClose: () => void }) {
+// 빨간 "밖에서 접속할 수 없어요"를 누르면 뜨는 창: 원인과 해결법 (포트 포워딩, 또는 playit 터널)
+function InviteHelp({
+  folderPath,
+  invite,
+  onClose
+}: {
+  folderPath: string
+  invite: Extract<InviteStatus, { state: 'failed' }>
+  onClose: () => void
+}) {
+  const toast = useToast()
+  const [linking, setLinking] = useState(false)
+
+  async function tunnel() {
+    setLinking(true)
+    try {
+      await window.api.useTunnel(folderPath)
+      onClose()
+    } catch (e) {
+      toast(cleanError(e), 'error')
+    } finally {
+      setLinking(false)
+    }
+  }
+
   return (
     <Modal onClose={onClose}>
       <h2>밖에서 접속할 수 없어요</h2>
@@ -80,9 +103,15 @@ function InviteHelp({ invite, onClose }: { invite: Extract<InviteStatus, { state
         <p>{invite.message}</p>
         <h3>해결법</h3>
         <p>{`공유기에서 포트 포워딩을 직접 해 주세요. (포트 ${invite.port}, TCP)`}</p>
+        <p>{'또는 playit.gg 터널로 열 수 있어요. 처음 한 번은 브라우저에서 playit 계정으로 승인해야 해요.'}</p>
+        {linking && <p className="hint">{'브라우저에서 승인을 기다리고 있어요…'}</p>}
         {invite.lan.length > 0 && <p className="hint">{`같은 와이파이의 플레이어는 지금도 ${invite.lan.join(', ')}(으)로 접속할 수 있어요.`}</p>}
       </div>
       <div className="actions">
+        <button className="btn" onClick={tunnel} disabled={linking}>
+          {linking ? <span className="spinner" /> : null}
+          터널로 열기
+        </button>
         <button className="btn primary" onClick={onClose}>
           확인
         </button>

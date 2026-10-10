@@ -1,0 +1,9 @@
+{0} (터널: {1})	{0} (Tunnel: {1})	{0}（隧道：{1}）
+playit {0} 실패 ({1})	playit {0} failed ({1})	playit {0} 失败（{1}）
+playit 승인을 기다리다 시간이 지났어요. 다시 해 주세요.	Timed out waiting for playit approval. Please try again.	等待 playit 授权超时，请重试。
+playit 승인을 거절했어요.	The playit approval was declined.	playit 授权被拒绝。
+playit 연결이 안 되어 있어요.	playit is not connected.	尚未连接 playit。
+터널 주소를 받지 못했어요.	Couldn't get the tunnel address.	未能获取隧道地址。
+또는 playit.gg 터널로 열 수 있어요. 처음 한 번은 브라우저에서 playit 계정으로 승인해야 해요.	Or you can open it with a playit.gg tunnel. The first time, you need to approve it in your browser with a playit account.	也可以通过 playit.gg 隧道开放。第一次需要在浏览器中用 playit 账号授权。
+브라우저에서 승인을 기다리고 있어요…	Waiting for approval in your browser…	正在等待浏览器中的授权…
+터널로 열기	Open with tunnel	通过隧道开放

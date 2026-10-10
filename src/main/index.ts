@@ -8,7 +8,7 @@ import { CreateEta } from './eta'
 import { listGameRules, setGameRule } from './gamerules'
 import { getHardcore, setHardcore } from './hardcore'
 import { getGameRuleLang } from './lang'
-import { checkReachable, closeAllPorts, getInvite, initInvite } from './invite'
+import { checkReachable, closeAllPorts, getInvite, initInvite, useTunnel } from './invite'
 import { getLoaderVersions } from './loaders'
 import * as mods from './mods'
 import { CancelledError, cancelTask, runCancellable, throwIfCancelled } from './cancel'
@@ -335,6 +335,7 @@ ipcMain.handle('getLog', (_event, folderPath: string) => getLog(checkServerFolde
 
 ipcMain.handle('getInvite', (_event, folderPath: string) => getInvite(checkServerFolder(folderPath)))
 ipcMain.handle('checkReachable', (_event, folderPath: string) => checkReachable(checkServerFolder(folderPath)))
+ipcMain.handle('useTunnel', (_event, folderPath: string) => useTunnel(checkServerFolder(folderPath)))
 ipcMain.handle('getStats', (_event, folderPath: string) => getStats(checkServerFolder(folderPath)))
 ipcMain.handle('getManageInfo', (_event, folderPath: string) => getManageInfo(checkServerFolder(folderPath)))
 ipcMain.handle('getPlayerHistory', (_event, folderPath: string) => getPlayerHistory(checkServerFolder(folderPath)))

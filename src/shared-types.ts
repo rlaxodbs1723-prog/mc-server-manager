@@ -90,7 +90,7 @@ export type ServerState = 'stopped' | 'starting' | 'running' | 'stopping'
 export type InviteStatus =
   | { state: 'off' }
   | { state: 'opening'; lan: string[] }
-  | { state: 'open'; address: string; lan: string[] }
+  | { state: 'open'; address: string; lan: string[]; tunnel?: boolean } // tunnel: playit 터널 주소
   | { state: 'failed'; message: string; lan: string[]; port: number }
 
 export type ServerEvent =
@@ -382,6 +382,8 @@ export interface Api {
   getInvite: (folderPath: string) => Promise<InviteStatus>
   // 바깥 인터넷에서 이 서버에 접속되는지 확인한다
   checkReachable: (folderPath: string) => Promise<{ ok: boolean; message: string }>
+  // 공유기로 못 열 때 playit 터널로 연다 (처음이면 브라우저에서 승인)
+  useTunnel: (folderPath: string) => Promise<void>
   // 켜진 서버의 CPU·메모리·TPS (꺼져 있으면 null)
   getStats: (folderPath: string) => Promise<ServerStats | null>
   getManageInfo: (folderPath: string) => Promise<ManageInfo>

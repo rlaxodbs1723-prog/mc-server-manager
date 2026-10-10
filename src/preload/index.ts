@@ -46,6 +46,7 @@ const api: Api = {
   getLog: (folderPath) => ipcRenderer.invoke('getLog', folderPath),
   getInvite: (folderPath) => ipcRenderer.invoke('getInvite', folderPath),
   checkReachable: (folderPath) => ipcRenderer.invoke('checkReachable', folderPath),
+  useTunnel: (folderPath) => ipcRenderer.invoke('useTunnel', folderPath),
   getStats: (folderPath) => ipcRenderer.invoke('getStats', folderPath),
   getManageInfo: (folderPath) => ipcRenderer.invoke('getManageInfo', folderPath),
   getPlayerHistory: (folderPath) => ipcRenderer.invoke('getPlayerHistory', folderPath),

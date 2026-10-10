@@ -1437,5 +1437,14 @@
  "새 버전 {0}이 준비됐어요. 앱에서 \"업데이트\"를 누르거나, 앱을 끄면 설치돼요.": "Version {0} is ready. Click \"Update\" in the app, or it will install when you close the app.",
  "새 버전 {0}이 준비됐어요. 오른쪽 위 \"업데이트\"를 누르면 설치돼요.": "Version {0} is ready. Click \"Update\" at the top right to install.",
  "최근 업데이트": "Recently updated",
- "업데이트가 준비됐어요": "Update ready"
+ "업데이트가 준비됐어요": "Update ready",
+ "{0} (터널: {1})": "{0} (Tunnel: {1})",
+ "playit {0} 실패 ({1})": "playit {0} failed ({1})",
+ "playit 승인을 기다리다 시간이 지났어요. 다시 해 주세요.": "Timed out waiting for playit approval. Please try again.",
+ "playit 승인을 거절했어요.": "The playit approval was declined.",
+ "playit 연결이 안 되어 있어요.": "playit is not connected.",
+ "터널 주소를 받지 못했어요.": "Couldn't get the tunnel address.",
+ "또는 playit.gg 터널로 열 수 있어요. 처음 한 번은 브라우저에서 playit 계정으로 승인해야 해요.": "Or you can open it with a playit.gg tunnel. The first time, you need to approve it in your browser with a playit account.",
+ "브라우저에서 승인을 기다리고 있어요…": "Waiting for approval in your browser…",
+ "터널로 열기": "Open with tunnel"
 }
