@@ -954,7 +954,7 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .bug-mine-item { display: block; width: 100%; min-width: 0; text-align: left; font: inherit; color: inherit; border: 0; cursor: pointer; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); }
 .bug-mine-item:hover { filter: brightness(1.1); }
 .bug-mine-item .bug-reply { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.modal:has(.bug-detail) { width: min(860px, calc(100vw - 48px)); }
+.modal:has(> .bug-detail) { width: min(860px, calc(100vw - 48px)); }
 .bug-detail { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
 .bug-detail h3 { font-size: 14px; color: var(--text-2); margin-bottom: 8px; }
 .bug-scroll { display: grid; gap: 8px; align-content: start; max-height: 460px; overflow: auto; padding-right: 4px; }
