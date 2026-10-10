@@ -153,6 +153,19 @@ export interface DirEntry {
 }
 
 // 버그 제보 첨부 파일 (사진·영상)
+// 알림함: 디스코드 공지·패치노트 채널에 쓴 글 (첫 줄이 제목)
+export interface InboxPost {
+  id: string
+  date: string
+  title: string
+  body: string
+  files: { url: string; name: string; type: string }[]
+}
+export interface Inbox {
+  notices: InboxPost[]
+  patches: InboxPost[]
+}
+
 // 내가 보낸 버그 제보와 받은 답장 (디스코드에서 그 제보에 답장한 것)
 export interface MyBugReport {
   id: string
@@ -442,6 +455,7 @@ export interface Api {
   pickBugFiles: () => Promise<BugFile[]>
   getMyBugReports: () => Promise<MyBugReport[]>
   markBugRepliesSeen: () => Promise<void>
+  getInbox: () => Promise<Inbox>
   refreshBugReplies: () => Promise<void> // 지금 바로 답장 확인 (첨부 파일 주소도 새로 받는다)
   onBugReplies: (cb: () => void) => () => void // 새 답장이 오면
   bugFileInfo: (file: File) => Promise<BugFile> // 끌어다 놓은 파일

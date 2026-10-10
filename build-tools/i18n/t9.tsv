@@ -36,3 +36,12 @@ playit 연결을 끊었어요	Disconnected from playit	已断开 playit 连接
 내 질문	My question	我的问题
 답장	Replies	回复
 {0} (눌러서 크게 보기)	{0} (click to enlarge)	{0}（点击放大）
+알림함을 불러오지 못했어요. ({0})	Couldn't load the inbox. ({0})	无法加载消息中心。({0})
+알림함	Inbox	消息中心
+공지	Notices	公告
+패치노트	Patch notes	更新日志
+제보 답장	Report replies	反馈回复
+공지가 없어요	No notices	暂无公告
+패치노트가 없어요	No patch notes	暂无更新日志
+보낸 제보가 없어요	No reports sent	还没有发送反馈
+오른쪽 위 버그 제보로 보내면 답장을 여기서 볼 수 있어요.	Send one with Bug report at the top right and replies will show up here.	通过右上角的"问题反馈"发送后，可以在这里查看回复。

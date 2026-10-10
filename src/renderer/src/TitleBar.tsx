@@ -7,13 +7,13 @@ import { Confirm, useToast } from './ui'
 import { cleanError } from './util'
 import { useEffect, useState } from 'react'
 import { TaskButton } from './tasks'
+import InboxButton from './Inbox'
 
 // 윈도우 기본 테두리 대신 쓰는 타이틀바. 빈 곳을 잡고 창을 옮길 수 있다.
 export default function TitleBar() {
   const [maximized, setMaximized] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showBug, setShowBug] = useState(false)
-  const [unread, setUnread] = useState(0) // 안 읽은 버그 제보 답장
   const [sites, setSites] = useState<SiteStatus>({ modrinth: true, curseforge: true })
   const toast = useToast()
   const [update, setUpdate] = useState<UpdateState>({ state: 'none' })
@@ -33,12 +33,6 @@ export default function TitleBar() {
   }, [])
   // 응답하지 않는 사이트 (다시 되면 알아서 사라진다)
   const down = [!sites.modrinth && 'Modrinth', !sites.curseforge && 'CurseForge'].filter(Boolean).join(', ')
-
-  useEffect(() => {
-    const load = () => window.api.getMyBugReports().then((l) => setUnread(l.reduce((n, r) => n + Math.max(0, r.replies.length - r.seen), 0))).catch(() => undefined)
-    load()
-    return window.api.onBugReplies(load)
-  }, [showBug])
 
   useEffect(() => {
     window.api.isMaximized().then(setMaximized)
@@ -100,9 +94,9 @@ export default function TitleBar() {
           document.body
         )}
       <TaskButton />
+      <InboxButton />
       <button className="bug-btn" onClick={() => setShowBug(true)} onDoubleClick={(e) => e.stopPropagation()}>
         버그 제보
-        {unread > 0 && <span className="bug-dot" title={`답장 ${unread}개`} />}
       </button>
       {showBug &&
         createPortal(

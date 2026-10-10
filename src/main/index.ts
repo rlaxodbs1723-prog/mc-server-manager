@@ -11,6 +11,7 @@ import { getGameRuleLang } from './lang'
 import { checkReachable, closeAllPorts, getInvite, initInvite, useTunnel } from './invite'
 import { track as trackUsage } from './usage'
 import { tunnelLinked, unlinkTunnel } from './tunnel'
+import { getInbox } from './inbox'
 import { getLoaderVersions } from './loaders'
 import * as mods from './mods'
 import { CancelledError, cancelTask, runCancellable, throwIfCancelled } from './cancel'
@@ -395,6 +396,7 @@ ipcMain.handle('openExternal', (_event, url: string) => {
 })
 ipcMain.handle('getMyBugReports', () => getMyBugReports())
 ipcMain.handle('markBugRepliesSeen', () => markBugRepliesSeen())
+ipcMain.handle('getInbox', () => getInbox())
 ipcMain.handle('refreshBugReplies', () => checkBugReplies(() => BrowserWindow.getAllWindows().forEach((w) => w.webContents.send('bugReplies'))))
 ipcMain.handle('sendBugReport', (_event, title: string, details: string, files: string[]) =>
   sendBugReport(String(title ?? ''), String(details ?? ''), Array.isArray(files) ? files.slice(0, 10).map(String) : [])

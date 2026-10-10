@@ -167,57 +167,67 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
       </div>
         </>
       )}
-      {open && (
-        <Modal onClose={() => setOpenId(null)}>
-          <div className="bug-detail">
-            {/* 왼쪽: 내가 보낸 질문 / 오른쪽: 개발자 답장 */}
-            <section>
-              <h3>{'내 질문'}</h3>
-              <div className="bug-scroll">
-                <b className="bug-detail-title">{open.title}</b>
-                <span className="hint">{new Date(open.sentAt).toLocaleString()}</span>
-                {open.details && <div className="bug-question">{open.details}</div>}
-              </div>
-            </section>
-            <section>
-              <h3>{'답장'}</h3>
-              <div className="bug-scroll">
-                {open.replies.length ? (
-                  open.replies.map((x) => (
-                    <div key={x.id} className="bug-reply">
-                      <span className="bug-reply-from">{new Date(x.at).toLocaleString()}</span>
-                      {x.text}
-                      {!!x.files?.length && (
-                        <div className="bug-files-in">
-                          {x.files.map((f) =>
-                            f.type.startsWith('image/') ? (
-                              <img key={f.url} src={f.url} alt={f.name} title={`${f.name} (눌러서 크게 보기)`} onClick={() => window.api.openExternal(f.url)} />
-                            ) : f.type.startsWith('video/') ? (
-                              <video key={f.url} src={f.url} controls />
-                            ) : (
-                              <button key={f.url} className="btn sm ghost" onClick={() => window.api.openExternal(f.url)}>
-                                <Paperclip size={13} />
-                                {f.name}
-                              </button>
-                            )
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <p className="hint">{'아직 답장이 없어요. 답장이 오면 알려 드려요.'}</p>
-                )}
-              </div>
-            </section>
-          </div>
-          <div className="actions">
-            <button className="btn primary" onClick={() => setOpenId(null)}>
-              닫기
-            </button>
-          </div>
-        </Modal>
-      )}
+      {open && <ReportDetail report={open} onClose={() => setOpenId(null)} />}
     </Modal>
+  )
+}
+
+// 내가 보낸 제보 하나: 왼쪽 질문, 오른쪽 답장 (버그 제보 창과 알림함이 같이 쓴다)
+export function ReportDetail({ report, onClose }: { report: MyBugReport; onClose: () => void }) {
+  return (
+    <Modal onClose={onClose}>
+      <div className="bug-detail">
+        {/* 왼쪽: 내가 보낸 질문 / 오른쪽: 개발자 답장 */}
+        <section>
+          <h3>{'내 질문'}</h3>
+          <div className="bug-scroll">
+            <b className="bug-detail-title">{report.title}</b>
+            <span className="hint">{new Date(report.sentAt).toLocaleString()}</span>
+            {report.details && <div className="bug-question">{report.details}</div>}
+          </div>
+        </section>
+        <section>
+          <h3>{'답장'}</h3>
+          <div className="bug-scroll">
+            {report.replies.length ? (
+              report.replies.map((x) => (
+                <div key={x.id} className="bug-reply">
+                  <span className="bug-reply-from">{new Date(x.at).toLocaleString()}</span>
+                  {x.text}
+                  {!!x.files?.length && <AttachedFiles files={x.files} />}
+                </div>
+              ))
+            ) : (
+              <p className="hint">{'아직 답장이 없어요. 답장이 오면 알려 드려요.'}</p>
+            )}
+          </div>
+        </section>
+      </div>
+      <div className="actions">
+        <button className="btn primary" onClick={onClose}>
+          닫기
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
+// 디스코드 첨부 파일: 사진은 바로 보이고(누르면 크게), 영상은 재생, 그 밖의 파일은 눌러서 연다
+export function AttachedFiles({ files }: { files: { url: string; name: string; type: string }[] }) {
+  return (
+    <div className="bug-files-in">
+      {files.map((f) =>
+        f.type.startsWith('image/') ? (
+          <img key={f.url} src={f.url} alt={f.name} title={`${f.name} (눌러서 크게 보기)`} onClick={() => window.api.openExternal(f.url)} />
+        ) : f.type.startsWith('video/') ? (
+          <video key={f.url} src={f.url} controls />
+        ) : (
+          <button key={f.url} className="btn sm ghost" onClick={() => window.api.openExternal(f.url)}>
+            <Paperclip size={13} />
+            {f.name}
+          </button>
+        )
+      )}
+    </div>
   )
 }

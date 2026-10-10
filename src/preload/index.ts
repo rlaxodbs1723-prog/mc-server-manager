@@ -41,6 +41,7 @@ const api: Api = {
   getMyBugReports: () => ipcRenderer.invoke('getMyBugReports'),
   markBugRepliesSeen: () => ipcRenderer.invoke('markBugRepliesSeen'),
   refreshBugReplies: () => ipcRenderer.invoke('refreshBugReplies'),
+  getInbox: () => ipcRenderer.invoke('getInbox'),
   preflight: (folderPath) => ipcRenderer.invoke('preflight', folderPath),
   openEulaPage: () => ipcRenderer.invoke('openEulaPage'),
   acceptEula: (folderPath) => ipcRenderer.invoke('acceptEula', folderPath),

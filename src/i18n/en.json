@@ -1484,5 +1484,14 @@
  "답장 {0}개": "{0} replies",
  "내 질문": "My question",
  "답장": "Replies",
- "{0} (눌러서 크게 보기)": "{0} (click to enlarge)"
+ "{0} (눌러서 크게 보기)": "{0} (click to enlarge)",
+ "알림함을 불러오지 못했어요. ({0})": "Couldn't load the inbox. ({0})",
+ "알림함": "Inbox",
+ "공지": "Notices",
+ "패치노트": "Patch notes",
+ "제보 답장": "Report replies",
+ "공지가 없어요": "No notices",
+ "패치노트가 없어요": "No patch notes",
+ "보낸 제보가 없어요": "No reports sent",
+ "오른쪽 위 버그 제보로 보내면 답장을 여기서 볼 수 있어요.": "Send one with Bug report at the top right and replies will show up here."
 }
