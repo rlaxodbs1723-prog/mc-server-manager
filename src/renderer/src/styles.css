@@ -953,7 +953,8 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .bug-mine { display: grid; gap: 10px; max-height: 420px; overflow: auto; }
 .bug-mine-item { padding: 12px 14px; border-radius: 12px; background: var(--surface-2); }
 .bug-mine-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
-.bug-mine-head b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bug-mine-head b { min-width: 0; word-break: break-all; } /* 긴 제목은 줄을 바꿔 다 보여 준다 */
+.bug-mine-head .hint { flex-shrink: 0; }
 .bug-reply { margin-top: 6px; padding: 8px 10px; border-radius: 8px; background: var(--primary-soft); white-space: pre-wrap; word-break: break-word; }
 .bug-reply.new { outline: 1px solid var(--primary); }
 .bug-reply-from { display: block; font-size: 12px; color: var(--primary); margin-bottom: 2px; }
