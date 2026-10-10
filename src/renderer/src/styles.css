@@ -445,8 +445,8 @@ input[type='number']::-webkit-inner-spin-button, input[type='number']::-webkit-o
 .btn.danger-hover:hover:not(:disabled) { background: var(--danger-soft); color: var(--danger); }
 .say-form { display: flex; gap: 8px; }
 .say-count { align-self: center; white-space: nowrap; }
-.seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(max-content, 1fr); gap: 4px; padding: 4px; border-radius: var(--r-md); background: var(--surface-2); }
-.seg button { min-width: 0; white-space: nowrap; padding: 0 8px; height: 38px; border-radius: 10px; font-weight: 600; font-size: 14px; color: var(--text-3); transition: background 0.15s, color 0.15s; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); /* 글자가 긴 언어(영어 등)에서도 창 밖으로 넘치지 않고 줄을 바꾼다 */ gap: 4px; padding: 4px; border-radius: var(--r-md); background: var(--surface-2); }
+.seg button { min-width: 0; white-space: normal; line-height: 1.25; padding: 4px 8px; min-height: 38px; border-radius: 10px; font-weight: 600; font-size: 14px; color: var(--text-3); transition: background 0.15s, color 0.15s; }
 .seg button:hover:not(:disabled) { color: var(--text); }
 .seg button.active { background: var(--primary); color: #fff; }
 .seg button:disabled { opacity: 0.5; }
@@ -475,7 +475,7 @@ input[type='number']::-webkit-inner-spin-button, input[type='number']::-webkit-o
 .btn, .tabs button, .chip, .pill { flex-shrink: 0; }
 
 /* ---------- 초기 설정 창 ---------- */
-.modal:has(.wizard-steps) { width: min(500px, calc(100vw - 48px)); }
+.modal:has(> * > .wizard-steps) { width: min(500px, calc(100vw - 48px)); }
 .wizard-steps { display: flex; gap: 6px; margin-bottom: 20px; }
 .wizard-step { flex: 1; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text-3); padding-bottom: 10px; border-bottom: 3px solid var(--surface-3); transition: color 0.2s, border-color 0.2s; }
 .wizard-step .num { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; background: var(--surface-3); color: var(--text-2); }
@@ -485,8 +485,6 @@ input[type='number']::-webkit-inner-spin-button, input[type='number']::-webkit-o
 .wizard-step.done .num { background: var(--primary-soft); color: var(--primary); }
 .wizard-title { display: flex; align-items: center; gap: 14px; }
 .wizard-title .hint { margin-top: 2px; }
-.wizard-title > div { min-width: 0; }
-.wizard-name { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wizard-title > div { min-width: 0; }
 .wizard-name { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
@@ -687,9 +685,9 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .sw-logo svg { width: var(--logo); height: var(--logo); display: block; }
 
 .modpack { display: flex; flex-direction: column; gap: 12px; }
-.modal:has(.modpack), .modal:has(.crash) { width: min(560px, calc(100vw - 48px)); max-height: calc(100vh - 80px); overflow-y: auto; }
+.modal:has(> .modpack), .modal:has(> .crash) { width: min(560px, calc(100vw - 48px)); max-height: calc(100vh - 80px); overflow-y: auto; }
 .modpack .map-list { max-height: 380px; }
-.modal:has(.modpack.wide) { width: min(1100px, calc(100vw - 48px)); height: calc(100vh - 80px); max-height: none; overflow: hidden; display: flex; flex-direction: column; padding: 20px; }
+.modal:has(> .modpack.wide) { width: min(1100px, calc(100vw - 48px)); height: calc(100vh - 80px); max-height: none; overflow: hidden; display: flex; flex-direction: column; padding: 20px; }
 .modpack.wide { flex: 1; min-height: 0; }
 .mp-back { align-self: flex-start; }
 .mp-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
@@ -901,7 +899,7 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .app-settings .label { font-size: 12px; font-weight: 700; color: var(--text-3); }
 .key-row { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
 .key-row .input { flex: 1; }
-.modal:has(.app-settings) { width: min(520px, calc(100vw - 48px)); }
+.modal:has(> .app-settings) { width: min(520px, calc(100vw - 48px)); }
 .inline-controls { display: flex; align-items: center; gap: 10px; }
 .time-input { width: 120px; color-scheme: dark; }
 .input.mono { font-family: 'Cascadia Mono', Consolas, monospace; font-size: 13px; }
