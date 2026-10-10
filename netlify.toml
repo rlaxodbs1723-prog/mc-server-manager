@@ -1,0 +1,5 @@
+# 사이트(docs/)와 중계 서버(netlify/functions/)
+# 중계 서버의 비밀값은 Netlify 환경 변수에만 둔다: CURSEFORGE_KEY, BUG_WEBHOOK
+[build]
+  publish = "docs"
+  functions = "netlify/functions"

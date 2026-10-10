@@ -1,5 +1,6 @@
-// CurseForge 맵(Worlds) 검색·다운로드. API 키가 있어야 한다.
-// 키는 빌드할 때 넣은 것(.env의 CURSEFORGE_KEY, 섞어서 넣는다)을 먼저 쓰고, 없으면 사용자가 넣은 키(userData/curseforge-key.txt)를 쓴다.
+// CurseForge 맵(Worlds) 검색·다운로드.
+// 앱에는 키를 넣지 않고 중계 서버(사이트의 /api/cf, netlify/functions/cf.mjs)를 거친다. 키는 Netlify 환경 변수에만 있다.
+// 사용자가 직접 넣은 키(userData/curseforge-key.txt)가 있으면 그걸로 CurseForge에 바로 묻는다.
 import { app } from 'electron'
 import fs from 'fs'
 import path from 'path'
@@ -9,54 +10,44 @@ import { registerPing, watchSite } from './sitestatus'
 import { tempRoot } from './worldzip'
 
 const API = 'https://api.curseforge.com/v1'
+// 시험용: MCSM_CF_RELAY로 다른 중계 주소를 쓸 수 있다
+const RELAY = process.env.MCSM_CF_RELAY || 'https://cubepanel.netlify.app/api/cf'
+const VIA_RELAY = 'relay' // 키 대신 이 값이면 중계 서버로 묻는다
 const GAME_MINECRAFT = 432
 const CLASS_WORLDS = 17
 const keyFile = (): string => path.join(app.getPath('userData'), 'curseforge-key.txt')
 
-// 빌드할 때 섞어서 넣은 키를 푼다 (섞는 쪽: build-tools/cfkey.mjs. MASK가 같아야 한다)
-declare const __CF_KEY_ENC__: string
-const MASK = 'mc-server-manager/cf'
-let builtCache: string | null | undefined
-function builtKey(): string | null {
-  if (builtCache !== undefined) return builtCache
-  const enc = typeof __CF_KEY_ENC__ === 'string' ? __CF_KEY_ENC__ : ''
-  builtCache = enc ? Buffer.from([...Buffer.from(enc, 'base64').reverse()].map((b, i) => b ^ MASK.charCodeAt(i % MASK.length))).toString('utf8') : null
-  return builtCache
-}
-
-function apiKey(): string | null {
-  const built = builtKey()
-  if (built) return built
+function userKey(): string | null {
   try {
     return fs.readFileSync(keyFile(), 'utf8').trim() || null
   } catch {
     return null
   }
 }
+const apiKey = (): string => userKey() ?? VIA_RELAY
 
-export const hasCurseForgeKey = (): boolean => !!apiKey()
-// 키가 어디서 왔는지 (앱 설정 창에 보여 주려고)
-export const curseForgeKeySource = (): 'built' | 'user' | null => (builtKey() ? 'built' : apiKey() ? 'user' : null)
+export const hasCurseForgeKey = (): boolean => true
+// 키가 어디서 왔는지 (앱 설정 창에 보여 주려고). built = 앱에 들어 있는 연결(중계 서버)
+export const curseForgeKeySource = (): 'built' | 'user' | null => (userKey() ? 'user' : 'built')
 export function removeCurseForgeKey(): void {
   fs.rmSync(keyFile(), { force: true })
 }
 
-async function call<T>(url: string, key = apiKey(), body?: unknown): Promise<T> {
-  if (!key) throw new Error('CurseForge API 키가 필요해요.')
+async function call<T>(url: string, key: string = apiKey(), body?: unknown): Promise<T> {
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), 20000)
   try {
     const res = await watchSite('curseforge', () =>
-      fetch(API + url, {
+      fetch((key === VIA_RELAY ? RELAY : API) + url, {
       method: body ? 'POST' : 'GET',
-      headers: { ...HEADERS, 'x-api-key': key, Accept: 'application/json', ...(body ? { 'Content-Type': 'application/json' } : {}) },
+      headers: { ...HEADERS, ...(key === VIA_RELAY ? {} : { 'x-api-key': key }), Accept: 'application/json', ...(body ? { 'Content-Type': 'application/json' } : {}) },
       body: body ? JSON.stringify(body) : undefined,
       signal: ctrl.signal
     })
     )
-    // 앱에 들어 있는 키가 막혔으면 사용자가 할 수 있는 게 없으니 잠시 못 쓴다고만 알린다 (Modrinth는 그대로 된다)
+    // 중계 서버의 키가 막혔으면 사용자가 할 수 있는 게 없으니 잠시 못 쓴다고만 알린다 (Modrinth는 그대로 된다)
     if (res.status === 401 || res.status === 403)
-      throw new Error(key === builtKey() ? 'CurseForge를 지금 쓸 수 없어요. Modrinth에서 찾아 주세요. (앱을 업데이트하면 다시 될 수 있어요)' : 'CurseForge API 키가 맞지 않아요.')
+      throw new Error(key === VIA_RELAY ? 'CurseForge를 지금 쓸 수 없어요. Modrinth에서 찾아 주세요. (앱을 업데이트하면 다시 될 수 있어요)' : 'CurseForge API 키가 맞지 않아요.')
     if (!res.ok) throw new Error(`CurseForge에서 오류가 났어요 (${res.status}).`)
     return (await res.json()) as T
   } catch (e) {
@@ -67,8 +58,8 @@ async function call<T>(url: string, key = apiKey(), body?: unknown): Promise<T> 
   }
 }
 
-// 연결 안 됨 표시를 풀려고 가볍게 물어볼 때 쓴다 (키가 없으면 CurseForge는 쓰지 않으므로 묻지 않는다)
-registerPing('curseforge', async () => (apiKey() ? call('/games/432') : undefined))
+// 연결 안 됨 표시를 풀려고 가볍게 물어볼 때 쓴다
+registerPing('curseforge', async () => call('/games/432'))
 
 // 키를 확인하고 저장한다
 export async function setCurseForgeKey(key: string): Promise<void> {

@@ -9,7 +9,11 @@
 - 화면 자동 클릭·스크린샷 자동화 금지. 로그·파일로만 검증. main 코드는 esbuild로 묶어 node로 직접 돌려 볼 수 있음 (electron은 가짜 모듈로).
 - UI 문제를 지적받으면 같은 모양의 다른 곳도 전부 같이 고치고, 고친 곳을 알려 줄 것.
 - 고친 뒤에는 보통 "내가 테스트해 볼 것"을 물어봄 → 확인 목록으로 답하기.
-- git 저장소 아님 (아직 버전 관리 없음).
+- git 저장소 (GitHub: rlaxodbs1723-prog/mc-server-manager, 공개). 앱 이름은 MC CubePanel.
+- 배포: `npm run dist` → dist/의 exe·blockmap·latest.yml을 GitHub 릴리즈에 올리고 Publish (자동 업데이트가 latest.yml을 읽음).
+- 사이트: docs/ (cubepanel.netlify.app, Netlify가 GitHub에서 자동 배포). 방문·버튼 클릭 수는 GoatCounter(cubepanel.goatcounter.com).
+- 비밀값: CurseForge 키와 버그 제보 디스코드 웹훅은 앱에 넣지 않는다. Netlify 함수(netlify/functions/cf.mjs, bug.mjs)가 Netlify 환경 변수 CURSEFORGE_KEY, BUG_WEBHOOK으로 중계한다.
+  .env는 절대 커밋하지 말 것. 올리기 전에 .env의 값이 HEAD에 없는지 확인.
 
 ## 완료 (사용자가 확인함)
 - 서버 7종 만들기(4단계 설정 창, 싱글 월드·zip·CurseForge 맵으로 시작 가능), 설치 중단, 타이틀바 작업 목록(버전 바꾸기·모두 업데이트 등 오래 걸리는 일도 표시)
@@ -32,7 +36,7 @@
 CurseForge 앱 Instances 폴더에서 막힌 모드를 자동으로 복사해 오지 말 것.
 
 ## 남은 일
-1. git 버전 관리 → electron-builder exe + GitHub Releases + 자동 업데이트 (resources/tray.png를 extraResources로)
-2. 후보: 단축키, 디스코드 알림, 예약 작업, 지난 로그 보기, playit.gg
-3. 알려진 작은 문제: 모드를 연달아 지우면 알림이 하나라서 앞의 것은 되돌리기 버튼이 사라짐 (사용자가 이번엔 안 고치기로 함)
-4. 배포 전에 정할 허점: CurseForge 키가 exe에 들어감(MAIN_VITE_CURSEFORGE_KEY), 모드팩 overrides가 eula.txt·server-manager.json·server.properties를 덮어쓸 수 있음, CurseForge 모드팩 파일은 받은 뒤 검증 안 함
+1. 후보: 터널(포트 포워딩 없이 접속, playit.gg 등), 단축키, 디스코드 알림, 지난 로그 보기
+2. 알려진 작은 문제: 모드를 연달아 지우면 알림이 하나라서 앞의 것은 되돌리기 버튼이 사라짐 (사용자가 이번엔 안 고치기로 함)
+3. 남은 허점: 모드팩 overrides가 eula.txt·server-manager.json·server.properties를 덮어쓸 수 있음, CurseForge 모드팩 파일은 받은 뒤 검증 안 함
+4. 1.0.5까지의 exe와 저장소 기록(dist-next)에 예전 CurseForge 키가 들어 있음 → 1.0.6이 퍼지면 CurseForge 키를 새로 발급하고 예전 키를 정지할 것

@@ -90,7 +90,7 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
               사진·영상 첨부
             </button>
           </div>
-          <p className="hint">앱 버전과 윈도우 정보가 같이 보내져요. 사진·영상은 파일당 10MB까지예요.</p>
+          <p className="hint">앱 버전과 윈도우 정보가 같이 보내져요. 사진·영상은 파일당 4MB까지예요.</p>
         </div>
       </DropZone>
       <div className="actions">

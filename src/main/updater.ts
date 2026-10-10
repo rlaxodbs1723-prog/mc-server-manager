@@ -43,7 +43,10 @@ export function initUpdater(): void {
   autoUpdater.autoDownload = true // 새 버전이 있으면 뒤에서 받아 둔다
   autoUpdater.autoInstallOnAppQuit = true // 받아 둔 채로 앱을 끄면 그때 설치된다
   autoUpdater.on('update-not-available', () => log('새 버전 없음'))
+  // 6시간마다 다시 확인하면 이미 받아 둔 버전도 "있음 → 받음"이 다시 온다. 그때 버튼이 깜빡이거나 알림이 또 뜨지 않게 한다
+  const alreadyReady = (version: string): boolean => state.state === 'ready' && state.version === version
   autoUpdater.on('update-available', (info) => {
+    if (alreadyReady(info.version)) return
     log(`새 버전 ${info.version} 받는 중`)
     set({ state: 'downloading', version: info.version, percent: 0 })
   })
@@ -51,6 +54,7 @@ export function initUpdater(): void {
     if (state.state === 'downloading') set({ ...state, percent: Math.round(p.percent) })
   })
   autoUpdater.on('update-downloaded', (info) => {
+    if (alreadyReady(info.version)) return
     log(`새 버전 ${info.version} 준비됨`)
     set({ state: 'ready', version: info.version })
     notify('업데이트가 준비됐어요', `새 버전 ${info.version}이 준비됐어요. 앱에서 "업데이트"를 누르거나, 앱을 끄면 설치돼요.`)

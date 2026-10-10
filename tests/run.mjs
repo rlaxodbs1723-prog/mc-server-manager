@@ -5,13 +5,10 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { encodeCfKey, readCfKey } from '../build-tools/cfkey.mjs'
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const full = process.argv.includes('--full')
 
-// .env의 CurseForge 키 (있으면 CurseForge 검색도 확인한다). 앱을 빌드할 때와 똑같이 섞어서 넣는다
-const cfKey = encodeCfKey(readCfKey(root))
 
 const out = path.join(os.tmpdir(), 'mcsm-test-build', 'test.cjs')
 await build({
@@ -22,7 +19,6 @@ await build({
   target: 'node20',
   outfile: out,
   alias: { electron: path.join(root, 'tests', 'electron-stub', 'index.js') },
-  define: { __CF_KEY_ENC__: JSON.stringify(cfKey), __BUG_HOOK_ENC__: JSON.stringify('') }, // 테스트는 제보를 실제로 보내지 않는다
   logLevel: 'warning'
 })
 
@@ -45,5 +41,6 @@ fs.rmSync(path.join(home, 'backups'), { recursive: true, force: true })
 fs.mkdirSync(home, { recursive: true })
 // --only=purpur,forge 처럼 주면 그 서버 종류만 만들어 본다
 const only = process.argv.filter((a) => a.startsWith('--only='))
-const r = spawnSync(process.execPath, [out, ...(full ? ['--full'] : []), ...only], { stdio: 'inherit', env: { ...process.env, TEST_HOME: home } })
+// 테스트는 제보를 실제로 보내지 않는다 (CurseForge는 중계 서버로 실제로 묻는다)
+const r = spawnSync(process.execPath, [out, ...(full ? ['--full'] : []), ...only], { stdio: 'inherit', env: { ...process.env, TEST_HOME: home, MCSM_BUG_RELAY: '' } })
 process.exit(r.status ?? 1)

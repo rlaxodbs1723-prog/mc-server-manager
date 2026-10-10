@@ -143,7 +143,7 @@ async function publicIpFromWeb(): Promise<string | null> {
 
 export type OpenResult =
   | { ok: true; externalIp: string | null }
-  | { ok: false; reason: 'no-upnp' | 'double-nat' | 'error'; message: string; wanIp?: string }
+  | { ok: false; reason: 'no-upnp' | 'double-nat' | 'error'; message: string }
 
 export async function openPort(port: number, description: string): Promise<OpenResult> {
   const gw = await findGateway().catch(() => null)
@@ -159,7 +159,6 @@ export async function openPort(port: number, description: string): Promise<OpenR
     return {
       ok: false,
       reason: 'double-nat',
-      wanIp: externalIp,
       message: `공유기 바깥에 공유기가 하나 더 있어서, 포트를 열어도 밖에서 접속되지 않아요. (공유기가 받은 주소: ${externalIp})`
     }
   }

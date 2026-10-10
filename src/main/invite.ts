@@ -28,21 +28,14 @@ async function open(folderPath: string, name: string): Promise<void> {
   const fake = process.env.MCSM_FAKE_INVITE
   const result: Awaited<ReturnType<typeof openPort>> =
     fake === 'double-nat' || fake === 'no-upnp' || fake === 'error'
-      ? { ok: false, reason: fake, message: `Test failure (${fake})`, wanIp: fake === 'double-nat' ? '192.168.0.2' : undefined }
+      ? { ok: false, reason: fake, message: `Test failure (${fake})` }
       : await openPort(port, `MC CubePanel - ${name}`)
   if (status.get(folderPath)?.state !== 'opening') {
     if (result.ok) closePort(port).catch(() => {}) // 여는 사이에 서버가 꺼졌다
     return
   }
   if (!result.ok)
-    return set(folderPath, {
-      state: 'failed',
-      message: result.message,
-      lan,
-      port,
-      reason: result.reason === 'error' ? 'refused' : result.reason,
-      wanIp: result.wanIp
-    })
+    return set(folderPath, { state: 'failed', message: result.message, lan, port })
   openedPorts.set(folderPath, port)
   // 포트는 1시간짜리라, 서버가 켜져 있는 동안 20분마다 다시 요청해 늘린다
   clearInterval(renewTimers.get(folderPath))
@@ -50,7 +43,7 @@ async function open(folderPath: string, name: string): Promise<void> {
     folderPath,
     setInterval(() => openPort(port, `MC CubePanel - ${name}`).catch(() => {}), RENEW_MS)
   )
-  if (!result.externalIp) return set(folderPath, { state: 'failed', message: '포트는 열었지만 외부 주소를 알아내지 못했어요.', lan, port, reason: 'no-ip' })
+  if (!result.externalIp) return set(folderPath, { state: 'failed', message: '포트는 열었지만 외부 주소를 알아내지 못했어요.', lan, port })
   set(folderPath, { state: 'open', address: withPort(result.externalIp, port), lan })
 }
 
@@ -72,7 +65,7 @@ export async function closeAllPorts(): Promise<void> {
 // 서버가 켜질 때 부르는 쪽(servers.ts)에서 이름을 넘겨주고, 꺼지는 건 이벤트로 감지한다
 export function startInvite(folderPath: string, name: string): void {
   open(folderPath, name).catch((e) =>
-    set(folderPath, { state: 'failed', message: String(e?.message ?? e), lan: [], port: serverPort(folderPath), reason: 'error' })
+    set(folderPath, { state: 'failed', message: String(e?.message ?? e), lan: [], port: serverPort(folderPath) })
   )
 }
 

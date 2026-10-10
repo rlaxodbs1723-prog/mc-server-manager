@@ -148,7 +148,7 @@ async function quick(): Promise<void> {
     fs.writeFileSync(path.join(dir, 'big.mp4'), Buffer.alloc(BUG_MAX_BYTES + 1))
     expect(bugFileInfo(path.join(dir, 'ok.png')).size === 10, '정상 사진을 막았어요')
     expect(await throws(() => bugFileInfo(path.join(dir, 'bad.exe'))), 'exe를 받아들였어요')
-    expect(await throws(() => bugFileInfo(path.join(dir, 'big.mp4'))), '10MB 넘는 영상을 받아들였어요')
+    expect(await throws(() => bugFileInfo(path.join(dir, 'big.mp4'))), '4MB 넘는 영상을 받아들였어요')
     expect(await throws(() => bugFileInfo(path.join(dir, 'none.png'))), '없는 파일을 받아들였어요')
     fs.rmSync(dir, { recursive: true, force: true })
     // 웹훅이 없는 빌드(테스트)에서는 보내지 않고 알려 준다. 빈 제보도 막는다
@@ -965,7 +965,7 @@ async function moreFeatures(): Promise<void> {
   })
   if (hasCurseForgeKey())
     await check('CurseForge 키: 앱에 넣은 키가 먼저, 틀린 키는 거절, 넣은 키 빼기', async () => {
-      expect(curseForgeKeySource() === 'built', '앱에 넣은 키를 못 찾았어요')
+      expect(curseForgeKeySource() === 'built', '중계 서버 연결을 안 쓰고 있어요')
       expect(await throws(() => setCurseForgeKey('abc')), '키 모양이 아닌데 받아들였어요')
       expect(await throws(() => setCurseForgeKey('$2a$10$' + 'x'.repeat(53))), '틀린 키를 받아들였어요')
       removeCurseForgeKey()

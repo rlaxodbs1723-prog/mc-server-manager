@@ -31,11 +31,8 @@ npm run dev      # run in development
 npm run dist     # build the Windows installer
 ```
 
-To enable CurseForge, create a `.env` file:
-
-```
-MAIN_VITE_CURSEFORGE_KEY=your_key
-```
+CurseForge requests and bug reports go through small relay functions on the website (`netlify/functions`).
+The CurseForge API key and the Discord webhook live only in the Netlify environment variables `CURSEFORGE_KEY` and `BUG_WEBHOOK`, never in the app.
 
 ## Note
 

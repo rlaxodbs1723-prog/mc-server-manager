@@ -91,10 +91,7 @@ export type InviteStatus =
   | { state: 'off' }
   | { state: 'opening'; lan: string[] }
   | { state: 'open'; address: string; lan: string[] }
-  // reason: 원인별 해결법을 보여 주려고 (wanIp: 이중 공유기일 때 안쪽 공유기가 받은 주소)
-  | { state: 'failed'; message: string; lan: string[]; reason: InviteFailReason; port: number; wanIp?: string }
-
-export type InviteFailReason = 'no-upnp' | 'double-nat' | 'refused' | 'no-ip' | 'error'
+  | { state: 'failed'; message: string; lan: string[]; port: number }
 
 export type ServerEvent =
   | { type: 'log'; folderPath: string; line: string }

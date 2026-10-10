@@ -1,6 +1,6 @@
 // 버그 제보: 앱 안에서 디스코드 웹훅으로 바로 보낸다 (제보하는 사람은 계정이 필요 없다).
 // 앱 버전·윈도우·언어는 알아서 붙인다. 사진·영상은 한 개씩 따로 올린다 (디스코드 한도 때문에).
-// 웹훅 주소는 .env의 BUG_WEBHOOK을 빌드할 때 섞어서 넣는다 (섞는 쪽: build-tools/cfkey.mjs, MASK가 같아야 한다)
+// 웹훅 주소는 앱에 넣지 않는다. 사이트의 중계 서버(/api/bug, netlify/functions/bug.mjs)가 Netlify 환경 변수의 웹훅으로 보낸다
 import { app, BrowserWindow, dialog } from 'electron'
 import fs from 'fs'
 import os from 'os'
@@ -8,21 +8,15 @@ import path from 'path'
 import { getAppSettings } from './appsettings'
 import type { BugFile } from '../shared-types'
 
-declare const __BUG_HOOK_ENC__: string
-const MASK = 'mc-server-manager/cf'
-export const BUG_MAX_BYTES = 10 * 1024 * 1024 // 디스코드 첨부 한도 (파일당 10MB)
+export const BUG_MAX_BYTES = 4 * 1024 * 1024 // 중계 서버(Netlify 함수) 요청 한도 안에 들어가게 (파일당 4MB)
 export const BUG_MAX_FILES = 10
 const GAP_MS = 60_000 // 1분에 한 번만 (실수로 여러 번 누르거나 장난으로 도배하지 않게)
 const IMAGE = ['png', 'jpg', 'jpeg', 'gif', 'webp']
 const VIDEO = ['mp4', 'mov', 'webm']
 let lastSent = 0
 
-function hook(): string {
-  const enc = typeof __BUG_HOOK_ENC__ === 'string' ? __BUG_HOOK_ENC__ : ''
-  if (!enc) return ''
-  const url = Buffer.from([...Buffer.from(enc, 'base64').reverse()].map((b, i) => b ^ MASK.charCodeAt(i % MASK.length))).toString('utf8')
-  return /^https:\/\/(discord|discordapp)\.com\/api\/webhooks\//.test(url) ? url : ''
-}
+// 시험용: MCSM_BUG_RELAY로 다른 주소를 쓰거나, 빈 값이면 보내지 않는다
+const hook = (): string => process.env.MCSM_BUG_RELAY ?? 'https://cubepanel.netlify.app/api/bug'
 
 // 디스코드에 보낼 글 (제목·설명·앱 정보). 길이는 디스코드 한도에 맞춰 자른다
 export function bugMessage(title: string, details: string, fileNames: string[] = []): Record<string, unknown> {
@@ -49,7 +43,7 @@ export function bugMessage(title: string, details: string, fileNames: string[] =
   }
 }
 
-// 첨부할 수 있는 파일인지 보고 정보를 돌려준다 (사진·영상만, 10MB 이하)
+// 첨부할 수 있는 파일인지 보고 정보를 돌려준다 (사진·영상만, 4MB 이하)
 export function bugFileInfo(file: string): BugFile {
   const p = path.resolve(String(file))
   const ext = path.extname(p).slice(1).toLowerCase()
@@ -61,7 +55,7 @@ export function bugFileInfo(file: string): BugFile {
     throw new Error('파일을 찾을 수 없어요.')
   }
   if (!st.isFile()) throw new Error('파일을 찾을 수 없어요.')
-  if (st.size > BUG_MAX_BYTES) throw new Error(`${path.basename(p)}: 10MB보다 커서 보낼 수 없어요.`)
+  if (st.size > BUG_MAX_BYTES) throw new Error(`${path.basename(p)}: 4MB보다 커서 보낼 수 없어요.`)
   return { path: p, name: path.basename(p), size: st.size }
 }
 
@@ -72,7 +66,7 @@ export async function pickBugFiles(win: BrowserWindow | null): Promise<BugFile[]
 }
 
 async function post(url: string, body: FormData | string): Promise<void> {
-  const res = await fetch(`${url}?wait=true`, {
+  const res = await fetch(url, {
     method: 'POST',
     body,
     headers: typeof body === 'string' ? { 'Content-Type': 'application/json' } : undefined,
