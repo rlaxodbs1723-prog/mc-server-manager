@@ -88,7 +88,7 @@ export async function sendBugReport(title: string, details: string, files: strin
   lastSent = Date.now()
   try {
     const sent = await post(url, JSON.stringify(bugMessage(title, details, list.map((f) => f.name))))
-    remember(sent, String(title ?? '').trim() || String(details ?? '').trim().slice(0, 60))
+    remember(sent, String(title ?? '').trim() || String(details ?? '').trim().slice(0, 60), String(details ?? '').trim().slice(0, 4000))
     // 파일은 한 개씩 (여러 개를 한 번에 보내면 합친 크기 한도에 걸린다)
     for (const f of list) {
       const form = new FormData()
@@ -119,11 +119,11 @@ function readReports(): MyBugReport[] {
 }
 const writeReports = (list: MyBugReport[]): void => fs.writeFileSync(reportsFile(), JSON.stringify(list, null, 2))
 
-function remember(response: string, title: string): void {
+function remember(response: string, title: string, details: string): void {
   try {
     const r = JSON.parse(response) as { id?: string; ticket?: string }
     if (!r.id || !r.ticket) return // 예전 중계 서버는 번호를 주지 않는다
-    writeReports([{ id: r.id, ticket: r.ticket, title: title || 'Bug report', sentAt: Date.now(), replies: [], seen: 0 }, ...readReports()].slice(0, 50))
+    writeReports([{ id: r.id, ticket: r.ticket, title: title || 'Bug report', details, sentAt: Date.now(), replies: [], seen: 0 }, ...readReports()].slice(0, 50))
   } catch {
     // 번호가 없으면 답장만 못 받는다
   }

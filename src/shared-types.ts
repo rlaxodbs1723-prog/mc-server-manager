@@ -158,6 +158,7 @@ export interface MyBugReport {
   id: string
   ticket: string // 이 제보의 답장을 볼 수 있는 표
   title: string
+  details?: string // 보낸 설명 (예전 제보에는 없다)
   sentAt: number
   replies: { id: string; text: string; at: string }[]
   seen: number // 읽은 답장 수

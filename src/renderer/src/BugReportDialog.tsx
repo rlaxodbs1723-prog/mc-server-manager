@@ -17,6 +17,7 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
   const [sending, setSending] = useState(false)
   const [mine, setMine] = useState<MyBugReport[]>([])
   const [tab, setTab] = useState<'new' | 'mine'>('new')
+  const [open, setOpen] = useState<MyBugReport | null>(null) // 눌러서 자세히 보는 제보
 
   // 내가 보낸 제보와 답장. 답장이 안 읽은 게 있으면 처음부터 그쪽을 보여 준다
   useEffect(() => {
@@ -94,7 +95,7 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
         <>
           <div className="bug-mine">
             {mine.map((r) => (
-              <div key={r.id} className="bug-mine-item">
+              <button key={r.id} className="bug-mine-item" onClick={() => setOpen(r)}>
                 <div className="bug-mine-head">
                   <b>{r.title}</b>
                   <span className="hint">{new Date(r.sentAt).toLocaleDateString()}</span>
@@ -109,7 +110,7 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
                 ) : (
                   <p className="hint">{'아직 답장이 없어요. 답장이 오면 알려 드려요.'}</p>
                 )}
-              </div>
+              </button>
             ))}
           </div>
           <div className="actions">
@@ -159,6 +160,30 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
         </button>
       </div>
         </>
+      )}
+      {open && (
+        <Modal onClose={() => setOpen(null)}>
+          <h2 className="bug-detail-title">{open.title}</h2>
+          <div className="bug-detail">
+            <span className="hint">{new Date(open.sentAt).toLocaleString()}</span>
+            {open.details && <div className="bug-question">{open.details}</div>}
+            {open.replies.length ? (
+              open.replies.map((x) => (
+                <div key={x.id} className="bug-reply">
+                  <span className="bug-reply-from">{'개발자 답장'}</span>
+                  {x.text}
+                </div>
+              ))
+            ) : (
+              <p className="hint">{'아직 답장이 없어요. 답장이 오면 알려 드려요.'}</p>
+            )}
+          </div>
+          <div className="actions">
+            <button className="btn primary" onClick={() => setOpen(null)}>
+              닫기
+            </button>
+          </div>
+        </Modal>
       )}
     </Modal>
   )
