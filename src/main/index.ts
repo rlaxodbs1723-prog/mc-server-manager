@@ -396,7 +396,7 @@ ipcMain.handle('openExternal', (_event, url: string) => {
 })
 ipcMain.handle('getMyBugReports', () => getMyBugReports())
 ipcMain.handle('markBugRepliesSeen', () => markBugRepliesSeen())
-ipcMain.handle('getInbox', () => getInbox())
+ipcMain.handle('getInbox', (_event, fresh?: boolean) => getInbox(!!fresh))
 ipcMain.handle('refreshBugReplies', () => checkBugReplies(() => BrowserWindow.getAllWindows().forEach((w) => w.webContents.send('bugReplies'))))
 ipcMain.handle('sendBugReport', (_event, title: string, details: string, files: string[]) =>
   sendBugReport(String(title ?? ''), String(details ?? ''), Array.isArray(files) ? files.slice(0, 10).map(String) : [])

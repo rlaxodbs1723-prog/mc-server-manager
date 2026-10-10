@@ -455,7 +455,7 @@ export interface Api {
   pickBugFiles: () => Promise<BugFile[]>
   getMyBugReports: () => Promise<MyBugReport[]>
   markBugRepliesSeen: () => Promise<void>
-  getInbox: () => Promise<Inbox>
+  getInbox: (fresh?: boolean) => Promise<Inbox> // fresh: 앱이 기억해 둔 것 말고 새로
   refreshBugReplies: () => Promise<void> // 지금 바로 답장 확인 (첨부 파일 주소도 새로 받는다)
   onBugReplies: (cb: () => void) => () => void // 새 답장이 오면
   bugFileInfo: (file: File) => Promise<BugFile> // 끌어다 놓은 파일

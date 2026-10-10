@@ -53,9 +53,9 @@ export default function InboxButton() {
   }, [show])
 
   const loadReports = () => window.api.getMyBugReports().then(setReports).catch(() => undefined)
-  const loadBox = () =>
+  const loadBox = (fresh = false) =>
     window.api
-      .getInbox()
+      .getInbox(fresh)
       .then((b) => {
         setBox(b)
         setError('')
@@ -65,7 +65,7 @@ export default function InboxButton() {
   useEffect(() => {
     loadBox()
     loadReports()
-    const t = setInterval(loadBox, 30 * 60_000)
+    const t = setInterval(() => loadBox(), 10 * 60_000) // 새 글 빨간 점용
     const off = window.api.onBugReplies(loadReports)
     return () => {
       clearInterval(t)
@@ -78,7 +78,10 @@ export default function InboxButton() {
 
   return (
     <div className="task-anchor inbox-anchor" ref={ref} onDoubleClick={(e) => e.stopPropagation()}>
-      <button className={`task-btn ${show ? 'active' : ''}`} onClick={() => setShow((v) => !v)} title="알림함">
+      <button className={`task-btn ${show ? 'active' : ''}`} onClick={() => {
+          if (!show) void loadBox(true) // 열 때마다 새로 받아 온다
+          setShow((v) => !v)
+        }} title="알림함">
         <Mail size={16} />
         {unread > 0 && <span className="bug-dot" />}
       </button>

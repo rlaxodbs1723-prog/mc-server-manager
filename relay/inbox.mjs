@@ -1,8 +1,8 @@
 // 알림함 중계: 디스코드의 공지 채널·패치노트 채널에 쓴 글을 앱에 보여 준다.
 // 환경 변수: DISCORD_BOT_TOKEN(버그 답장과 같은 봇), NOTICE_CHANNEL_ID, PATCH_CHANNEL_ID
-// 글의 첫 줄이 제목, 나머지가 내용이다. 많은 앱이 물어도 디스코드에는 10분에 한 번만 묻는다 (Cloudflare 캐시)
+// 글의 첫 줄이 제목, 나머지가 내용이다. 많은 앱이 물어도 디스코드에는 3분에 한 번만 묻는다 (Cloudflare 캐시)
 const DISCORD = 'https://discord.com/api/v10'
-const CACHE_SEC = 600
+const CACHE_SEC = 180
 const LIMIT = 30
 
 async function channelPosts(raw, bot) {

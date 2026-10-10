@@ -20,8 +20,9 @@ function clean(list: unknown): InboxPost[] {
   }))
 }
 
-export async function getInbox(): Promise<Inbox> {
-  if (cache && Date.now() - cache.at < CACHE_MS) return cache.data
+// fresh: 알림함을 열 때는 앱의 기억을 건너뛰고 새로 묻는다
+export async function getInbox(fresh = false): Promise<Inbox> {
+  if (!fresh && cache && Date.now() - cache.at < CACHE_MS) return cache.data
   const res = await fetch(URL_INBOX, { signal: AbortSignal.timeout(10000) })
   if (!res.ok) throw new Error(`알림함을 불러오지 못했어요. (${res.status})`)
   const raw = (await res.json()) as { notices?: unknown; patches?: unknown }
