@@ -354,7 +354,8 @@
         sessionStorage.setItem('chromeTried', '1')
       } catch {}
       if (!tried) {
-        window.goatcounter?.count?.({ path: 'auto-chrome', title: '처음부터 크롬으로 열기 시도', event: true })
+        // GoatCounter 스크립트가 아직 안 불렸을 수 있어서 직접 센다
+        navigator.sendBeacon?.('https://cubepanel.goatcounter.com/count?e=true&p=auto-chrome&t=' + encodeURIComponent('처음부터 크롬으로 열기 시도'))
         openChrome()
       }
     }
