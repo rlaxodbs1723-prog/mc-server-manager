@@ -318,7 +318,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
                   최대 인원 <span className="muted">{'1 ~ 500'}</span>
                 </div>
                 <div className="num-input">
-                  <input type="number" className="input" style={{ width: '100%' }} value={maxPlayers} min={1} max={500} onChange={(e) => setMaxPlayers(e.target.value)} />
+                  <input type="number" className="input" style={{ width: '100%' }} value={maxPlayers} min={1} max={500} onChange={(e) => setMaxPlayers(e.target.value)} onBlur={() => setMaxPlayers(String(Math.min(500, Math.max(1, Math.round(Number(maxPlayers) || 10)))))} />
                   <span>명</span>
                 </div>
               </div>

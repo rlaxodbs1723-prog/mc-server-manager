@@ -107,6 +107,7 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
                 disabled={!running}
                 maxLength={200}
               />
+              {message.length > 150 && <span className="hint say-count">{`${message.length}/200`}</span>}
               <button className="btn primary icon" style={{ height: 48, width: 48 }} disabled={!running || !message.trim()} aria-label="보내기">
                 <Send size={18} />
               </button>

@@ -444,6 +444,7 @@ input[type='number']::-webkit-inner-spin-button, input[type='number']::-webkit-o
 .btn.op-on { background: rgba(255, 196, 0, 0.16); color: #ffc400; }
 .btn.danger-hover:hover:not(:disabled) { background: var(--danger-soft); color: var(--danger); }
 .say-form { display: flex; gap: 8px; }
+.say-count { align-self: center; white-space: nowrap; }
 .seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(max-content, 1fr); gap: 4px; padding: 4px; border-radius: var(--r-md); background: var(--surface-2); }
 .seg button { min-width: 0; white-space: nowrap; padding: 0 8px; height: 38px; border-radius: 10px; font-weight: 600; font-size: 14px; color: var(--text-3); transition: background 0.15s, color 0.15s; }
 .seg button:hover:not(:disabled) { color: var(--text); }

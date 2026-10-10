@@ -1,7 +1,7 @@
 import { UserPlus, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { WhitelistInfo } from '../../shared-types'
-import { Empty, Modal, useToast } from './ui'
+import { Confirm, Empty, Modal, useToast } from './ui'
 import { cleanError } from './util'
 
 // 화이트리스트 켜기/끄기와 목록 관리. 바꾸는 즉시 저장되고, 켜진 서버에는 바로 적용된다.
@@ -12,13 +12,17 @@ export function WhitelistPanel({ folderPath, autoFocus }: { folderPath: string; 
   const [name, setName] = useState('')
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState('')
+  const [askEmpty, setAskEmpty] = useState(false) // 목록이 빈 채로 켜려고 할 때
 
   const load = () => window.api.getWhitelist(folderPath).then(setInfo)
   useEffect(() => {
     load()
   }, [folderPath]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function toggle(enabled: boolean) {
+  async function toggle(enabled: boolean, sure = false) {
+    // 목록이 비어 있으면 켜는 순간 아무도(방장도) 못 들어온다
+    if (enabled && !sure && info && info.players.length === 0) return setAskEmpty(true)
+    setAskEmpty(false)
     try {
       await window.api.setWhitelistEnabled(folderPath, enabled)
       await load()
@@ -96,6 +100,17 @@ export function WhitelistPanel({ folderPath, autoFocus }: { folderPath: string; 
         <p className="hint" style={{ marginTop: 8 }}>
           정품 인증이 꺼져 있어서 닉네임만으로 추가돼요.
         </p>
+      )}
+
+      {askEmpty && (
+        <Confirm
+          title="목록이 비어 있어요"
+          body="이대로 켜면 아무도(방장도) 들어올 수 없어요. 먼저 닉네임을 추가하는 게 좋아요."
+          confirmText="그래도 켜기"
+          cancelText="먼저 추가하기"
+          onConfirm={() => toggle(true, true)}
+          onCancel={() => setAskEmpty(false)}
+        />
       )}
 
       <div className="wl-list">

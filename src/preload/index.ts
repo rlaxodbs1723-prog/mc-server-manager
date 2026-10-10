@@ -84,6 +84,7 @@ const api: Api = {
   hasCurseForgeKey: () => ipcRenderer.invoke('hasCurseForgeKey'),
   removeCurseForgeKey: () => ipcRenderer.invoke('removeCurseForgeKey'),
   getAppInfo: () => ipcRenderer.invoke('getAppInfo'),
+  unlinkTunnel: () => ipcRenderer.invoke('unlinkTunnel'),
   setAppSettings: (patch) => ipcRenderer.invoke('setAppSettings', patch),
   openDataFolder: () => ipcRenderer.invoke('openDataFolder'),
   listDir: (folderPath, rel) => ipcRenderer.invoke('listDir', folderPath, rel),

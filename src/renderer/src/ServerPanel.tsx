@@ -84,6 +84,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
   const [historyIndex, setHistoryIndex] = useState(-1)
   const [showEula, setShowEula] = useState(false)
   const [askDelete, setAskDelete] = useState(false)
+  const [askStop, setAskStop] = useState(false) // 접속한 사람이 있을 때 끌지 묻기
   const [naming, setNaming] = useState<'rename' | 'duplicate' | null>(null)
   const [showSettings, setShowSettings] = useState(false)
   const [progress, setProgress] = useState<Progress | null>(null)
@@ -92,6 +93,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
   const [tab, setTab] = useStored<'console' | 'manage' | 'mods' | 'datapacks' | 'backup' | 'files'>(`tab:${folderPath}`, 'console') // 서버마다 마지막 탭을 기억한다
   const [modKind, setModKind] = useState<ModKindInfo | null>(null) // 바닐라면 null → 모드 탭 없음
   const consoleRef = useRef<HTMLPreElement>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
   const [search, setSearch] = useState('')
   const [onlyProblems, setOnlyProblems] = useState(false)
   const [players, setPlayers] = useState<string[]>([])
@@ -157,6 +159,20 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
   )
   const suggestions = sugHidden ? [] : suggest(command, players)
   const usage = usageOf(command)
+
+  // 콘솔 탭에서 Ctrl+F를 누르면 로그 검색 칸으로 간다
+  useEffect(() => {
+    if (tab !== 'console') return
+    const onKey = (e: KeyboardEvent): void => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f' && searchRef.current) {
+        e.preventDefault()
+        searchRef.current.focus()
+        searchRef.current.select()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [tab])
 
   // 맨 아래를 보고 있을 때만 새 줄을 따라 내려간다 (위로 올려 읽는 중이면 그대로)
   const jumpOnce = useRef(true) // 서버를 열거나 탭을 바꾼 직후에는 따라가기와 상관없이 맨 아래(최신 로그)를 보여 준다
@@ -287,6 +303,13 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
   }
 
   const on = state !== 'stopped'
+
+  // 접속한 사람이 있으면 한 번 묻고 끈다
+  function stop(sure = false) {
+    if (!sure && players.length > 0) return setAskStop(true)
+    setAskStop(false)
+    window.api.stopServer(folderPath)
+  }
   const busy = busyOf(folderPath) // 버전 바꾸기 같은 작업 중이면 그 이름
 
   // 우클릭 메뉴에서 온 요청
@@ -296,7 +319,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
     handled.current = request.n
     onRequestDone?.() // 한 번만 실행되게 비운다 (다시 이 서버를 열 때 또 실행되지 않게)
     if (request.action === 'start' && !on) start()
-    if (request.action === 'stop' && on) window.api.stopServer(folderPath)
+    if (request.action === 'stop' && on) stop()
     if (request.action === 'settings') setShowSettings(true)
     if (request.action === 'rename') setNaming('rename')
     if (request.action === 'duplicate' && !on) setNaming('duplicate')
@@ -355,7 +378,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
             </button>
           )}
           {on ? (
-            <button className="btn lg" onClick={() => window.api.stopServer(folderPath)} disabled={state === 'stopping'}>
+            <button className="btn lg" onClick={() => stop()} disabled={state === 'stopping'}>
               <Square size={16} fill="currentColor" />
               {state === 'stopping' ? '끄는 중…' : '서버 끄기'}
             </button>
@@ -414,7 +437,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
             <div className="console-tools">
               <div className="console-search">
                 <Search size={14} />
-                <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="로그 검색" />
+                <input ref={searchRef} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="로그 검색 (Ctrl+F)" />
                 {search && (
                   <button onClick={() => setSearch('')} aria-label="검색 지우기">
                     <X size={14} />
@@ -550,6 +573,16 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
             setNaming(null)
             onChanged()
           }}
+        />
+      )}
+      {askStop && (
+        <Confirm
+          title={`${players.length}명이 접속해 있어요`}
+          body="서버를 끄면 모두 나가져요. 월드는 저장하고 꺼요."
+          confirmText="서버 끄기"
+          danger
+          onCancel={() => setAskStop(false)}
+          onConfirm={() => stop(true)}
         />
       )}
       {askDelete && (

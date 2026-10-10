@@ -164,13 +164,15 @@ export interface AppSettings {
   startHidden: boolean // 그때 창 없이 트레이로 시작
   closeBehavior: 'tray-if-running' | 'always-tray' // 창을 닫으면: 켜진 서버가 있을 때만 트레이로 / 늘 트레이로
   notifications: boolean // 윈도우 알림
+  usageStats: boolean // 익명 사용 통계 보내기 (앱을 켠 횟수 등, 개인 정보 없음)
   language: 'ko' | 'en' | 'zh' // 앱 언어 (처음에는 윈도우 언어를 따른다)
 }
 export interface AppInfo {
   settings: AppSettings
   version: string
   packaged: boolean // 설치한 앱인지 (윈도우 시작 시 실행은 설치한 앱에서만 된다)
-  curseForgeKey: 'built' | 'user' | null // 앱에 들어 있는 키 / 사용자가 넣은 키 / 없음
+  curseForgeKey: 'built' | 'user' | null // 기본 연결(중계 서버) / 사용자가 넣은 키 / 없음
+  tunnelLinked: boolean // playit 터널을 승인해 둠
   dataFolder: string
 }
 
@@ -436,6 +438,8 @@ export interface Api {
   hasCurseForgeKey: () => Promise<boolean>
   removeCurseForgeKey: () => Promise<void>
   getAppInfo: () => Promise<AppInfo>
+  // playit 연결 끊기 (저장한 키를 지우고 터널 프로그램을 끈다)
+  unlinkTunnel: () => Promise<void>
   setAppSettings: (patch: Partial<AppSettings>) => Promise<AppSettings>
   openDataFolder: () => Promise<void>
   // 파일 탐색기 (rel은 서버 폴더 기준 경로, ""이면 맨 위)

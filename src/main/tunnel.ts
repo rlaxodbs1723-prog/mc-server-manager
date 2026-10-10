@@ -68,6 +68,7 @@ export async function linkTunnel(): Promise<void> {
 }
 
 export function unlinkTunnel(): void {
+  users.clear() // 켜진 서버의 터널 주소는 서버를 다시 켜면 사라진다
   stopAgent()
   fs.rmSync(secretFile(), { force: true })
 }

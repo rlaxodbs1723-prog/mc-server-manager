@@ -9,6 +9,8 @@ import { listGameRules, setGameRule } from './gamerules'
 import { getHardcore, setHardcore } from './hardcore'
 import { getGameRuleLang } from './lang'
 import { checkReachable, closeAllPorts, getInvite, initInvite, useTunnel } from './invite'
+import { track as trackUsage } from './usage'
+import { tunnelLinked, unlinkTunnel } from './tunnel'
 import { getLoaderVersions } from './loaders'
 import * as mods from './mods'
 import { CancelledError, cancelTask, runCancellable, throwIfCancelled } from './cancel'
@@ -245,6 +247,7 @@ ipcMain.handle('createServer', async (event, options: CreateServerOptions, taskI
     }
     eta.finish()
     notify('서버를 만들었어요', `${options.name} 서버가 준비됐어요. 눌러서 열어 보세요.`)
+    trackUsage(`create-${options.modpackId ? 'modpack' : options.software}`)
     return info
   } catch (e) {
     if (!(e instanceof CancelledError)) notify('서버를 만들지 못했어요', `${options.name}: ${friendlyError(e instanceof Error ? e.message.split('\n')[0] : String(e))}`)
@@ -323,6 +326,7 @@ async function startWithChecks(target: string, report: (p: Progress) => void): P
   const info = readServerInfo(target)
   if ((info.software === 'fabric' || info.software === 'quilt') && info.baseModsFor !== info.mcVersion) await mods.refreshBaseMods(target).catch(() => null)
   await startServerAt(target, report)
+  trackUsage(`start-${info.software ?? 'vanilla'}`)
 }
 setStarter((f) => startWithChecks(f, () => undefined))
 ipcMain.handle('stopServer', (_event, folderPath: string, force?: boolean) =>
@@ -400,11 +404,13 @@ ipcMain.handle('installModById', (_event, folderPath: string, modId: string) => 
 ipcMain.handle('disableDatapack', (_event, folderPath: string, name: string) => disableDatapack(checkServerFolder(folderPath), String(name)))
 ipcMain.handle('hasCurseForgeKey', () => hasCurseForgeKey())
 ipcMain.handle('removeCurseForgeKey', () => removeCurseForgeKey())
+ipcMain.handle('unlinkTunnel', () => unlinkTunnel())
 ipcMain.handle('getAppInfo', () => ({
   settings: getAppSettings(),
   version: app.getVersion(),
   packaged: app.isPackaged,
   curseForgeKey: curseForgeKeySource(),
+  tunnelLinked: tunnelLinked(),
   dataFolder: app.getPath('userData')
 }))
 ipcMain.handle('setAppSettings', (_event, patch) => {
@@ -567,6 +573,7 @@ app.whenReady().then(() => {
   cleanWorldTemp()
   cleanModpackTemp() // 지난번에 만들다 만 서버 폴더 정리
   createWindow()
+  trackUsage('open')
   void autoStartServers() // "앱을 켜면 이 서버도 켜기"를 켠 서버 (하나씩 차례로)
   initUpdater() // 새 버전 확인 (설치한 앱에서만)
   app.on('activate', () => {

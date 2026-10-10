@@ -133,9 +133,23 @@ export default function AppSettingsDialog({ onClose }: { onClose: () => void }) 
           </section>
 
           <section>
+            <div className="label">개인 정보</div>
+            <label className="reset-row">
+              <span>
+                <b>익명 사용 통계 보내기</b>
+                <span className="hint">앱을 켠 횟수와 서버 종류만 세요. 이름·서버 이름·IP 같은 개인 정보는 저장하지 않아요.</span>
+              </span>
+              <span className="switch">
+                <input type="checkbox" checked={s.usageStats} onChange={(e) => set({ usageStats: e.target.checked })} />
+                <span />
+              </span>
+            </label>
+          </section>
+
+          <section>
             <div className="label">CurseForge</div>
             {info.curseForgeKey === 'built' ? (
-              <p className="hint">앱에 들어 있는 키로 연결돼 있어요.</p>
+              <p className="hint">기본으로 연결돼 있어요. 따로 할 일은 없어요.</p>
             ) : info.curseForgeKey === 'user' ? (
               <div className="key-row">
                 <span className="hint">내가 넣은 API 키로 연결돼 있어요.</span>
@@ -162,6 +176,29 @@ export default function AppSettingsDialog({ onClose }: { onClose: () => void }) 
               </>
             )}
           </section>
+
+          {info.tunnelLinked && (
+            <section>
+              <div className="label">playit 터널</div>
+              <div className="key-row">
+                <span className="hint">공유기로 못 열 때 playit 터널로 열도록 연결돼 있어요.</span>
+                <button
+                  className="btn sm ghost"
+                  onClick={async () => {
+                    try {
+                      await window.api.unlinkTunnel()
+                      toast('playit 연결을 끊었어요')
+                      load()
+                    } catch (e) {
+                      toast(cleanError(e), 'error')
+                    }
+                  }}
+                >
+                  연결 끊기
+                </button>
+              </div>
+            </section>
+          )}
 
           <section>
             <div className="label">데이터</div>

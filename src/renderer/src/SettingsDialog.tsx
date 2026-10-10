@@ -61,7 +61,7 @@ const SECTIONS: Section[] = [
       { key: 'allow-nether', label: '네더 허용', type: 'bool', def: true, legacy: true },
       { key: 'spawn-monsters', label: '몬스터 생성', type: 'bool', def: true, legacy: true },
       { key: 'view-distance', label: '보이는 거리', desc: '클수록 멀리 보이지만 컴퓨터가 힘들어해요. 보통 8~12가 적당해요.', type: 'number', def: 10, min: 3, max: 32, unit: '청크' },
-      { key: 'simulation-distance', label: '움직이는 거리', desc: '플레이어 주변에서 동물·작물이 움직이는 범위예요.', type: 'number', def: 10, min: 3, max: 32, unit: '청크' },
+      { key: 'simulation-distance', label: '움직이는 거리', desc: '플레이어 주변에서 동물·작물이 움직이는 범위예요. 보이는 거리보다 크게 해도 효과가 없어요.', type: 'number', def: 10, min: 3, max: 32, unit: '청크' },
       { key: 'spawn-protection', label: '스폰 보호 범위', desc: '처음 태어나는 곳 주변을 관리자만 부술 수 있어요. 0이면 꺼져요.', type: 'number', def: 16, min: 0, max: 256, unit: '블록' },
       { key: 'max-world-size', label: '월드 크기 제한', desc: '월드 경계까지의 거리(반지름)예요. 작게 하면 지도가 좁아져서 용량이 덜 늘어요.', type: 'number', def: 29999984, min: 1, max: 29999984, unit: '블록' },
       { key: 'max-build-height', label: '건축 높이 제한', type: 'number', def: 256, min: 64, max: 256, unit: '블록', legacy: true }
@@ -111,7 +111,7 @@ const SECTIONS: Section[] = [
     icon: <Cpu size={18} />,
     fields: [
       { key: 'entity-broadcast-range-percentage', label: '몹이 보이는 거리', desc: '멀리 있는 몹·아이템을 얼마나 멀리서 보여 줄지예요. 낮추면 가벼워져요.', type: 'number', def: 100, min: 10, max: 1000, unit: '%' },
-      { key: 'network-compression-threshold', label: '네트워크 압축 기준', desc: '이 크기(바이트)보다 큰 데이터를 압축해요. 256이면 충분해요.', type: 'number', def: 256, min: -1, max: 65535, unit: '바이트' },
+      { key: 'network-compression-threshold', label: '네트워크 압축 기준', desc: '이 크기(바이트)보다 큰 데이터를 압축해요. 256이면 충분해요. -1이면 압축하지 않아요.', type: 'number', def: 256, min: -1, max: 65535, unit: '바이트' },
       { key: 'max-tick-time', label: '멈춤 감지 시간', desc: '서버가 이 시간(밀리초) 동안 멈추면 강제로 꺼요. 무거운 모드 서버에서 자꾸 꺼지면 늘리세요. -1이면 끄기.', type: 'number', def: 60000, min: -1, max: 600000, unit: 'ms' },
       { key: 'sync-chunk-writes', label: '월드 안전 저장', desc: '켜면 조금 느려도 갑자기 꺼졌을 때 월드가 덜 망가져요.', type: 'bool', def: true },
       {
@@ -134,14 +134,22 @@ const SECTIONS: Section[] = [
       { key: 'rcon.password', label: 'RCON 비밀번호', desc: 'RCON을 켰다면 꼭 어려운 비밀번호를 정해 주세요.', type: 'password', def: '' },
       { key: 'enable-query', label: '서버 정보 조회(Query)', desc: '서버 목록 사이트 등이 접속자 수를 조회할 수 있게 해요.', type: 'bool', def: false },
       { key: 'query.port', label: 'Query 포트 (서버 정보 조회용)', desc: '서버 포트와는 따로예요. 서버 정보 조회를 켰을 때만 써요.', type: 'number', def: 25565, min: 1024, max: 65535 },
-      { key: 'function-permission-level', label: '함수 권한 단계', desc: '데이터 팩 함수가 쓸 수 있는 명령어 범위예요.', type: 'number', def: 2, min: 1, max: 4 },
-      { key: 'max-chained-neighbor-updates', label: '연쇄 블록 갱신 한도', desc: '레드스톤 등이 한 번에 일으킬 수 있는 블록 변화 수예요.', type: 'number', def: 1000000, min: -1, max: 100000000 },
-      { key: 'rate-limit', label: '패킷 제한', desc: '한 사람이 1초에 보낼 수 있는 데이터 수예요. 0이면 제한 없음.', type: 'number', def: 0, min: 0, max: 100000 },
+      {
+        key: 'function-permission-level', label: '함수 권한 단계', desc: '데이터 팩 함수가 쓸 수 있는 명령어 범위예요. 보통 2로 두면 돼요.', type: 'select', def: '2',
+        options: [
+          { value: '1', label: '1 · 스폰 보호 무시' },
+          { value: '2', label: '2 · 치트 명령어' },
+          { value: '3', label: '3 · 플레이어 관리' },
+          { value: '4', label: '4 · 전부 (서버 끄기 포함)' }
+        ]
+      },
+      { key: 'max-chained-neighbor-updates', label: '연쇄 블록 갱신 한도', desc: '레드스톤 등이 한 번에 일으킬 수 있는 블록 변화 수예요. -1이면 제한 없음.', type: 'number', def: 1000000, min: -1, max: 100000000, unit: '번' },
+      { key: 'rate-limit', label: '패킷 제한', desc: '한 사람이 1초에 보낼 수 있는 데이터 수예요. 0이면 제한 없음.', type: 'number', def: 0, min: 0, max: 100000, unit: '개/초' },
       { key: 'broadcast-rcon-to-ops', label: 'RCON 명령 결과를 관리자 채팅에 보이기', desc: '원격 콘솔로 보낸 명령의 결과를 관리자(OP) 채팅에도 보여 줘요.', type: 'bool', def: true },
       { key: 'enable-code-of-conduct', label: '행동 규칙 보여 주기', desc: '서버 폴더의 codeofconduct 폴더에 쓴 규칙을 들어오는 사람에게 보여 주고 동의를 받아요.', type: 'bool', def: false },
       { key: 'bug-report-link', label: '문제 신고 주소', desc: '플레이어가 게임 메뉴에서 서버 문제를 신고할 때 열리는 주소예요.', type: 'text', def: '', placeholder: 'https://…' },
       { key: 'management-server-enabled', label: '관리 API', desc: '다른 프로그램이 이 서버를 관리할 수 있는 통로를 열어요. 필요할 때만 켜세요.', type: 'bool', def: false },
-      { key: 'management-server-port', label: '관리 API 포트', type: 'number', def: 0, min: 0, max: 65535 },
+      { key: 'management-server-port', label: '관리 API 포트', desc: '0이면 비어 있는 포트를 알아서 골라요.', type: 'number', def: 0, min: 0, max: 65535 },
       { key: 'enable-jmx-monitoring', label: 'JMX 모니터링', desc: '자바 모니터링 도구로 서버 상태를 볼 수 있게 해요.', type: 'bool', def: false }
     ]
   }

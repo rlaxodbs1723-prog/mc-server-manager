@@ -10,6 +10,7 @@ const DEFAULTS: AppSettings = {
   startHidden: true,
   closeBehavior: 'tray-if-running',
   notifications: true,
+  usageStats: true,
   language: 'ko'
 }
 
@@ -33,6 +34,7 @@ export function setAppSettings(patch: Partial<AppSettings>): AppSettings {
     startHidden: patch.startHidden != null ? !!patch.startHidden : cur.startHidden,
     closeBehavior: patch.closeBehavior === 'always-tray' || patch.closeBehavior === 'tray-if-running' ? patch.closeBehavior : cur.closeBehavior,
     notifications: patch.notifications != null ? !!patch.notifications : cur.notifications,
+    usageStats: patch.usageStats != null ? !!patch.usageStats : cur.usageStats,
     language: patch.language === 'ko' || patch.language === 'en' || patch.language === 'zh' ? patch.language : cur.language
   }
   fs.writeFileSync(file(), JSON.stringify(next, null, 2))

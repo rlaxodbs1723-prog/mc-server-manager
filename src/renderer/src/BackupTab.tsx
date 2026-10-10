@@ -71,6 +71,7 @@ export default function BackupTab({ folderPath, serverOn }: { folderPath: string
     setRemoving(null)
     try {
       await window.api.deleteBackup(folderPath, b.id)
+      toast('백업을 휴지통으로 옮겼어요')
       load()
     } catch (e) {
       toast(cleanError(e), 'error')
@@ -84,6 +85,7 @@ export default function BackupTab({ folderPath, serverOn }: { folderPath: string
           <h3>
             <Archive size={18} />
             월드 백업
+            {!!list?.length && <span className="hint">{`${list.length} · ${size(list.reduce((n, b) => n + b.sizeBytes, 0))}`}</span>}
           </h3>
           <div className="backup-actions">
             <button className="btn icon ghost" onClick={() => window.api.openBackupFolder(folderPath)} title="백업 폴더 열기">
