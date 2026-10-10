@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Inbox, InboxPost, MyBugReport } from '../../shared-types'
 import { AttachedFiles, ReportDetail } from './BugReportDialog'
-import { Empty, LeaveBox, Loading } from './ui'
+import { Empty, LeaveBox, Loading, Modal } from './ui'
 import { cleanError } from './util'
 
 // 읽은 공지·패치노트는 이 컴퓨터에만 기억한다 (못 읽으면 전부 새 글로 보일 뿐이다)
@@ -113,6 +113,7 @@ function InboxPanel(props: {
   const [tab, setTab] = useState<Tab>(() => (unreadReplies(reports) > 0 ? 'replies' : 'notices'))
   const [openId, setOpenId] = useState<string | null>(null)
   const open = reports.find((r) => r.id === openId) ?? null
+  const [openPost, setOpenPost] = useState<InboxPost | null>(null) // 눌러서 자세히 보는 공지·패치노트
 
   // 탭을 보면 그 탭의 글은 읽은 것으로 친다 (빨간 표시는 이번에 연 동안은 남겨 둔다)
   const [firstSeen] = useState(seen)
@@ -128,15 +129,16 @@ function InboxPanel(props: {
   const dot = (n: number) => (n > 0 ? <span className="inbox-tab-dot" /> : null)
   const newNotices = box ? box.notices.filter((n) => isNew(n.id)).length : 0
   const newPatches = box ? box.patches.filter((p) => isNew(p.id)).length : 0
+  // 목록에는 제목과 첫 줄만, 누르면 전체를 창으로
   const post = (p: InboxPost) => (
-    <article key={p.id} className={`inbox-item ${isNew(p.id) ? 'new' : ''}`}>
-      <div className="inbox-head">
-        <b>{p.title}</b>
+    <button key={p.id} className={`bug-mine-item ${isNew(p.id) ? 'new' : ''}`} onClick={() => setOpenPost(p)}>
+      <div className="bug-mine-head">
+        <b>{p.title || '📎'}</b>
         <span className="hint">{p.date}</span>
       </div>
-      {p.body && <p>{p.body}</p>}
-      {p.files.length > 0 && <AttachedFiles files={p.files} />}
-    </article>
+      {(p.body || p.files.length > 0) && <div className="inbox-line hint">{p.body.split('
+')[0] || `📎 ${p.files.length}`}</div>}
+    </button>
   )
 
   return (
@@ -205,6 +207,26 @@ function InboxPanel(props: {
       </div>
       {/* 패널은 움직이는 효과가 있어서, 자세히 보기 창은 화면 맨 위(body)에 띄운다 */}
       {open && createPortal(<ReportDetail report={open} onClose={() => setOpenId(null)} />, document.body)}
+      {openPost && createPortal(<PostDetail post={openPost} onClose={() => setOpenPost(null)} />, document.body)}
     </LeaveBox>
+  )
+}
+
+// 공지·패치노트 하나 전체
+function PostDetail({ post, onClose }: { post: InboxPost; onClose: () => void }) {
+  return (
+    <Modal onClose={onClose}>
+      <div className="post-detail">
+        <h2>{post.title}</h2>
+        <span className="hint">{post.date}</span>
+        {post.body && <p>{post.body}</p>}
+        {post.files.length > 0 && <AttachedFiles files={post.files} />}
+      </div>
+      <div className="actions">
+        <button className="btn primary" onClick={onClose}>
+          닫기
+        </button>
+      </div>
+    </Modal>
   )
 }

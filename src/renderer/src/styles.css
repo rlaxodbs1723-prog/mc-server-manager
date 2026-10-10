@@ -985,3 +985,8 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .inbox-item p { white-space: pre-wrap; word-break: break-word; color: var(--text-2); line-height: 1.6; }
 .inbox-item ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; color: var(--text-2); }
 .inbox-tab-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--danger); vertical-align: middle; margin-left: 4px; }
+.inbox-line { margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.modal:has(> .post-detail) { width: min(640px, calc(100vw - 48px)); }
+.post-detail { display: grid; gap: 8px; max-height: min(560px, calc(100vh - 220px)); overflow: auto; }
+.post-detail h2 { margin: 0; word-break: break-all; }
+.post-detail p { white-space: pre-wrap; word-break: break-word; color: var(--text-2); line-height: 1.7; }
