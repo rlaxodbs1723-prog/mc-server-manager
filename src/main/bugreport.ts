@@ -17,7 +17,7 @@ const VIDEO = ['mp4', 'mov', 'webm']
 let lastSent = 0
 
 // 시험용: MCSM_BUG_RELAY로 다른 주소를 쓰거나, 빈 값이면 보내지 않는다
-const hook = (): string => process.env.MCSM_BUG_RELAY ?? 'https://cubepanel.netlify.app/api/bug'
+const hook = (): string => process.env.MCSM_BUG_RELAY ?? 'https://cubepanel.kr/api/bug'
 
 // 디스코드에 보낼 글 (제목·설명·앱 정보). 길이는 디스코드 한도에 맞춰 자른다
 export function bugMessage(title: string, details: string, fileNames: string[] = []): Record<string, unknown> {

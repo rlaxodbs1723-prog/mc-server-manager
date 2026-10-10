@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://cubepanel.netlify.app/sitemap.xml
+Sitemap: https://cubepanel.kr/sitemap.xml

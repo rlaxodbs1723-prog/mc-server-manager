@@ -11,7 +11,7 @@ import { tempRoot } from './worldzip'
 
 const API = 'https://api.curseforge.com/v1'
 // 시험용: MCSM_CF_RELAY로 다른 중계 주소를 쓸 수 있다
-const RELAY = process.env.MCSM_CF_RELAY || 'https://cubepanel.netlify.app/api/cf'
+const RELAY = process.env.MCSM_CF_RELAY || 'https://cubepanel.kr/api/cf'
 const VIA_RELAY = 'relay' // 키 대신 이 값이면 중계 서버로 묻는다
 const GAME_MINECRAFT = 432
 const CLASS_WORLDS = 17
