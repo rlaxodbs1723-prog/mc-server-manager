@@ -148,10 +148,17 @@ export async function checkBugReplies(onChange: () => void): Promise<void> {
       const res = await fetch(`${url}/replies?${q}`, { signal: AbortSignal.timeout(20_000) })
       if (!res.ok) continue
       const { replies } = (await res.json()) as { replies: MyBugReport['replies'] }
-      if (!Array.isArray(replies) || replies.length <= r.replies.length) continue
-      r.replies = replies.map((x) => ({ id: String(x.id), text: String(x.text), at: String(x.at) }))
+      if (!Array.isArray(replies)) continue
+      const isNew = replies.length > r.replies.length
+      const files = (x: MyBugReport['replies'][number]): NonNullable<MyBugReport['replies'][number]['files']> =>
+        (Array.isArray(x.files) ? x.files : [])
+          .filter((f) => /^https:\/\/(cdn|media)\.discordapp\.(com|net)\//.test(String(f.url)))
+          .map((f) => ({ url: String(f.url), name: String(f.name), type: String(f.type) }))
+      // 첨부 파일 주소는 시간이 지나면 막혀서, 새 답장이 없어도 늘 새 주소로 바꿔 둔다
+      r.replies = replies.map((x) => ({ id: String(x.id), text: String(x.text), at: String(x.at), files: files(x) }))
       changed = true
-      notify('버그 제보에 답장이 왔어요', `${r.title}: ${r.replies[r.replies.length - 1].text.slice(0, 100)}`, true) // 답장은 드물고 중요해서 앱을 보고 있어도 알린다
+      if (!isNew) continue
+      notify('버그 제보에 답장이 왔어요', `${r.title}: ${r.replies[r.replies.length - 1].text.slice(0, 100) || '📎'}`, true) // 답장은 드물고 중요해서 앱을 보고 있어도 알린다
     } catch {
       // 인터넷이 안 되면 다음에 다시 묻는다
     }

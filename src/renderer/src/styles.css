@@ -970,3 +970,5 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .bug-dot { position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
 .bug-detail-title { word-break: break-all; font-size: 16px; }
 .bug-count { align-self: flex-end; margin-top: -6px; font-size: 12px; }
+.bug-files-in { display: grid; gap: 6px; margin-top: 6px; }
+.bug-files-in img, .bug-files-in video { max-width: 100%; max-height: 260px; border-radius: 6px; cursor: pointer; justify-self: start; }

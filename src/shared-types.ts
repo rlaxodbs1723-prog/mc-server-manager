@@ -160,7 +160,7 @@ export interface MyBugReport {
   title: string
   details?: string // 보낸 설명 (예전 제보에는 없다)
   sentAt: number
-  replies: { id: string; text: string; at: string }[]
+  replies: { id: string; text: string; at: string; files?: { url: string; name: string; type: string }[] }[]
   seen: number // 읽은 답장 수
 }
 export interface BugFile {
@@ -442,6 +442,7 @@ export interface Api {
   pickBugFiles: () => Promise<BugFile[]>
   getMyBugReports: () => Promise<MyBugReport[]>
   markBugRepliesSeen: () => Promise<void>
+  refreshBugReplies: () => Promise<void> // 지금 바로 답장 확인 (첨부 파일 주소도 새로 받는다)
   onBugReplies: (cb: () => void) => () => void // 새 답장이 오면
   bugFileInfo: (file: File) => Promise<BugFile> // 끌어다 놓은 파일
   // 크래시 보고서를 메모장 등으로 연다

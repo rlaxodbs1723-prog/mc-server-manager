@@ -17,7 +17,8 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
   const [sending, setSending] = useState(false)
   const [mine, setMine] = useState<MyBugReport[]>([])
   const [tab, setTab] = useState<'new' | 'mine'>('new')
-  const [open, setOpen] = useState<MyBugReport | null>(null) // 눌러서 자세히 보는 제보
+  const [openId, setOpenId] = useState<string | null>(null) // 눌러서 자세히 보는 제보
+  const open = mine.find((r) => r.id === openId) ?? null
 
   // 내가 보낸 제보와 답장. 답장이 안 읽은 게 있으면 처음부터 그쪽을 보여 준다
   useEffect(() => {
@@ -95,7 +96,10 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
         <>
           <div className="bug-mine">
             {mine.map((r) => (
-              <button key={r.id} className="bug-mine-item" onClick={() => setOpen(r)}>
+              <button key={r.id} className="bug-mine-item" onClick={() => {
+                setOpenId(r.id)
+                void window.api.refreshBugReplies() // 첨부 파일 주소가 막혔을 수 있어서 새로 받는다
+              }}>
                 <div className="bug-mine-head">
                   <b>{r.title}</b>
                   <span className="hint">{new Date(r.sentAt).toLocaleDateString()}</span>
@@ -164,7 +168,7 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
         </>
       )}
       {open && (
-        <Modal onClose={() => setOpen(null)}>
+        <Modal onClose={() => setOpenId(null)}>
           <div className="bug-detail">
             {/* 왼쪽: 내가 보낸 질문 / 오른쪽: 개발자 답장 */}
             <section>
@@ -183,6 +187,22 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
                     <div key={x.id} className="bug-reply">
                       <span className="bug-reply-from">{new Date(x.at).toLocaleString()}</span>
                       {x.text}
+                      {!!x.files?.length && (
+                        <div className="bug-files-in">
+                          {x.files.map((f) =>
+                            f.type.startsWith('image/') ? (
+                              <img key={f.url} src={f.url} alt={f.name} title={`${f.name} (눌러서 크게 보기)`} onClick={() => window.api.openExternal(f.url)} />
+                            ) : f.type.startsWith('video/') ? (
+                              <video key={f.url} src={f.url} controls />
+                            ) : (
+                              <button key={f.url} className="btn sm ghost" onClick={() => window.api.openExternal(f.url)}>
+                                <Paperclip size={13} />
+                                {f.name}
+                              </button>
+                            )
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))
                 ) : (
@@ -192,7 +212,7 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
             </section>
           </div>
           <div className="actions">
-            <button className="btn primary" onClick={() => setOpen(null)}>
+            <button className="btn primary" onClick={() => setOpenId(null)}>
               닫기
             </button>
           </div>

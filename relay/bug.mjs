@@ -80,8 +80,14 @@ async function replies(url, hook, bot) {
     const page = await res.json()
     if (!page.length) break
     for (const m of page)
-      if (m.message_reference?.message_id === id && !m.author?.bot && m.content?.trim())
-        found.push({ id: m.id, text: m.content.slice(0, 2000), at: m.timestamp })
+      if (m.message_reference?.message_id === id && !m.author?.bot && (m.content?.trim() || m.attachments?.length))
+        found.push({
+          id: m.id,
+          text: (m.content || '').slice(0, 2000),
+          at: m.timestamp,
+          // 첨부 파일 주소는 디스코드가 하루쯤 뒤에 막는다. 앱이 물을 때마다 새 주소를 받아 간다
+          files: (m.attachments || []).slice(0, 10).map((a) => ({ url: a.url, name: a.filename, type: a.content_type || '' }))
+        })
     after = page.reduce((max, m) => (BigInt(m.id) > BigInt(max) ? m.id : max), after) // 다음 쪽
     if (page.length < 100) break
   }

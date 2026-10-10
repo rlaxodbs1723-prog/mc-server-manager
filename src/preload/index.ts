@@ -40,6 +40,7 @@ const api: Api = {
   onBugReplies: (fn) => subscribe('bugReplies', fn),
   getMyBugReports: () => ipcRenderer.invoke('getMyBugReports'),
   markBugRepliesSeen: () => ipcRenderer.invoke('markBugRepliesSeen'),
+  refreshBugReplies: () => ipcRenderer.invoke('refreshBugReplies'),
   preflight: (folderPath) => ipcRenderer.invoke('preflight', folderPath),
   openEulaPage: () => ipcRenderer.invoke('openEulaPage'),
   acceptEula: (folderPath) => ipcRenderer.invoke('acceptEula', folderPath),

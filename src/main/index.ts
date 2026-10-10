@@ -390,9 +390,12 @@ ipcMain.handle('pickWorldZip', (event) => pickWorldZip(BrowserWindow.fromWebCont
 ipcMain.handle('openExternal', (_event, url: string) => {
   // 화면이 아무 주소나 열지 못하게 CurseForge 주소만 연다
   if (/^https:\/\/([a-z0-9-]+\.)*curseforge\.com\//i.test(String(url))) return shell.openExternal(String(url))
+  // 버그 제보 답장의 첨부 파일 (디스코드)
+  if (/^https:\/\/(cdn|media)\.discordapp\.(com|net)\//i.test(String(url))) return shell.openExternal(String(url))
 })
 ipcMain.handle('getMyBugReports', () => getMyBugReports())
 ipcMain.handle('markBugRepliesSeen', () => markBugRepliesSeen())
+ipcMain.handle('refreshBugReplies', () => checkBugReplies(() => BrowserWindow.getAllWindows().forEach((w) => w.webContents.send('bugReplies'))))
 ipcMain.handle('sendBugReport', (_event, title: string, details: string, files: string[]) =>
   sendBugReport(String(title ?? ''), String(details ?? ''), Array.isArray(files) ? files.slice(0, 10).map(String) : [])
 )
