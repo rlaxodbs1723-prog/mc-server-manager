@@ -113,7 +113,10 @@ export async function scanForOff(folderPath: string): Promise<boolean> {
 // 로그 모양: "이름 (모드ID) encountered an error ..." 바로 다음 줄에 "invalid dist DEDICATED_SERVER"
 // 라이브러리가 다른 모드 대신 실패한 경우(NoClassDefFoundError)는 모드 ID가 라이브러리를 가리키므로 잡지 않는다
 export async function suggestFromCrash(folderPath: string, log: string[]): Promise<number> {
-  const text = log.slice(-1500).join('\n')
+  // 이번에 켠 부분만 본다: 콘솔에는 전에 튕긴 기록이 남아 있어서, 고친 모드를 또 잡지 않게 마지막 실행 줄("> java ...")부터 읽는다
+  let from = log.length - 1
+  while (from > 0 && !log[from].startsWith('> java ')) from--
+  const text = log.slice(Math.max(from, 0)).join('\n')
   const re = /\(([\w.-]+)\) (?:encountered an error[^\n]*|has failed to load correctly)[^\S\n]*\n[^\n]*invalid dist DEDICATED_SERVER/g
   const ids = new Set([...text.matchAll(re)].map((m) => m[1]))
   // 모드 불러오기 실패 목록: "이름 (모드ID) has failed to load correctly" 다음 줄이 게임 화면 클래스 오류이거나, 모드별 상세 칸의 오류 메시지가 게임 화면 클래스
