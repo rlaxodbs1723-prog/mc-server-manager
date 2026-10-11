@@ -17,6 +17,7 @@ const BUILT_IN = new Set(['minecraft', 'java', 'fabricloader', 'fabric-loader', 
 interface ModMeta {
   name: string
   provides: string[] // 이 jar가 주는 모드 ID (안에 든 jar 포함)
+  bare?: boolean // 자기 정보 파일은 없고 안에 든 jar만 모드인 jar (Kotlin for Forge 등)
   needs: string[] // 꼭 있어야 하는 모드 ID
 }
 
@@ -55,7 +56,7 @@ function fromMcmod(text: string): Omit<ModMeta, 'name'> & { name?: string } {
 }
 
 // jar 하나(와 안에 든 jar들)의 정보
-async function readMod(jar: string | Buffer, depth = 0): Promise<ModMeta | null> {
+async function readMod(jar: string | Buffer, forge: boolean, depth = 0): Promise<ModMeta | null> {
   const files = await readEntries(jar, (n) =>
     ['fabric.mod.json', 'quilt.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml', 'mcmod.info'].includes(n) || (depth < 2 && /^META-INF\/(jars|jarjar)\/[^/]+\.jar$/i.test(n))
   )
@@ -64,7 +65,9 @@ async function readMod(jar: string | Buffer, depth = 0): Promise<ModMeta | null>
     const q = files.get('quilt.mod.json')
     const f = files.get('fabric.mod.json')
     const t = files.get('META-INF/neoforge.mods.toml') ?? files.get('META-INF/mods.toml')
-    if (q) meta = fromFabric(q.toString('utf8'))
+    // 여러 로더용으로 같이 만든 jar는 정보 파일이 둘 다 든다: 서버 로더 쪽 것만 본다 (Forge 서버에서 fabric-api가 없다고 뜨는 것을 막는다)
+    if (forge && t) meta = fromToml(t.toString('utf8'))
+    else if (q) meta = fromFabric(q.toString('utf8'))
     else if (f) meta = fromFabric(f.toString('utf8'))
     else if (t) meta = fromToml(t.toString('utf8'))
   } catch {
@@ -76,29 +79,31 @@ async function readMod(jar: string | Buffer, depth = 0): Promise<ModMeta | null>
     const old = fromMcmod(mc.toString('utf8'))
     meta = meta ? { ...meta, name: meta.name ?? old.name, provides: [...meta.provides, ...old.provides] } : old
   }
-  if (!meta) return null
-  const provides = [...meta.provides]
+  const bare = !meta
+  const own: Omit<ModMeta, 'name'> & { name?: string } = meta ?? { provides: [], needs: [] }
+  const provides = [...own.provides]
   for (const [name, buf] of files) {
     if (!/\.jar$/i.test(name)) continue
-    const inner = await readMod(buf, depth + 1).catch(() => null)
+    const inner = await readMod(buf, forge, depth + 1).catch(() => null)
     if (inner) provides.push(...inner.provides)
   }
-  return { name: meta.name || (typeof jar === 'string' ? path.basename(jar) : '?'), provides, needs: meta.needs }
+  if (bare && !provides.length) return null
+  return { name: own.name || (typeof jar === 'string' ? path.basename(jar) : '?'), provides, needs: own.needs, ...(bare ? { bare } : {}) }
 }
 
 // 파일 크기·수정 시각이 같으면 다시 열지 않는다 (서버를 켤 때마다 모드 수십 개를 여는 게 느려서)
 const metaCache = new Map<string, { key: string; meta: ModMeta | null }>()
-async function readModCached(file: string): Promise<ModMeta | null> {
+async function readModCached(file: string, forge: boolean): Promise<ModMeta | null> {
   const st = fs.statSync(file)
-  const key = `${st.size}:${st.mtimeMs}`
+  const key = `${st.size}:${st.mtimeMs}:${forge}`
   const hit = metaCache.get(file.replace(/\.disabled$/i, ''))
   if (hit?.key === key) return hit.meta
-  const meta = await readMod(file).catch(() => null)
+  const meta = await readMod(file, forge).catch(() => null)
   metaCache.set(file.replace(/\.disabled$/i, ''), { key, meta })
   return meta
 }
 
-async function checkMods(folderPath: string): Promise<Pick<PreflightResult, 'missing' | 'duplicates'>> {
+async function checkMods(folderPath: string, forge: boolean): Promise<Pick<PreflightResult, 'missing' | 'duplicates'>> {
   const dir = path.join(folderPath, 'mods')
   if (!fs.existsSync(dir)) return { missing: [], duplicates: [] }
   const files = fs.readdirSync(dir).filter((f) => /\.jar(\.disabled)?$/i.test(f))
@@ -107,14 +112,14 @@ async function checkMods(folderPath: string): Promise<Pick<PreflightResult, 'mis
   const off = new Set<string>() // 꺼 둔 모드가 주는 ID
   const owners = new Map<string, { name: string; files: string[] }>() // 모드 ID → 그 ID를 직접 주는 켜진 파일들
   for (const f of files) {
-    const m = await readModCached(path.join(dir, f)).catch(() => null)
+    const m = await readModCached(path.join(dir, f), forge).catch(() => null)
     if (!m) continue
     if (/\.disabled$/i.test(f)) m.provides.forEach((id) => off.add(id))
     else {
       on.push(m)
       m.provides.forEach((id) => have.add(id))
       // 첫 ID(그 jar의 본래 모드)만 본다. 안에 든 jar가 주는 ID는 여러 모드가 같이 넣어 두는 게 정상이다
-      const own = m.provides[0]
+      const own = m.bare ? undefined : m.provides[0]
       if (own) owners.set(own, { name: owners.get(own)?.name ?? m.name, files: [...(owners.get(own)?.files ?? []), f] })
     }
   }
@@ -142,7 +147,7 @@ export async function runPreflight(folderPath: string): Promise<PreflightResult>
   const info = readServerInfo(folderPath)
   const modded = MODDED.includes(info.software ?? 'vanilla')
   return {
-    ...(modded ? await checkMods(folderPath).catch(() => ({ missing: [], duplicates: [] })) : { missing: [], duplicates: [] }),
+    ...(modded ? await checkMods(folderPath, info.software === 'forge' || info.software === 'neoforge').catch(() => ({ missing: [], duplicates: [] })) : { missing: [], duplicates: [] }),
     memory: memoryWarning(info.memoryMb),
     askOff: modded ? await scanForOff(folderPath).catch(() => false) : false
   }
