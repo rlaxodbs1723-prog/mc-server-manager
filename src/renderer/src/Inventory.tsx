@@ -164,6 +164,10 @@ function ModelIcon({ textures, boxes, rotY, onDrawn }: { textures: Record<string
               // 면 사이에 틈이 보이지 않게 가장자리를 반 픽셀씩 겹쳐 그린다
               const eu = 0.5 / Math.max(Math.hypot(U[0], U[1]), 0.5)
               const ev = 0.5 / Math.max(Math.hypot(V[0], V[1]), 0.5)
+              // 텍스처를 줄여서 그릴 때(한 칸이 1픽셀보다 작을 때)는 섞어서 그린다. 안 그러면 픽셀이 빠져서 깨져 보인다
+              const shrink = Math.hypot(U[0], U[1]) < sw || Math.hypot(V[0], V[1]) < sh
+              c.imageSmoothingEnabled = shrink
+              c.imageSmoothingQuality = 'high'
               c.drawImage(tinted(f.tex, img, shade), u1 * s, v1 * s, sw, sh, -eu, -ev, 1 + 2 * eu, 1 + 2 * ev)
             }
           })
