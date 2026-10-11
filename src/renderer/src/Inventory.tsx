@@ -167,9 +167,11 @@ function ModelIcon({ textures, boxes, rotY, onDrawn }: { textures: Record<string
                 o = [o[0] + V[0], o[1] + V[1]]
                 V = [-V[0], -V[1]]
               }
-              const s = img.width / 16
-              const sw = Math.max((u2 - u1) * s, 0.01)
-              const sh = Math.max((v2 - v1) * s, 0.01)
+              // uv는 0~16 기준. 그림이 정사각형이 아닐 수도 있어서(몹 모델 면) 가로세로 따로 맞춘다
+              const sx = img.width / 16
+              const sy = img.height / 16
+              const sw = Math.max((u2 - u1) * sx, 0.01)
+              const sh = Math.max((v2 - v1) * sy, 0.01)
               c.setTransform(U[0], U[1], V[0], V[1], o[0], o[1])
               // 면 사이에 틈이 보이지 않게 가장자리를 반 픽셀씩 겹쳐 그린다
               const eu = 0.5 / Math.max(Math.hypot(U[0], U[1]), 0.5)
@@ -178,7 +180,7 @@ function ModelIcon({ textures, boxes, rotY, onDrawn }: { textures: Record<string
               const shrink = Math.hypot(U[0], U[1]) < sw || Math.hypot(V[0], V[1]) < sh
               c.imageSmoothingEnabled = shrink
               c.imageSmoothingQuality = 'high'
-              c.drawImage(tinted(f.tex, img, shade), u1 * s, v1 * s, sw, sh, -eu, -ev, 1 + 2 * eu, 1 + 2 * ev)
+              c.drawImage(tinted(f.tex, img, shade), u1 * sx, v1 * sy, sw, sh, -eu, -ev, 1 + 2 * eu, 1 + 2 * ev)
             }
           })
         }

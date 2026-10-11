@@ -320,10 +320,28 @@ async function entityImage(jars: Jar[], ref: string): Promise<Electron.NativeIma
   const img = nativeImage.createFromBuffer(buf)
   return img.isEmpty() ? null : img
 }
-function uvFaces(img: Electron.NativeImage, base: number, u: number, v: number, w: number, h: number, d: number, tint?: number): Faces {
+// 투명한 칸을 바로 위(없으면 아래) 칸 색으로 채운다. 몹 모델 면에 투명한 줄이 있으면 틈으로 비쳐 보여서
+function fillHoles(img: Electron.NativeImage): Electron.NativeImage {
+  const { width, height } = img.getSize()
+  const b = Buffer.from(img.toBitmap()) // BGRA
+  for (let pass = 0; pass < 2; pass++)
+    for (let y = 0; y < height; y++)
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 4
+        if (b[i + 3] >= 128) continue
+        const from = pass === 0 ? y - 1 : y + 1
+        if (from < 0 || from >= height) continue
+        const j = (from * width + x) * 4
+        if (b[j + 3] < 128) continue
+        b.copy(b, i, j, j + 4)
+      }
+  return nativeImage.createFromBitmap(b, { width, height })
+}
+function uvFaces(img: Electron.NativeImage, base: number, u: number, v: number, w: number, h: number, d: number, tint?: number, solid = false): Faces {
   const k = img.getSize().width / base
   const crop = (x: number, y: number, cw: number, ch: number) => {
-    const c = img.crop({ x: Math.round(x * k), y: Math.round(y * k), width: Math.max(1, Math.round(cw * k)), height: Math.max(1, Math.round(ch * k)) })
+    let c = img.crop({ x: Math.round(x * k), y: Math.round(y * k), width: Math.max(1, Math.round(cw * k)), height: Math.max(1, Math.round(ch * k)) })
+    if (solid) c = fillHoles(c)
     return (tint != null ? tintImage(c, tint) : c).toDataURL()
   }
   return {
@@ -336,23 +354,22 @@ function uvFaces(img: Electron.NativeImage, base: number, u: number, v: number, 
 }
 // 앞면이 왼쪽 앞(동쪽)을 보게 상자를 만든다 (게임 인벤토리의 머리·조각상 방향)
 const FULL = [0, 0, 16, 16]
-function faceBox(key: string, from: number[], to: number[]): ModelBox {
+// facing: 앞면이 왼쪽 앞(east, 머리·조각상) 또는 오른쪽 앞(north, 드래곤 머리)
+function faceBox(key: string, from: number[], to: number[], facing: 'east' | 'north' = 'east'): ModelBox {
+  const f = (n: string) => ({ tex: `${key}${n}`, uv: FULL })
   return {
     from,
     to,
-    faces: {
-      up: { tex: `${key}top`, uv: FULL },
-      east: { tex: `${key}front`, uv: FULL },
-      north: { tex: `${key}left`, uv: FULL },
-      south: { tex: `${key}right`, uv: FULL },
-      west: { tex: `${key}back`, uv: FULL }
-    }
+    faces:
+      facing === 'east'
+        ? { up: f('top'), east: f('front'), north: f('left'), south: f('right'), west: f('back') }
+        : { up: f('top'), north: f('front'), east: f('right'), west: f('left'), south: f('back') }
   }
 }
-function boxesIcon(parts: [string, Faces, number[], number[]][]): ItemIcon {
+function boxesIcon(parts: [string, Faces, number[], number[]][], facing: 'east' | 'north' = 'east'): ItemIcon {
   const textures: Record<string, string> = {}
   for (const [key, f] of parts) for (const [n, url] of Object.entries(f)) textures[`${key}${n}`] = url
-  return { kind: 'model', textures, rotY: 225, boxes: parts.map(([key, , from, to]) => faceBox(key, from, to)) }
+  return { kind: 'model', textures, rotY: 225, boxes: parts.map(([key, , from, to]) => faceBox(key, from, to, facing)) }
 }
 
 // 그림 일부를 정사각형 가운데에 놓은 평평한 아이콘 (배너·방패는 게임 인벤토리에서 앞모습으로 보인다)
@@ -375,15 +392,15 @@ function frontIcon(img: Electron.NativeImage, base: number, x: number, y: number
 // [이름, x, y, z, 너비, 높이, 깊이, 그림 u, v]
 type EntityBox = [string, number, number, number, number, number, number, number, number]
 function entityModelIcon(img: Electron.NativeImage, base: number, parts: EntityBox[]): ItemIcon {
-  // 앞(-z)이 왼쪽 앞(동쪽)을 보게: X = -z, Y = -y, Z = x
-  const conv = parts.map(([key, x, y, z, w, h, d, u, v]) => ({ key, u, v, w, h, d, from: [-(z + d), -(y + h), x], to: [-z, -y, x + w] }))
+  // 게임 인벤토리처럼 앞(-z)이 오른쪽 앞(북쪽)을 보게: X = x, Y = -y, Z = z
+  const conv = parts.map(([key, x, y, z, w, h, d, u, v]) => ({ key, u, v, w, h, d, from: [x, -(y + h), z], to: [x + w, -y, z + d] }))
   const lo = [0, 1, 2].map((i) => Math.min(...conv.map((c) => c.from[i])))
   const hi = [0, 1, 2].map((i) => Math.max(...conv.map((c) => c.to[i])))
   const scale = 16 / Math.max(...[0, 1, 2].map((i) => hi[i] - lo[i]))
   // 가로·앞뒤는 가운데에, 아래는 바닥에 맞춘다
   const off = [0, 1, 2].map((i) => (i === 1 ? 0 : (16 - (hi[i] - lo[i]) * scale) / 2))
   const fit = (p: number[]) => p.map((n, i) => (n - lo[i]) * scale + off[i])
-  return boxesIcon(conv.map((c) => [c.key, uvFaces(img, base, c.u, c.v, c.w, c.h, c.d), fit(c.from), fit(c.to)] as [string, Faces, number[], number[]]))
+  return boxesIcon(conv.map((c) => [c.key, uvFaces(img, base, c.u, c.v, c.w, c.h, c.d, undefined, true), fit(c.from), fit(c.to)] as [string, Faces, number[], number[]]), 'north')
 }
 
 // 염료 색 (배너)
