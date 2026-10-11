@@ -16,6 +16,7 @@ interface Running {
   state: ServerState
   log: string[]
   players: Set<string> // 지금 접속 중인 사람
+  failTimer?: ReturnType<typeof setTimeout> // 켜지다 실패했는데 프로그램이 안 꺼질 때 끄는 타이머
 }
 
 // "[..INFO]: Steve joined the game" / "left the game". 26.x부터는 "]: System chat: Steve joined the game"처럼 찍힌다.
@@ -93,6 +94,13 @@ function pushLog(folderPath: string, line: string): void {
     if (r.log.length > LOG_LIMIT) r.log.splice(0, r.log.length - LOG_LIMIT)
     // 바닐라/Fabric 모두 다 켜지면 "Done (3.2s)! For help, type "help"" 를 찍는다
     if (r.state === 'starting' && /Done \([\d.,]+s\)!/.test(line)) setState(folderPath, 'running')
+    // Forge는 모드를 불러오다 실패해도 안 꺼지고 계속 떠 있다 (다른 모드의 백그라운드 작업이 남아서). 앱이 모르면 "켜는 중"에서 영원히 멈춘다.
+    // 실패 줄이 찍히면 마지막 오류 줄이 다 나올 때까지 잠깐 기다렸다가 끄고, 튕긴 것으로 처리한다
+    if (r.state === 'starting' && !r.failTimer && /Failed to start the minecraft server/i.test(stripColors(line))) {
+      r.failTimer = setTimeout(() => {
+        if (running.get(folderPath) === r && r.state === 'starting') r.proc.kill()
+      }, 4000)
+    }
     const m = JOIN_LEFT.exec(stripColors(line).trimEnd())
     if (m) {
       if (m[2] === 'joined') r.players.add(m[1])
@@ -233,6 +241,7 @@ export async function startServer(folderPath: string, { java, args }: StartOptio
     out.flush()
     err.flush()
     const r = running.get(folderPath)
+    if (r?.failTimer) clearTimeout(r.failTimer)
     const requested = r?.state === 'stopping'
     // 켜지는 중에 꺼지면 (마인크래프트는 초기화에 실패해도 코드 0으로 끝날 때가 있다) 역시 튕긴 것
     const crashed = !requested && (code !== 0 || r?.state === 'starting')
