@@ -1,0 +1,51 @@
+로그 파일을 찾지 못했어요.	Couldn't find the log file.	找不到日志文件。
+jar를 열지 못했어요.	Couldn't open the jar.	无法打开 jar。
+이 버전은 게임 파일이 없어요.	This version has no game files.	此版本没有游戏文件。
+퇴장	left	离开
+{0} (지금)	{0} (now)	{0}（当前）
+채팅 기록	Chat history	聊天记录
+로그가 없어요	No logs	没有日志
+서버를 한 번 켜면 기록이 생겨요.	Start the server once to create a log.	启动一次服务器就会生成记录。
+이름이나 내용 찾기	Search name or text	搜索名字或内容
+채팅만	Chat only	仅聊天
+기록을 읽는 중이에요	Reading the log	正在读取记录
+찾는 기록이 없어요	Nothing found	没有找到记录
+이 날은 채팅이 없어요	No chat on this day	这天没有聊天
+서버 공지	Server notice	服务器公告
+내구도 {0} 닳음	Durability -{0}	耐久已消耗 {0}
+들어왔던 플레이어 {0}명	Past players: {0}	来过的玩家 {0} 人
+채팅, 접속, 사망 기록	Chat, joins, deaths	聊天、进出、死亡记录
+오버월드	Overworld	主世界
+네더	Nether	下界
+엔드	The End	末地
+게임 파일을 읽는 중이에요. 처음에는 조금 걸려요.	Reading game files. The first time takes a moment.	正在读取游戏文件，第一次会稍慢。
+이 플레이어의 저장된 정보가 없어요. 서버에 한 번 들어왔다 나가면 생겨요.	No saved data for this player. It appears after they join and leave once.	该玩家没有保存的数据。进入服务器并离开一次后就会生成。
+체력	Health	生命值
+배고픔	Hunger	饥饿值
+레벨	Level	等级
+마지막 위치	Last position	最后位置
+마지막 사망 위치	Last death	最后死亡位置
+인벤토리	Inventory	物品栏
+엔더 상자	Ender chest	末影箱
+{0} 저장	Saved {0}	保存于 {0}
+접속 중일 때 회복을 할 수 있어요.	You can heal them while they're online.	在线时可以恢复状态。
+실시간	Live	实时
+이름 찾기	Find name	查找名字
+정보 · 인벤토리 보기	Info · Inventory	信息 · 物品栏
+체력 회복	Heal	恢复生命
+배고픔 회복	Feed	恢复饱食
+{0}님의 체력을 채웠어요	Healed {0}	已恢复 {0} 的生命值
+{0}님의 배고픔을 채웠어요	Fed {0}	已恢复 {0} 的饱食度
+채팅	Chat	聊天
+맨 아래로	Jump to bottom	回到底部
+계속 보관	Keep forever	永久保留
+7일 지나면 삭제	Delete after 7 days	7 天后删除
+30일 지나면 삭제	Delete after 30 days	30 天后删除
+90일 지나면 삭제	Delete after 90 days	90 天后删除
+1년 지나면 삭제	Delete after 1 year	1 年后删除
+{0}일 지나면 삭제	Delete after {0} days	{0} 天后删除
+서버를 켤 때 오래된 기록을 지워요	Old logs are deleted when the server starts	启动服务器时删除旧记录
+localhost를 복사했어요. 이 컴퓨터에서 접속할 때 쓰세요!	Copied localhost. Use it to join from this computer!	已复制 localhost。在这台电脑上连接时使用它！
+내 접속: localhost	Me: localhost	本机：localhost
+이 컴퓨터에서는 지금도 localhost로 접속할 수 있어요.	You can still join from this computer with localhost.	这台电脑现在也可以用 localhost 连接。
+이 컴퓨터에서 접속할 때는 이 주소를 쓰세요 (눌러서 복사) · {0}	Use this address to join from this computer (click to copy) · {0}	在这台电脑上连接时请使用此地址（点击复制）· {0}

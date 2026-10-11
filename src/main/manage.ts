@@ -108,7 +108,9 @@ export function runAction(folderPath: string, action: ManageAction): void {
     const cmds = old
       ? [`effect ${name} 6 1 10`, `effect ${name} 23 1 10`]
       : [`effect give ${name} minecraft:instant_health 1 10`, `effect give ${name} minecraft:saturation 1 10`]
-    cmds.forEach((c) => sendCommand(folderPath, c))
+    // 체력만이면 앞의 것, 배고픔만이면 뒤의 것
+    const pick = action.what === 'health' ? cmds.slice(0, 1) : action.what === 'food' ? cmds.slice(1) : cmds
+    pick.forEach((c) => sendCommand(folderPath, c))
     return
   }
   sendCommand(folderPath, toCommand(action))

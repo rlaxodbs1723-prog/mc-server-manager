@@ -6,6 +6,7 @@ import EulaDialog from './EulaDialog'
 import InviteBox from './InviteBox'
 import FirstRunGuide from './FirstRunGuide'
 import ManageTab from './ManageTab'
+import ChatLogTab from './ChatLogTab'
 import BackupTab from './BackupTab'
 import FilesTab from './FilesTab'
 import DatapacksTab from './DatapacksTab'
@@ -90,7 +91,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
   const [progress, setProgress] = useState<Progress | null>(null)
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState('')
-  const [tab, setTab] = useStored<'console' | 'manage' | 'mods' | 'datapacks' | 'backup' | 'files'>(`tab:${folderPath}`, 'console') // 서버마다 마지막 탭을 기억한다
+  const [tab, setTab] = useStored<'console' | 'manage' | 'chat' | 'mods' | 'datapacks' | 'backup' | 'files'>(`tab:${folderPath}`, 'console') // 서버마다 마지막 탭을 기억한다
   const [modKind, setModKind] = useState<ModKindInfo | null>(null) // 바닐라면 null → 모드 탭 없음
   const consoleRef = useRef<HTMLPreElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
@@ -404,6 +405,9 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
         <button className={tab === 'manage' ? 'active' : ''} onClick={() => setTab('manage')}>
           관리
         </button>
+        <button className={tab === 'chat' ? 'active' : ''} onClick={() => setTab('chat')}>
+          채팅
+        </button>
         {modKind && (
           <button className={tab === 'mods' ? 'active' : ''} onClick={() => setTab('mods')}>
             {modKind.kind}
@@ -426,6 +430,8 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
         <BackupTab folderPath={folderPath} serverOn={on} />
       ) : tab === 'files' ? (
         <FilesTab folderPath={folderPath} serverOn={on} />
+      ) : tab === 'chat' ? (
+        <ChatLogTab folderPath={folderPath} />
       ) : tab === 'manage' ? (
         <ManageTab folderPath={folderPath} running={state === 'running'} />
       ) : tab === 'mods' && modKind ? (

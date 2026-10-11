@@ -22,7 +22,8 @@ export default function InviteBox({ folderPath }: { folderPath: string }) {
     setChecking(true)
     try {
       const r = await window.api.checkReachable(folderPath)
-      toast(r.message, r.ok ? 'success' : 'error')
+      if (r.ok) toast(r.message, 'success')
+      else setHelp(true) // 실패하면 빨간 표시로 바뀌고, 원인과 터널로 여는 법을 바로 보여 준다
     } catch (e) {
       toast(cleanError(e), 'error')
     } finally {
@@ -62,6 +63,17 @@ export default function InviteBox({ folderPath }: { folderPath: string }) {
         title="주소 복사"
       >
         <Copy size={14} />
+      </button>
+      {/* 방장이 바깥 주소로 들어가면 공유기에 따라 타임아웃이 나서, 이 컴퓨터용 주소를 따로 보여 준다 */}
+      <button
+        className="invite-self"
+        onClick={async () => {
+          await window.api.copyText('localhost')
+          toast('localhost를 복사했어요. 이 컴퓨터에서 접속할 때 쓰세요!')
+        }}
+        title={`이 컴퓨터에서 접속할 때는 이 주소를 쓰세요 (눌러서 복사) · ${lanHint}`}
+      >
+        내 접속: localhost
       </button>
       <button onClick={check} disabled={checking} title="밖에서 접속되는지 확인">
         {checking ? <span className="spinner" /> : <Radar size={14} />}
@@ -110,6 +122,7 @@ function InviteHelp({
         </ol>
         {linking && <p className="hint">{'브라우저에서 승인을 기다리고 있어요…'}</p>}
         {invite.lan.length > 0 && <p className="hint">{`같은 와이파이의 플레이어는 지금도 ${invite.lan.join(', ')}(으)로 접속할 수 있어요.`}</p>}
+        <p className="hint">이 컴퓨터에서는 지금도 localhost로 접속할 수 있어요.</p>
       </div>
       <div className="actions">
         <button className="btn primary" onClick={tunnel} disabled={linking}>

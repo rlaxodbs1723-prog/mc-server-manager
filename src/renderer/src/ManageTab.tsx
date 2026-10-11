@@ -1,8 +1,8 @@
-import { Ban, CloudLightning, Gamepad2, ListChecks, ShieldCheck, CloudRain, Crown, LogOut, Megaphone, Moon, Send, Sun, Sunrise } from 'lucide-react'
+import { Ban, Users, CloudLightning, Gamepad2, ListChecks, ShieldCheck, CloudRain, Crown, LogOut, Megaphone, Moon, Send, Sun, Sunrise } from 'lucide-react'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import type { Difficulty, GameMode, ManageAction, ManageInfo, PlayerRecord } from '../../shared-types'
 import GameRulesDialog from './GameRulesDialog'
-import PlayerDialog from './PlayerDialog'
+import PlayerDialog, { ago } from './PlayerDialog'
 import Select from './Select'
 import { Confirm, Empty, Loading, Modal, useToast } from './ui'
 import { cleanError } from './util'
@@ -57,6 +57,8 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
   const [showRules, setShowRules] = useState(false)
   const [history, setHistory] = useState<PlayerRecord[]>([])
   const [openPlayer, setOpenPlayer] = useState<string | null>(null)
+  const [findPlayer, setFindPlayer] = useState('')
+  const [showHistory, setShowHistory] = useState(false)
 
   const load = useCallback(() => {
     window.api.getPlayerHistory(folderPath).then(setHistory).catch(() => undefined)
@@ -118,7 +120,7 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
             {info.players.length === 0 ? (
               <Empty title={running ? '아직 아무도 없어요' : '서버가 꺼져 있어요'} hint={running ? '플레이어가 들어오면 여기에 보여요.' : undefined} />
             ) : (
-              <div className="player-list">
+              <div className="player-list scroll">
                 {info.players.map((p) => (
                   <div className="player" key={p.name}>
                     <img src={`https://mc-heads.net/avatar/${p.name}/40`} alt="" onError={(e) => (e.currentTarget.style.visibility = 'hidden')} />
@@ -155,7 +157,7 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
 
           {info.banned.length > 0 && (
             <Card title={`차단한 사람 ${info.banned.length}명`} icon={<Ban size={18} />}>
-              <div className="player-list">
+              <div className="player-list scroll">
                 {info.banned.map((name) => (
                   <div className="player" key={name}>
                     <img src={`https://mc-heads.net/avatar/${name}/40`} alt="" onError={(e) => (e.currentTarget.style.visibility = 'hidden')} />
@@ -169,6 +171,16 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
                 ))}
               </div>
             </Card>
+          )}
+
+          {history.length > 0 && (
+            <button className="btn block mode-button" onClick={() => setShowHistory(true)}>
+              <span className="mode-button-label">
+                <Users size={18} />
+                {`들어왔던 플레이어 ${history.length}명`}
+              </span>
+              <span className="mode-button-now">정보 · 인벤토리 보기</span>
+            </button>
           )}
 
           <Card title="화이트리스트" icon={<ShieldCheck size={18} />}>
@@ -238,6 +250,32 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
         </div>
       </div>
 
+      {showHistory && (
+        <Modal onClose={() => setShowHistory(false)}>
+          <div className="history">
+            <h2>{`들어왔던 플레이어 ${history.length}명`}</h2>
+            <input className="input player-find" value={findPlayer} onChange={(e) => setFindPlayer(e.target.value)} placeholder="이름 찾기" autoFocus />
+            <div className="history-grid">
+              {history
+                .filter((h) => h.name.toLowerCase().includes(findPlayer.trim().toLowerCase()))
+                .map((h) => (
+                  <button className="history-card" key={h.name} title={`${h.name} 정보 보기`} onClick={() => setOpenPlayer(h.name)}>
+                    <img src={`https://mc-heads.net/avatar/${h.name}/40`} alt="" onError={(e) => (e.currentTarget.style.visibility = 'hidden')} />
+                    <span className="history-text">
+                      <b>{h.name}</b>
+                      <span className={h.online ? 'history-on' : 'hint'}>{h.online ? '접속 중' : ago(h.lastSeen)}</span>
+                    </span>
+                  </button>
+                ))}
+            </div>
+            <div className="actions">
+              <button className="btn" onClick={() => setShowHistory(false)}>
+                닫기
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
       {showRules && <GameRulesDialog folderPath={folderPath} onClose={() => setShowRules(false)} />}
       {pickMode && (
         <Modal onClose={() => setPickMode(false)}>
@@ -277,8 +315,8 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
       )}
       {openPlayer && (
         <PlayerDialog
-          record={history.find((h) => h.name === openPlayer) ?? { name: openPlayer, online: true, firstSeen: Date.now(), lastSeen: Date.now(), joins: 1, playMs: 0 }}
-          others={info.players.map((p) => p.name).filter((n) => n !== openPlayer)}
+          folderPath={folderPath}
+          record={history.find((h) => h.name === openPlayer) ?? { name: openPlayer, online: info.players.some((p) => p.name === openPlayer), firstSeen: Date.now(), lastSeen: Date.now(), joins: 1, playMs: 0 }}
           running={running}
           act={act}
           onClose={() => setOpenPlayer(null)}

@@ -990,3 +990,81 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .post-detail { display: grid; gap: 8px; max-height: min(560px, calc(100vh - 220px)); overflow: auto; }
 .post-detail h2 { margin: 0; word-break: break-all; }
 .post-detail p { white-space: pre-wrap; word-break: break-word; color: var(--text-2); line-height: 1.7; }
+
+/* ---------- 플레이어 정보 · 인벤토리 ---------- */
+.modal:has(> .pd) { width: min(1120px, calc(100vw - 48px)); }
+.pd-cols { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: start; margin-bottom: 8px; }
+.pd-left { min-width: 0; }
+.pd-right { min-width: 0; }
+.pd-line { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pd-heal { flex: 0 0 auto; white-space: nowrap; }
+@media (max-width: 1000px) { .pd-cols { grid-template-columns: 1fr; } }
+.pd-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }
+.pd-info > div { background: var(--surface-2); border-radius: var(--r-md); padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pd-info > div > span:first-child { font-size: 12px; color: var(--text-3); }
+.pd-info b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pd-bar { font-size: 13px; letter-spacing: -1px; white-space: nowrap; }
+.pd-xp { height: 5px; background: var(--surface-3, rgba(127,127,127,.25)); border-radius: 3px; overflow: hidden; }
+.pd-xp > span { display: block; height: 100%; background: #80ff20; }
+.pd-inv-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.pd-inv-head .seg { flex: 0 0 auto; }
+
+.inv-panel { --slot: 54px; /* 게임 GUI 3배: 칸 18 -> 54, 아이템 16 -> 48 */ background: #c6c6c6; border: 3px solid; border-color: #fff #555 #555 #fff; border-radius: 6px; padding: 10px; width: max-content; max-width: 100%; margin: 0 auto; }
+.inv-top { display: flex; gap: 8px; margin-bottom: 10px; align-items: flex-end; }
+.inv-col { display: grid; gap: 0; }
+.inv-offhand { align-self: flex-end; }
+.inv-grid { display: grid; grid-template-columns: repeat(9, var(--slot)); }
+.inv-grid.hotbar { margin-top: 8px; }
+.inv-slot { position: relative; width: var(--slot); height: var(--slot); background: #8b8b8b; border: 3px solid; border-color: #373737 #fff #fff #373737; display: grid; place-items: center; }
+.inv-slot:hover { background: #a5a5a5; }
+.inv-icon { width: 48px; height: 48px; image-rendering: pixelated; display: block; }
+.inv-flat { position: relative; }
+.inv-flat img { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+.inv-missing { display: grid; place-items: center; background: #6b6b6b; color: #fff; font-weight: 700; border-radius: 4px; font-size: 20px; }
+.inv-slot.enchanted .inv-icon { filter: drop-shadow(0 0 3px #b56cff); }
+.inv-count { position: absolute; right: 1px; bottom: -1px; color: #fff; font-weight: 700; font-size: 18px; text-shadow: 2px 2px 0 #3f3f3f; pointer-events: none; }
+.inv-tip { position: fixed; z-index: 2000; pointer-events: none; background: rgba(16, 0, 16, .94); border: 2px solid #2a0a5e; border-radius: 4px; padding: 6px 9px; display: flex; flex-direction: column; gap: 2px; color: #fff; font-size: 13px; max-width: 280px; }
+.inv-tip b.ench { color: #55ffff; }
+.inv-tip b.custom { color: #ffffff; font-style: italic; }
+.inv-tip .ench-line { color: #aaaaaa; }
+.inv-tip .dim { color: #777; font-size: 12px; }
+
+/* 들어왔던 플레이어: 넓은 창에 카드로 */
+.modal:has(> .history) { width: min(820px, calc(100vw - 48px)); }
+.history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; max-height: min(60vh, 560px); overflow-y: auto; }
+.history-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface-2); border: 0; border-radius: var(--r-md); cursor: pointer; color: inherit; text-align: left; min-width: 0; }
+.history-card:hover { background: var(--surface-3, rgba(127,127,127,.2)); }
+.history-card img { width: 36px; height: 36px; border-radius: 6px; image-rendering: pixelated; flex: 0 0 auto; }
+.history-text { display: flex; flex-direction: column; min-width: 0; }
+.history-text b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.history-on { color: #22c55e; font-size: 13px; }
+
+/* ---------- 채팅 기록 ---------- */
+.chatlog { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.chatlog-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.chatlog-date { width: 150px; }
+.chatlog-search { flex: 1; min-width: 160px; position: relative; display: flex; align-items: center; }
+.chatlog-search svg { position: absolute; left: 12px; color: var(--text-3); }
+.chatlog-search .input { padding-left: 34px; width: 100%; }
+.chatlog-list { flex: 1; min-height: 240px; overflow-y: auto; background: var(--surface-2); border-radius: var(--r-md); padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+.chat-row { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 8px; margin-top: 8px; }
+.chat-row.grouped { margin-top: 0; }
+.chat-row.grouped .chat-body { grid-column: 2; }
+.chat-avatar { width: 32px; height: 32px; border-radius: 6px; image-rendering: pixelated; }
+.chat-avatar.say { display: grid; place-items: center; background: var(--surface); font-size: 16px; }
+.chat-name { font-size: 13px; display: block; margin-bottom: 3px; }
+.chat-line { display: flex; align-items: flex-end; gap: 6px; }
+.chat-bubble { background: var(--surface); padding: 6px 10px; border-radius: 10px; font-size: 14px; white-space: pre-wrap; word-break: break-word; max-width: 100%; }
+.chat-bubble.say { background: rgba(59, 130, 246, .18); }
+.chat-time { font-size: 11px; color: var(--text-3); white-space: nowrap; }
+.chat-event { display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-3); margin: 6px 0; text-align: center; }
+.chat-event.death > span:first-child { color: #ef4444; }
+.chat-event.advancement > span:first-child { color: #22c55e; }
+/* 사람이 많으면 목록 안에서 스크롤 (약 8명 높이) */
+.player-list.scroll { max-height: 420px; overflow-y: auto; }
+.player-find { width: 100%; margin-bottom: 10px; }
+.chatlog-wrap { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.chatlog-bottom { position: absolute; right: 16px; bottom: 16px; display: inline-flex; align-items: center; gap: 6px; box-shadow: var(--shadow); }
+.chatlog-keep { width: 170px; }
+.inv-count-px { position: absolute; right: -3px; bottom: -3px; image-rendering: pixelated; pointer-events: none; }
+.invite-inline button.invite-self { width: auto; padding: 0 8px; margin-left: 4px; font-size: 12px; color: var(--text-3); background: var(--surface-2); white-space: nowrap; }

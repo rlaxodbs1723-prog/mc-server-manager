@@ -54,6 +54,7 @@ export interface ServerInfo {
   defaultsVersion?: number // 앱 기본 설정을 몇 번째까지 적용했는지
   javaArgs?: string // 사용자가 더 넣은 자바 옵션 (예: -XX:+UseZGC)
   automation?: Partial<ServerAutomation>
+  logKeepDays?: number // 며칠 지난 로그를 지울지 (없으면 30일, 0이면 지우지 않음)
   folderPath: string
   createdAt: string
 }
@@ -131,7 +132,59 @@ export type ManageAction =
   | { type: 'gamemode'; name: string; value: GameMode }
   | { type: 'tp'; name: string; target: string } // name을 target 옆으로
   | { type: 'give'; name: string; item: string; count: number }
-  | { type: 'heal'; name: string } // 체력·배고픔 채우기
+  | { type: 'heal'; name: string; what?: 'health' | 'food' } // 체력·배고픔 채우기 (what이 없으면 둘 다)
+
+// 블록 모델의 상자 하나 (0~16 좌표). 면마다 그림 이름과 그림에서 쓸 부분(uv)
+export interface ModelBox {
+  from: number[]
+  to: number[]
+  faces: Partial<Record<'up' | 'down' | 'north' | 'south' | 'east' | 'west', { tex: string; uv?: number[] }>>
+}
+// 게임과 같은 아이템 그림: 평평한 그림(겹칠 수 있음) 또는 블록 모델(상자 여러 개)
+export type ItemIcon =
+  | { kind: 'flat'; layers: string[] }
+  | { kind: 'model'; textures: Record<string, string>; boxes: ModelBox[]; rotY: number }
+
+// 인벤토리 한 칸. slot: 0~8 핫바, 9~35 가방, 100~103 신발~투구, -106 왼손 (엔더 상자는 0~26)
+export interface InvItem {
+  id: string
+  slot: number
+  count: number
+  name: string
+  customName?: string
+  enchants: string[]
+  damage: number
+  icon: ItemIcon | null
+}
+
+export interface PlayerData {
+  live: boolean // 켜진 서버에서 지금 바로 읽은 정보 (아니면 저장된 파일)
+  health: number
+  food: number
+  level: number
+  xpProgress: number
+  gameMode: number // 0 서바이벌, 1 크리에이티브, 2 모험, 3 관전
+  dimension: string
+  pos: number[] | null
+  deathDimension: string | null
+  deathPos: number[] | null
+  savedAt: number
+  inventory: InvItem[]
+  ender: InvItem[]
+  digits: string | null // 게임 글꼴 숫자 그림 (개수 표시용)
+}
+
+// 채팅 기록: 로그 파일 하나와 그 안의 일들
+export interface ChatLogList {
+  keepDays: number // 며칠 지난 로그를 지울지 (0이면 지우지 않음)
+  logs: { date: string; size: number }[] // 날짜별 (같은 날 여러 파일은 합침), 최근부터
+}
+export interface ChatEvent {
+  time: string // HH:MM:SS
+  kind: 'chat' | 'join' | 'leave' | 'death' | 'advancement' | 'say'
+  name: string
+  text: string
+}
 
 export interface PlayerRecord {
   name: string
@@ -415,6 +468,12 @@ export interface Api {
   getManageInfo: (folderPath: string) => Promise<ManageInfo>
   // 이 서버에 들어왔던 모든 사람의 기록
   getPlayerHistory: (folderPath: string) => Promise<PlayerRecord[]>
+  // 월드에 저장된 플레이어 정보 (체력, 위치, 인벤토리 등). 파일이 없으면 null
+  getPlayerData: (folderPath: string, name: string) => Promise<PlayerData | null>
+  // logs 폴더의 로그 파일 목록과, 한 파일의 채팅·접속·사망 기록
+  listChatLogs: (folderPath: string) => Promise<ChatLogList>
+  readChatLog: (folderPath: string, date: string) => Promise<ChatEvent[]>
+  setLogKeepDays: (folderPath: string, days: number) => Promise<void>
   manage: (folderPath: string, action: ManageAction) => Promise<void>
   // 켜진 서버에 물어서 게임 규칙 목록과 현재 값을 가져온다
   listGameRules: (folderPath: string) => Promise<GameRule[]>

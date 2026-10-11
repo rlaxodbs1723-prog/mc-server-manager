@@ -136,13 +136,16 @@ export async function checkReachable(folderPath: string): Promise<{ ok: boolean;
     })
     if (!res.ok) throw new Error()
     const data = (await res.json()) as { online?: boolean }
-    return data.online
-      ? { ok: true, message: '밖에서도 접속돼요! 플레이어에게 주소를 보내 주세요.' }
-      : {
-          ok: false,
-          message:
-            '밖에서 접속되지 않아요. 윈도우 방화벽이 Java를 막고 있거나, 공유기가 두 개(공유기 뒤에 또 공유기)이거나, 통신사가 포트를 막았을 수 있어요.'
-        }
+    if (data.online) return { ok: true, message: '밖에서도 접속돼요! 플레이어에게 주소를 보내 주세요.' }
+    const message =
+      '밖에서 접속되지 않아요. 윈도우 방화벽이 Java를 막고 있거나, 공유기가 두 개(공유기 뒤에 또 공유기)이거나, 통신사가 포트를 막았을 수 있어요.'
+    // 공유기 포트는 열렸는데 실제로는 막힌 경우: 빨간 표시로 바꿔서 터널로 열 수 있게 한다 (터널을 연결해 둔 사람은 바로 터널로)
+    if (!invite.tunnel && getInvite(folderPath).state === 'open') {
+      const port = serverPort(folderPath)
+      if (tunnelLinked()) void openViaTunnel(folderPath, port, invite.lan, message)
+      else set(folderPath, { state: 'failed', message, lan: invite.lan, port })
+    }
+    return { ok: false, message }
   } catch {
     throw new Error('확인 서비스에 연결하지 못했어요. 잠시 뒤에 다시 해 보세요.')
   } finally {

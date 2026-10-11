@@ -21,6 +21,8 @@ import { browseModpacks, cleanModpackTemp, gameVersions, modpackVersions, prepar
 import * as datapacks from './datapacks'
 import { getStats, stopAllSamplers } from './stats'
 import { flushPlayerLog, getPlayerHistory } from './playerlog'
+import { getPlayerData } from './playerdata'
+import { cleanOldLogs, listChatLogs, readChatLog, setLogKeepDays } from './chatlog'
 import { importWorld, listSaves, openDroppedWorld, pickWorldZip, prepareMap } from './worldimport'
 import { curseForgeKeySource, hasCurseForgeKey, mapFiles, removeCurseForgeKey, searchMaps, setCurseForgeKey } from './curseforge'
 import { applyLoginItem, getAppSettings, setAppSettings, startedHidden } from './appsettings'
@@ -326,6 +328,11 @@ async function startWithChecks(target: string, report: (p: Progress) => void): P
   // 버전을 바꾼 뒤에 기본 모드가 예전 버전용으로 남아 있으면 새 버전에 맞춘다 (한 번만)
   const info = readServerInfo(target)
   if ((info.software === 'fabric' || info.software === 'quilt') && info.baseModsFor !== info.mcVersion) await mods.refreshBaseMods(target).catch(() => null)
+  try {
+    cleanOldLogs(target) // 설정한 날짜가 지난 로그를 켤 때마다 정리한다
+  } catch {
+    // 못 지워도 켜는 데는 상관없다
+  }
   await startServerAt(target, report)
   trackUsage(`start-${info.software ?? 'vanilla'}`)
 }
@@ -344,6 +351,10 @@ ipcMain.handle('useTunnel', (_event, folderPath: string) => useTunnel(checkServe
 ipcMain.handle('getStats', (_event, folderPath: string) => getStats(checkServerFolder(folderPath)))
 ipcMain.handle('getManageInfo', (_event, folderPath: string) => getManageInfo(checkServerFolder(folderPath)))
 ipcMain.handle('getPlayerHistory', (_event, folderPath: string) => getPlayerHistory(checkServerFolder(folderPath)))
+ipcMain.handle('getPlayerData', (_event, folderPath: string, name: string) => getPlayerData(checkServerFolder(folderPath), String(name)))
+ipcMain.handle('listChatLogs', (_event, folderPath: string) => listChatLogs(checkServerFolder(folderPath)))
+ipcMain.handle('readChatLog', (_event, folderPath: string, date: string) => readChatLog(checkServerFolder(folderPath), String(date)))
+ipcMain.handle('setLogKeepDays', (_event, folderPath: string, days: number) => setLogKeepDays(checkServerFolder(folderPath), Number(days)))
 ipcMain.handle('manage', (_event, folderPath: string, action: ManageAction) =>
   runAction(checkServerFolder(folderPath), action)
 )
