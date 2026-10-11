@@ -14,6 +14,26 @@ export type OffReason = 'client' | 'clientMixin'
 
 const META = ['fabric.mod.json', 'quilt.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml', 'META-INF/MANIFEST.MF', 'mcmod.info']
 
+// 모드 정보 파일은 게임이 느슨하게 읽어서, 글자 안에 줄바꿈이 그대로 든 파일도 있다 (JSON.parse는 거부함). 글자 안의 제어 문자를 바꿔서 읽는다
+export function parseLenient(text: string): any {
+  try {
+    return JSON.parse(text)
+  } catch {
+    const esc: Record<string, string> = { '\n': '\\n', '\r': '\\r', '\t': '\\t' }
+    let out = ''
+    let inStr = false
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i]
+      if (inStr && ch === '\\') out += ch + (text[++i] ?? '')
+      else {
+        if (ch === '"') inStr = !inStr
+        out += inStr && ch < ' ' ? (esc[ch] ?? '') : ch
+      }
+    }
+    return JSON.parse(out)
+  }
+}
+
 // jar 안에서 원하는 파일들만 읽는다 (이름 -> 내용). jar 안에 든 jar는 Buffer로 넘긴다
 export function readEntries(jar: string | Buffer, want: (name: string) => boolean): Promise<Map<string, Buffer>> {
   return new Promise((resolve) => {
@@ -59,7 +79,7 @@ function serverMixinConfigs(m: Map<string, string>): string[] {
   const out: string[] = []
   for (const name of ['fabric.mod.json', 'quilt.mod.json']) {
     try {
-      const j = JSON.parse(m.get(name) ?? 'null')
+      const j = parseLenient(m.get(name) ?? 'null')
       const list = name === 'quilt.mod.json' ? j?.mixin : j?.mixins
       for (const e of Array.isArray(list) ? list : list ? [list] : []) {
         if (typeof e === 'string') out.push(e)
@@ -170,7 +190,7 @@ async function hasClientMixin(jar: string, meta: Map<string, string>): Promise<b
   const classes: string[] = []
   for (const name of configs) {
     try {
-      const c = JSON.parse(text(files, name))
+      const c = parseLenient(text(files, name))
       // plugin이 있으면 mixin을 알아서 거를 수 있어서, 실패해도 멈추지 않으면(required 아님) 괜찮아서 뺀다
       if (c.plugin || c.required !== true || typeof c.package !== 'string') continue
       for (const m of Array.isArray(c.mixins) ? c.mixins : []) if (typeof m === 'string') classes.push(`${c.package}.${m}`.replace(/\./g, '/') + '.class')
@@ -195,9 +215,9 @@ const localCache = new Map<string, { key: string; info: LocalInfo }>()
 function modIdOf(meta: Map<string, string>): string | null {
   try {
     const f = meta.get('fabric.mod.json')
-    if (f) return JSON.parse(f).id ?? null
+    if (f) return parseLenient(f).id ?? null
     const q = meta.get('quilt.mod.json')
-    if (q) return JSON.parse(q).quilt_loader?.id ?? null
+    if (q) return parseLenient(q).quilt_loader?.id ?? null
   } catch {
     // 읽을 수 없으면 아래 toml로
   }

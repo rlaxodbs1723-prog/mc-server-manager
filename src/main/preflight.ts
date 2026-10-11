@@ -6,7 +6,7 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import type { PreflightResult } from '../shared-types'
-import { readEntries } from './clientjar'
+import { parseLenient, readEntries } from './clientjar'
 import { scanForOff } from './mods'
 import { readServerInfo } from './servers'
 
@@ -21,7 +21,7 @@ interface ModMeta {
 }
 
 function fromFabric(text: string): Omit<ModMeta, 'name'> & { name?: string } {
-  const j = JSON.parse(text)
+  const j = parseLenient(text)
   const q = j.quilt_loader
   if (q) {
     const deps = (Array.isArray(q.depends) ? q.depends : []).flatMap((d: unknown) =>
