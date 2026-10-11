@@ -138,7 +138,7 @@ function PlayerSaved(props: { folderPath: string; name: string; live: boolean; h
           <span className="hint">{`${new Date(data.savedAt).toLocaleString()} 저장`}</span>
         )}
       </div>
-      {tab === 'inv' ? <PlayerInventory items={data.inventory} digits={data.digits} /> : <EnderChest items={data.ender} digits={data.digits} />}
+      {tab === 'inv' ? <PlayerInventory items={data.inventory} digits={data.digits} glint={data.glint} /> : <EnderChest items={data.ender} digits={data.digits} glint={data.glint} />}
     </>
   )
 }

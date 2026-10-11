@@ -534,3 +534,17 @@ export function digitFont(mcVersion: string): Promise<string | null> {
   }
   return digitCache.get(mcVersion)!
 }
+
+// 인챈트 반짝임 그림 (게임과 같은 보라색 무늬가 흐르게 하는 데 쓴다)
+const glintCache = new Map<string, Promise<string | null>>()
+export function glintTexture(mcVersion: string): Promise<string | null> {
+  if (!glintCache.has(mcVersion)) {
+    const p = (async () => {
+      const jar = await jarOf(await clientJar(mcVersion))
+      const buf = (await jar.read('assets/minecraft/textures/misc/enchanted_glint_item.png')) ?? (await jar.read('assets/minecraft/textures/misc/enchanted_item_glint.png'))
+      return buf ? nativeImage.createFromBuffer(buf).toDataURL() : null
+    })().catch(() => null)
+    glintCache.set(mcVersion, p)
+  }
+  return glintCache.get(mcVersion)!
+}

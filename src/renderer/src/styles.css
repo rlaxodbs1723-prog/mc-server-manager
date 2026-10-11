@@ -1021,7 +1021,11 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .inv-flat { position: relative; }
 .inv-flat img { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
 .inv-missing { display: grid; place-items: center; background: #6b6b6b; color: #fff; font-weight: 700; border-radius: 4px; font-size: 20px; }
-.inv-slot.enchanted .inv-icon { filter: drop-shadow(0 0 3px #b56cff); }
+.inv-glint-wrap { position: relative; display: block; }
+/* 인챈트 반짝임: 게임의 반짝임 그림을 아이템 모양 안에서 비스듬히 흘린다 */
+.inv-glint { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: plus-lighter; opacity: 0.55; background-size: 128px 128px; image-rendering: pixelated;
+  -webkit-mask-size: 100% 100%; mask-size: 100% 100%; animation: inv-glint 4s linear infinite; }
+@keyframes inv-glint { from { background-position: 0 0; } to { background-position: 128px 128px; } }
 .inv-count { position: absolute; right: 1px; bottom: -1px; color: #fff; font-weight: 700; font-size: 18px; text-shadow: 2px 2px 0 #3f3f3f; pointer-events: none; }
 .inv-tip { position: fixed; z-index: 2000; pointer-events: none; background: rgba(16, 0, 16, .94); border: 2px solid #2a0a5e; border-radius: 4px; padding: 6px 9px; display: flex; flex-direction: column; gap: 2px; color: #fff; font-size: 13px; max-width: 280px; }
 .inv-tip b.ench { color: #55ffff; }

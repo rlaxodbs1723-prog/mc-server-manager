@@ -154,6 +154,7 @@ export interface InvItem {
   customName?: string
   enchants: string[]
   damage: number
+  glint: boolean // 인챈트처럼 반짝이는지
   icon: ItemIcon | null
 }
 
@@ -172,6 +173,7 @@ export interface PlayerData {
   inventory: InvItem[]
   ender: InvItem[]
   digits: string | null // 게임 글꼴 숫자 그림 (개수 표시용)
+  glint: string | null // 인챈트 반짝임 그림
 }
 
 // 채팅 기록: 로그 파일 하나와 그 안의 일들

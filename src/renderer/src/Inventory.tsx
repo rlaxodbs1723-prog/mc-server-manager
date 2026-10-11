@@ -65,7 +65,7 @@ function defaultUv(d: Dir, [x1, y1, z1]: number[], [x2, y2, z2]: number[]): numb
   }
 }
 
-function ModelIcon({ textures, boxes, rotY }: { textures: Record<string, string>; boxes: ModelBox[]; rotY: number }) {
+function ModelIcon({ textures, boxes, rotY, onDrawn }: { textures: Record<string, string>; boxes: ModelBox[]; rotY: number; onDrawn?: (url: string) => void }) {
   const ref = useRef<HTMLCanvasElement>(null)
   const px = Math.round(48 * (window.devicePixelRatio || 1)) // 화면에 보이는 크기(48) x 화면 배율
   const HI = px / 64
@@ -171,19 +171,24 @@ function ModelIcon({ textures, boxes, rotY }: { textures: Record<string, string>
       }
       faces.sort((x, y) => x.depth - y.depth).forEach((f) => f.draw())
       c.setTransform(1, 0, 0, 1, 0, 0)
+      onDrawn?.(c.canvas.toDataURL())
+      c.setTransform(1, 0, 0, 1, 0, 0)
       c.globalCompositeOperation = 'source-over'
     })
     return () => {
       alive = false
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [textures, boxes, rotY, HI])
   return <canvas ref={ref} width={px} height={px} className="inv-icon" />
 }
 
-export function ItemIconView({ icon, name }: { icon: ItemIcon | null; name: string }) {
-  if (icon?.kind === 'model') return <ModelIcon {...icon} />
-  if (icon?.kind === 'flat')
-    return (
+export function ItemIconView({ icon, name, glint }: { icon: ItemIcon | null; name: string; glint?: string | null }) {
+  const [drawn, setDrawn] = useState<string | null>(null)
+  let view
+  if (icon?.kind === 'model') view = <ModelIcon {...icon} onDrawn={glint ? setDrawn : undefined} />
+  else if (icon?.kind === 'flat')
+    view = (
       <span className="inv-icon inv-flat">
         {icon.layers.map((src, i) => (
           <img key={i} src={src} alt="" draggable={false} />
@@ -191,7 +196,16 @@ export function ItemIconView({ icon, name }: { icon: ItemIcon | null; name: stri
       </span>
     )
   // 그림을 못 찾은 아이템 (일부 모드 아이템 등): 이름 첫 글자
-  return <span className="inv-icon inv-missing">{name.slice(0, 1).toUpperCase()}</span>
+  else view = <span className="inv-icon inv-missing">{name.slice(0, 1).toUpperCase()}</span>
+  if (!glint) return view
+  // 게임처럼 아이템 모양 안에서만 보라색 반짝임이 흐른다
+  const mask = icon?.kind === 'flat' ? icon.layers.map((u) => `url(${u})`).join(', ') : drawn ? `url(${drawn})` : null
+  return (
+    <span className="inv-glint-wrap">
+      {view}
+      {mask && <span className="inv-glint" style={{ backgroundImage: `url(${glint})`, maskImage: mask, WebkitMaskImage: mask }} />}
+    </span>
+  )
 }
 
 // 아이템 개수: 게임 글꼴 숫자 그림으로 그림자까지 똑같이 그린다 (그림이 없으면 글자로)
@@ -221,12 +235,12 @@ function Count({ n, digits }: { n: number; digits: string | null }) {
   return <canvas ref={ref} width={w} height={9} className="inv-count-px" style={{ width: w * 3, height: 27 }} />
 }
 
-function Slot({ item, digits, onHover }: { item?: InvItem; digits: string | null; onHover: (i: InvItem | null, e?: React.MouseEvent) => void }) {
+function Slot({ item, digits, glint, onHover }: { item?: InvItem; digits: string | null; glint: string | null; onHover: (i: InvItem | null, e?: React.MouseEvent) => void }) {
   return (
-    <div className={`inv-slot ${item?.enchants.length ? 'enchanted' : ''}`} onMouseMove={(e) => item && onHover(item, e)} onMouseLeave={() => onHover(null)}>
+    <div className="inv-slot" onMouseMove={(e) => item && onHover(item, e)} onMouseLeave={() => onHover(null)}>
       {item && (
         <>
-          <ItemIconView icon={item.icon} name={item.name} />
+          <ItemIconView icon={item.icon} name={item.name} glint={item.glint ? glint : null} />
           {item.count > 1 && <Count n={item.count} digits={digits} />}
         </>
       )}
@@ -257,7 +271,7 @@ function useTooltip() {
 }
 
 // 게임의 플레이어 인벤토리: 갑옷 4칸 + 왼손, 가방 3줄, 핫바 1줄
-export function PlayerInventory({ items, digits }: { items: InvItem[]; digits: string | null }) {
+export function PlayerInventory({ items, digits, glint }: { items: InvItem[]; digits: string | null; glint: string | null }) {
   const at = (slot: number) => items.find((i) => i.slot === slot)
   const { onHover, view } = useTooltip()
   return (
@@ -265,21 +279,21 @@ export function PlayerInventory({ items, digits }: { items: InvItem[]; digits: s
       <div className="inv-top">
         <div className="inv-col">
           {[103, 102, 101, 100].map((s) => (
-            <Slot key={s} item={at(s)} digits={digits} onHover={onHover} />
+            <Slot key={s} item={at(s)} digits={digits} glint={glint} onHover={onHover} />
           ))}
         </div>
         <div className="inv-col inv-offhand">
-          <Slot item={at(-106)} digits={digits} onHover={onHover} />
+          <Slot item={at(-106)} digits={digits} glint={glint} onHover={onHover} />
         </div>
       </div>
       <div className="inv-grid">
         {Array.from({ length: 27 }, (_, i) => (
-          <Slot key={i} item={at(9 + i)} digits={digits} onHover={onHover} />
+          <Slot key={i} item={at(9 + i)} digits={digits} glint={glint} onHover={onHover} />
         ))}
       </div>
       <div className="inv-grid hotbar">
         {Array.from({ length: 9 }, (_, i) => (
-          <Slot key={i} item={at(i)} digits={digits} onHover={onHover} />
+          <Slot key={i} item={at(i)} digits={digits} glint={glint} onHover={onHover} />
         ))}
       </div>
       {view}
@@ -288,13 +302,13 @@ export function PlayerInventory({ items, digits }: { items: InvItem[]; digits: s
 }
 
 // 엔더 상자: 3줄
-export function EnderChest({ items, digits }: { items: InvItem[]; digits: string | null }) {
+export function EnderChest({ items, digits, glint }: { items: InvItem[]; digits: string | null; glint: string | null }) {
   const { onHover, view } = useTooltip()
   return (
     <div className="inv-panel">
       <div className="inv-grid">
         {Array.from({ length: 27 }, (_, i) => (
-          <Slot key={i} item={items.find((it) => it.slot === i)} digits={digits} onHover={onHover} />
+          <Slot key={i} item={items.find((it) => it.slot === i)} digits={digits} glint={glint} onHover={onHover} />
         ))}
       </div>
       {view}

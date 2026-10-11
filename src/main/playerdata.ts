@@ -4,7 +4,7 @@ import crypto from 'crypto'
 import fs from 'fs'
 import path from 'path'
 import type { InvItem, PlayerData } from '../shared-types'
-import { digitFont, getItemIcons, getItemLang } from './gameassets'
+import { digitFont, getItemIcons, getItemLang, glintTexture } from './gameassets'
 import { parseNbt, type Tag } from './nbt'
 import { readProperties } from './properties'
 import { getPlayers, getState, quietQuery } from './runner'
@@ -71,6 +71,11 @@ function textOf(v: Plain | undefined): string | undefined {
   return String(v)
 }
 
+// 인챈트가 없어도 원래 반짝이는 아이템
+const GLINT_ITEMS = new Set(
+  ['enchanted_golden_apple', 'enchanted_book', 'nether_star', 'experience_bottle', 'end_crystal', 'written_book', 'debug_stick'].map((n) => `minecraft:${n}`)
+)
+
 interface RawItem {
   id: string
   count: number
@@ -78,6 +83,7 @@ interface RawItem {
   name?: string
   ench: [string, number][]
   damage: number
+  glint: boolean
 }
 
 function rawItem(v: Plain, slot?: number): RawItem | null {
@@ -102,7 +108,9 @@ function rawItem(v: Plain, slot?: number): RawItem | null {
     slot: slot ?? num(o.Slot, -1),
     name: textOf(comp['minecraft:custom_name']) ?? textOf(obj(tag.display).Name),
     ench,
-    damage: num(comp['minecraft:damage'] ?? tag.Damage)
+    damage: num(comp['minecraft:damage'] ?? tag.Damage),
+    // 반짝임: 따로 정했으면 그대로, 아니면 인챈트가 있거나 원래 반짝이는 아이템
+    glint: typeof comp['minecraft:enchantment_glint_override'] === 'number' ? comp['minecraft:enchantment_glint_override'] !== 0 : ench.length > 0 || GLINT_ITEMS.has(id)
   }
 }
 
@@ -233,10 +241,11 @@ export async function getPlayerData(folderPath: string, name: string): Promise<P
   const { mcVersion } = readServerInfo(folderPath)
   const all = [...inv, ...ender]
   const ids = all.map((i) => i.id)
-  const [icons, lang, digits] = await Promise.all([
+  const [icons, lang, digits, glint] = await Promise.all([
     getItemIcons(folderPath, mcVersion, ids).catch(() => ({}) as Record<string, null>),
     getItemLang(folderPath, mcVersion, ids.map((i) => i.split(':')[0])).catch(() => ({}) as Record<string, string>),
-    digitFont(mcVersion)
+    digitFont(mcVersion),
+    glintTexture(mcVersion)
   ])
   const itemName = (id: string): string => {
     const [ns, p] = id.split(':')
@@ -255,6 +264,7 @@ export async function getPlayerData(folderPath: string, name: string): Promise<P
     customName: i.name,
     enchants: i.ench.map(([e, lv]) => `${enchName(e)} ${roman(lv)}`),
     damage: i.damage,
+    glint: i.glint,
     icon: icons[i.id] ?? null
   })
 
@@ -279,6 +289,7 @@ export async function getPlayerData(folderPath: string, name: string): Promise<P
     savedAt: file ? fs.statSync(file).mtimeMs : Date.now(),
     inventory: inv.map(done),
     ender: ender.map(done),
-    digits
+    digits,
+    glint
   }
 }
