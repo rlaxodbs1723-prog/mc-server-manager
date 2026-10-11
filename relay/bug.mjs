@@ -30,7 +30,7 @@ function same(a, b) {
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } })
 
-async function send(req, hook) {
+async function send(req, hook, role) {
   const type = req.headers.get('content-type') || ''
   let body
   if (type.startsWith('application/json')) {
@@ -41,7 +41,13 @@ async function send(req, hook) {
       return new Response('bad json', { status: 400 })
     }
     if (!Array.isArray(msg?.embeds) || msg.embeds.length !== 1) return new Response('bad report', { status: 400 })
-    body = JSON.stringify({ username: NAME, allowed_mentions: NO_MENTIONS, embeds: msg.embeds })
+    // 글 제보에만 "관리자" 역할을 부른다 (사용자가 쓴 글 안의 멘션은 계속 막고, 역할 번호는 환경 변수에서만 가져온다)
+    const ping = role && /^[0-9]{5,25}$/.test(role) ? role : null
+    body = JSON.stringify({
+      username: NAME,
+      ...(ping ? { content: `<@&${ping}>`, allowed_mentions: { parse: [], roles: [ping] } } : { allowed_mentions: NO_MENTIONS }),
+      embeds: msg.embeds
+    })
   } else if (type.startsWith('multipart/form-data')) {
     const form = await req.formData()
     const file = form.get('files[0]')
@@ -101,5 +107,5 @@ export async function handleBug(req, env) {
   const url = new URL(req.url)
   if (url.pathname.endsWith('/replies')) return req.method === 'GET' ? replies(url, hook, env.DISCORD_BOT_TOKEN) : new Response('method not allowed', { status: 405 })
   if (req.method !== 'POST') return new Response('method not allowed', { status: 405 })
-  return send(req, hook)
+  return send(req, hook, env.BUG_PING_ROLE)
 }
