@@ -283,7 +283,7 @@ async function chestIcon(jars: Jar[], ref: string): Promise<ItemIcon | null> {
   }
   // 상자 모양(1~15칸, 높이 14) 하나로 그린다
   const side = stack(crop(0, 14, 14, 5), crop(0, 33, 14, 10))
-  const tex = { top: crop(14, 0, 14, 14).toDataURL(), front: stack(crop(14, 14, 14, 5), crop(14, 33, 14, 10)), side }
+  const tex = { top: crop(28, 0, 14, 14).toDataURL(), front: stack(crop(14, 14, 14, 5), crop(14, 33, 14, 10)), side, lockTop: crop(2, 0, 2, 1).toDataURL(), lockFront: crop(1, 1, 2, 4).toDataURL(), lockSide: crop(0, 1, 1, 4).toDataURL() }
   const full = [0, 0, 16, 16]
   return {
     kind: 'model',
@@ -293,7 +293,14 @@ async function chestIcon(jars: Jar[], ref: string): Promise<ItemIcon | null> {
       {
         from: [1, 0, 1],
         to: [15, 14, 15],
-        faces: { up: { tex: 'top', uv: full }, north: { tex: 'front', uv: full }, east: { tex: 'side', uv: full }, south: { tex: 'side', uv: full }, west: { tex: 'side', uv: full } }
+        // 게임 인벤토리처럼 걸쇠가 있는 앞면이 왼쪽 앞(동쪽)을 본다
+        faces: { up: { tex: 'top', uv: full }, east: { tex: 'front', uv: full }, north: { tex: 'side', uv: full }, south: { tex: 'side', uv: full }, west: { tex: 'side', uv: full } }
+      },
+      // 앞쪽 걸쇠 (2x4x1)
+      {
+        from: [15, 7, 7],
+        to: [16, 11, 9],
+        faces: { up: { tex: 'lockTop', uv: full }, east: { tex: 'lockFront', uv: full }, north: { tex: 'lockSide', uv: full }, south: { tex: 'lockSide', uv: full } }
       }
     ]
   }
