@@ -138,12 +138,21 @@ export type ManageAction =
 export interface ModelBox {
   from: number[]
   to: number[]
-  faces: Partial<Record<'up' | 'down' | 'north' | 'south' | 'east' | 'west', { tex: string; uv?: number[] }>>
+  // 기울어진 부품: origin을 중심으로 axis 축을 angle도 돌린다
+  rotation?: { origin: number[]; axis: 'x' | 'y' | 'z'; angle: number }
+  // rotation: 면 그림을 시계 방향으로 몇 도 돌려 쓰는지 (0, 90, 180, 270)
+  faces: Partial<Record<'up' | 'down' | 'north' | 'south' | 'east' | 'west', { tex: string; uv?: number[]; rotation?: number }>>
+}
+// 인벤토리에서 보이는 각도·위치·크기 (게임 모델의 display.gui)
+export interface GuiDisplay {
+  rotation?: number[]
+  translation?: number[]
+  scale?: number[]
 }
 // 게임과 같은 아이템 그림: 평평한 그림(겹칠 수 있음) 또는 블록 모델(상자 여러 개)
 export type ItemIcon =
   | { kind: 'flat'; layers: string[]; tint?: { layer: number; color: number } } // tint: 이 그림을 아이템마다 색칠 (물약, 염색한 가죽). 기본 색
-  | { kind: 'model'; textures: Record<string, string>; boxes: ModelBox[]; rotY: number }
+  | { kind: 'model'; textures: Record<string, string>; boxes: ModelBox[]; rotY: number; display?: GuiDisplay }
 
 // 인벤토리 한 칸. slot: 0~8 핫바, 9~35 가방, 100~103 신발~투구, -106 왼손 (엔더 상자는 0~26)
 export interface InvItem {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import type { InvItem, ItemIcon, ModelBox } from '../../shared-types'
+import type { GuiDisplay, InvItem, ItemIcon, ModelBox } from '../../shared-types'
 
 // 블록 모델: 게임 파일의 상자들을 크기 그대로, 인벤토리와 같은 각도로 그린다 (계단, 반 블록, 버튼 등)
 type V3 = [number, number, number]
@@ -68,13 +68,41 @@ function defaultUv(d: Dir, [x1, y1, z1]: number[], [x2, y2, z2]: number[]): numb
 // 상자의 한 면이 바로 붙어 있는 다른 상자에 완전히 덮이는지 (덮인 면을 그리면 가장자리로 새어 보인다)
 const AXIS: Record<Dir, [number, 1 | -1]> = { up: [1, 1], down: [1, -1], east: [0, 1], west: [0, -1], south: [2, 1], north: [2, -1] }
 function hidden(b: ModelBox, d: Dir, boxes: ModelBox[]): boolean {
+  if (b.rotation) return false // 기울어진 부품은 맞붙었는지 따지지 않는다
   const [ax, sign] = AXIS[d]
   const plane = sign > 0 ? b.to[ax] : b.from[ax]
   const others = [0, 1, 2].filter((i) => i !== ax)
-  return boxes.some((o) => o !== b && (sign > 0 ? o.from[ax] : o.to[ax]) === plane && others.every((i) => o.from[i] <= b.from[i] && o.to[i] >= b.to[i]))
+  return boxes.some(
+    (o) => o !== b && !o.rotation && (sign > 0 ? o.from[ax] : o.to[ax]) === plane && others.every((i) => o.from[i] <= b.from[i] && o.to[i] >= b.to[i])
+  )
 }
 
-function ModelIcon({ textures, boxes, rotY, onDrawn }: { textures: Record<string, string>; boxes: ModelBox[]; rotY: number; onDrawn?: (url: string) => void }) {
+// 부품 회전: origin을 중심으로 axis 축을 angle도
+function rotateAround(p: V3, r: NonNullable<ModelBox['rotation']>, normal = false): V3 {
+  const a = (r.angle * Math.PI) / 180
+  const [ox, oy, oz] = normal ? [0, 0, 0] : r.origin
+  let [x, y, z] = [p[0] - ox, p[1] - oy, p[2] - oz]
+  const c = Math.cos(a)
+  const s = Math.sin(a)
+  if (r.axis === 'x') [y, z] = [y * c - z * s, y * s + z * c]
+  else if (r.axis === 'y') [x, z] = [x * c + z * s, -x * s + z * c]
+  else [x, y] = [x * c - y * s, x * s + y * c]
+  return [x + ox, y + oy, z + oz]
+}
+
+function ModelIcon({
+  textures,
+  boxes,
+  rotY,
+  display,
+  onDrawn
+}: {
+  textures: Record<string, string>
+  boxes: ModelBox[]
+  rotY: number
+  display?: GuiDisplay
+  onDrawn?: (url: string) => void
+}) {
   const ref = useRef<HTMLCanvasElement>(null)
   const px = Math.round(48 * (window.devicePixelRatio || 1)) // 화면에 보이는 크기(48) x 화면 배율
   const HI = px / 64
@@ -95,23 +123,31 @@ function ModelIcon({ textures, boxes, rotY, onDrawn }: { textures: Record<string
       )
     ).then(() => {
       if (!alive) return
-      // 기본 각도(225도)와 다르게 보이는 모델(계단 등)은 90도 단위로 돌린다
-      const k = ((Math.round((225 - rotY) / 90) % 4) + 4) % 4
-      const rot = ([x, y, z]: V3): V3 => {
-        for (let i = 0; i < k; i++) [x, z] = [16 - z, x]
-        return [x, y, z]
+      // 게임처럼: 부품 회전 -> 인벤토리 각도(기본 225도와의 차이만큼 세로축으로) -> 크기 -> 위치
+      const theta = ((225 - (display?.rotation?.[1] ?? rotY)) * Math.PI) / 180
+      const ct = Math.cos(theta)
+      const st = Math.sin(theta)
+      const spin = ([x, y, z]: V3, normal = false): V3 => {
+        const [dx, dz] = normal ? [x, z] : [x - 8, z - 8]
+        const nx = ct * dx - st * dz
+        const nz = st * dx + ct * dz
+        return normal ? [nx, y, nz] : [nx + 8, y, nz + 8]
       }
-      const rotN = ([x, y, z]: V3): V3 => {
-        for (let i = 0; i < k; i++) [x, z] = [-z, x]
-        return [x, y, z]
-      }
-      // 화면 좌표: 오른쪽 앞 모서리가 가운데 아래
+      const world = (p: V3, b: ModelBox): V3 => spin(b.rotation ? rotateAround(p, b.rotation) : p)
+      const worldN = (n: V3, b: ModelBox): V3 => spin(b.rotation ? rotateAround(n, b.rotation, true) : n, true)
+      const zoom = (display?.scale?.[0] ?? 0.625) / 0.625
+      const shiftX = (display?.translation?.[0] ?? 0) * 4 * HI
+      const shiftY = -(display?.translation?.[1] ?? 0) * 4 * HI
       // 화면 좌표: 오른쪽 앞 모서리가 가운데 아래. 게임 인벤토리 각도(위로 30도, 옆으로 45도)와 같은 비율
       // 게임처럼 실제 화면 픽셀 수(화면 배율 포함)에 딱 맞춰 한 번에 그린다. 그린 뒤 늘이거나 줄이면 픽셀이 깨지거나 뭉개진다
+      const mid = 32 * HI
       const P = ([x, y, z]: V3): [number, number] => [
-        HI * (32 + 1.6875 * (16 - x) - 1.6875 * z), // 게임처럼 동쪽 면이 왼쪽, 북쪽 면이 오른쪽
-        HI * (62 + 0.84375 * (x - 16) - 0.84375 * z - 2.0625 * y)
+        mid + zoom * (HI * (32 + 1.6875 * (16 - x) - 1.6875 * z) - mid) + shiftX, // 게임처럼 동쪽 면이 왼쪽, 북쪽 면이 오른쪽
+        mid + zoom * (HI * (62 + 0.84375 * (x - 16) - 0.84375 * z - 2.0625 * y) - mid) + shiftY
       ]
+      // 보는 쪽 방향 (깊이·보이는 면 판단)
+      const VIEW: V3 = [0.612, 0.5, -0.612]
+      const dot = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
       c.setTransform(1, 0, 0, 1, 0, 0)
       c.clearRect(0, 0, 64 * HI, 64 * HI)
       c.imageSmoothingEnabled = false
@@ -138,19 +174,19 @@ function ModelIcon({ textures, boxes, rotY, onDrawn }: { textures: Record<string
       // 보이는 면을 모두 모아, 보는 쪽에서 먼 면부터 그린다 (상자 단위로 정하면 계단처럼 붙은 상자에서 면이 잘못 겹친다)
       const faces: { depth: number; draw: () => void }[] = []
       for (const b of boxes) {
-        for (const [d, f] of Object.entries(b.faces) as [Dir, { tex: string; uv?: number[] }][]) {
+        for (const [d, f] of Object.entries(b.faces) as [Dir, { tex: string; uv?: number[]; rotation?: number }][]) {
           if (hidden(b, d, boxes)) continue // 다른 상자에 완전히 덮인 면 (맞붙은 곳)
-          const n = rotN(NORMAL[d])
-          const shade = n[1] > 0 ? 0 : n[0] > 0 ? 0.22 : n[2] < 0 ? 0.42 : -1
+          const n = worldN(NORMAL[d], b)
           const img = imgs[f.tex]
-          if (shade < 0 || !img) continue // 안 보이는 면
-          const corners = faceCorners(d, b.from, b.to).map((p) => rot(p))
+          if (dot(n, VIEW) <= 1e-6 || !img) continue // 안 보이는 면
+          // 밝기: 윗면은 그대로, 옆면은 동서 방향 0.22, 남북 방향 0.42만큼 어둡게 (기울어진 면은 섞어서)
+          const side = n[0] * n[0] + n[2] * n[2]
+          const shade = Math.round((side ? (0.22 * n[0] * n[0] + 0.42 * n[2] * n[2]) / side : 0) * (1 - Math.max(0, n[1])) * 100) / 100
+          const corners = faceCorners(d, b.from, b.to).map((p) => world(p, b))
           // 면 가운데의 깊이 (화면 쪽으로 갈수록 크다)
-          const cx = (corners[1][0] + corners[2][0]) / 2
-          const cy = (corners[1][1] + corners[2][1]) / 2
-          const cz = (corners[1][2] + corners[2][2]) / 2
+          const center: V3 = [(corners[1][0] + corners[2][0]) / 2, (corners[1][1] + corners[2][1]) / 2, (corners[1][2] + corners[2][2]) / 2]
           faces.push({
-            depth: 0.5 * cy + 0.612 * (cx - cz),
+            depth: dot(center, VIEW),
             draw: () => {
               let [o, u, v] = corners.map(P)
               let U: [number, number] = [u[0] - o[0], u[1] - o[1]]
@@ -166,6 +202,18 @@ function ModelIcon({ textures, boxes, rotY, onDrawn }: { textures: Record<string
                 ;[v1, v2] = [v2, v1]
                 o = [o[0] + V[0], o[1] + V[1]]
                 V = [-V[0], -V[1]]
+              }
+              // 면 그림을 돌려 쓰는 경우 (시계 방향 90/180/270도): 그림의 왼쪽 위가 닿는 모서리를 바꾼다
+              const turn = ((((f.rotation ?? 0) / 90) % 4) + 4) % 4
+              if (turn) {
+                const c0: [number, number] = o
+                const c1: [number, number] = [o[0] + U[0], o[1] + U[1]]
+                const c3: [number, number] = [o[0] + V[0], o[1] + V[1]]
+                const c2: [number, number] = [c1[0] + V[0], c1[1] + V[1]]
+                const [no, nu, nv] = turn === 1 ? [c1, c2, c0] : turn === 2 ? [c2, c3, c1] : [c3, c0, c2]
+                o = no
+                U = [nu[0] - no[0], nu[1] - no[1]]
+                V = [nv[0] - no[0], nv[1] - no[1]]
               }
               // uv는 0~16 기준. 그림이 정사각형이 아닐 수도 있어서(몹 모델 면) 가로세로 따로 맞춘다
               const sx = img.width / 16
@@ -195,7 +243,7 @@ function ModelIcon({ textures, boxes, rotY, onDrawn }: { textures: Record<string
       alive = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [textures, boxes, rotY, HI])
+  }, [textures, boxes, rotY, display, HI])
   return <canvas ref={ref} width={px} height={px} className="inv-icon" />
 }
 

@@ -5,7 +5,7 @@ import { app, nativeImage } from 'electron'
 import fs from 'fs'
 import path from 'path'
 import yauzl from 'yauzl'
-import type { ItemIcon, ModelBox } from '../shared-types'
+import type { GuiDisplay, ItemIcon, ModelBox } from '../shared-types'
 import { downloadFile, fetchJson } from './download'
 import { getVersionMeta } from './mojang'
 import { getAppSettings } from './appsettings'
@@ -159,19 +159,25 @@ const splitRef = (ref: string, ns = 'minecraft'): [string, string] => {
 interface Model {
   parent?: string
   textures?: Record<string, string | { sprite: string }>
-  elements?: { from: number[]; to: number[]; faces?: Record<string, { texture: string; uv?: number[]; tintindex?: number }> }[]
-  display?: { gui?: { rotation?: number[] } }
+  elements?: {
+    from: number[]
+    to: number[]
+    rotation?: { origin: number[]; axis: 'x' | 'y' | 'z'; angle: number }
+    faces?: Record<string, { texture: string; uv?: number[]; rotation?: number; tintindex?: number }>
+  }[]
+  display?: { gui?: GuiDisplay }
 }
 
 // 부모를 따라가며 그림 변수와 모양(elements)을 모은다
 async function loadModel(
   jars: Jar[],
   ref: string
-): Promise<{ textures: Record<string, string>; elements?: Model['elements']; parents: string[]; guiY?: number }> {
+): Promise<{ textures: Record<string, string>; elements?: Model['elements']; parents: string[]; guiY?: number; gui?: GuiDisplay }> {
   const textures: Record<string, string> = {}
   const parents: string[] = []
   let elements: Model['elements']
   let guiY: number | undefined // 인벤토리에서 보이는 방향 (가로 회전)
+  let gui: GuiDisplay | undefined // 인벤토리에서 보이는 각도·위치·크기
   let cur: string | undefined = ref
   for (let depth = 0; cur && depth < 16; depth++) {
     const [ns, p] = splitRef(cur)
@@ -183,12 +189,15 @@ async function loadModel(
     for (const [k, v] of Object.entries(m.textures ?? {})) if (!(k in textures)) textures[k] = typeof v === 'string' ? v : v?.sprite
     if (!elements && m.elements) elements = m.elements
     if (guiY == null && m.display?.gui?.rotation) guiY = m.display.gui.rotation[1]
+    if (!gui && m.display?.gui) gui = m.display.gui
     cur = m.parent
   }
-  return { textures, elements, parents, guiY }
+  return { textures, elements, parents, guiY, gui }
 }
 
+// 그림 변수 풀기. "#all"처럼 쓰는 게 보통이지만 "#" 없이 "all"만 쓴 모델도 있다 (무거운 핵 등)
 const resolveVar = (textures: Record<string, string>, v: string | undefined): string | undefined => {
+  if (v && !v.startsWith('#') && !/[:/]/.test(v) && v in textures) v = `#${v}`
   for (let i = 0; v?.startsWith('#') && i < 10; i++) v = textures[v.slice(1)]
   return v?.startsWith('#') ? undefined : v
 }
@@ -501,7 +510,7 @@ async function itemIcon(jars: Jar[], id: string): Promise<ItemIcon | null> {
   const def = await readJson<{ model?: unknown }>(jars, `assets/${ns}/items/${name}.json`)
   const picked = def ? pickItemModel(def.model) : { model: `${ns}:item/${name}`, special: false }
   if (!picked.model) return null
-  const { textures, elements, parents, guiY } = await loadModel(jars, splitRef(picked.model, ns).join(':'))
+  const { textures, elements, parents, guiY, gui } = await loadModel(jars, splitRef(picked.model, ns).join(':'))
   const flat = async (): Promise<ItemIcon | null> => {
     const layers: string[] = []
     for (let i = 0; i < 5; i++) {
@@ -540,12 +549,12 @@ async function itemIcon(jars: Jar[], id: string): Promise<ItemIcon | null> {
         if (!url) continue
         texMap[key] = url
       }
-      faces[dir as keyof ModelBox['faces']] = { tex: key, uv: f.uv }
+      faces[dir as keyof ModelBox['faces']] = { tex: key, uv: f.uv, ...(f.rotation ? { rotation: f.rotation } : {}) }
     }
-    if (Object.keys(faces).length) boxes.push({ from: el.from, to: el.to, faces })
+    if (Object.keys(faces).length) boxes.push({ from: el.from, to: el.to, faces, ...(el.rotation?.angle ? { rotation: el.rotation } : {}) })
   }
   if (!boxes.length) return flat()
-  return { kind: 'model', textures: texMap, boxes, rotY: guiY ?? 225 }
+  return { kind: 'model', textures: texMap, boxes, rotY: guiY ?? 225, ...(gui ? { display: gui } : {}) }
 }
 
 // 여러 아이템의 그림과 이름을 한 번에. 못 찾은 것은 그림 없이 이름만
