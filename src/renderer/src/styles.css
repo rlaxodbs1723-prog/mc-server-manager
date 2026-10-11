@@ -445,8 +445,8 @@ input[type='number']::-webkit-inner-spin-button, input[type='number']::-webkit-o
 .btn.danger-hover:hover:not(:disabled) { background: var(--danger-soft); color: var(--danger); }
 .say-form { display: flex; gap: 8px; }
 .say-count { align-self: center; white-space: nowrap; }
-.seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); /* 글자가 긴 언어(영어 등)에서도 창 밖으로 넘치지 않고 줄을 바꾼다 */ gap: 4px; padding: 4px; border-radius: var(--r-md); background: var(--surface-2); }
-.seg button { min-width: 0; white-space: normal; line-height: 1.25; padding: 4px 8px; min-height: 38px; border-radius: 10px; font-weight: 600; font-size: 14px; color: var(--text-3); transition: background 0.15s, color 0.15s; }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(min-content, 1fr); /* 긴 글자는 띄어쓰기에서만 줄을 바꾸고, 낱말(CurseForge 등)은 자르지 않는다 */ gap: 4px; padding: 4px; border-radius: var(--r-md); background: var(--surface-2); }
+.seg button { min-width: min-content; white-space: normal; word-break: keep-all; overflow-wrap: normal; line-height: 1.25; padding: 4px 8px; min-height: 38px; border-radius: 10px; font-weight: 600; font-size: 14px; color: var(--text-3); transition: background 0.15s, color 0.15s; }
 .seg button:hover:not(:disabled) { color: var(--text); }
 .seg button.active { background: var(--primary); color: #fff; }
 .seg button:disabled { opacity: 0.5; }
