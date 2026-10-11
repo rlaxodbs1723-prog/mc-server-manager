@@ -130,7 +130,14 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
       })
     }
     const off = window.api.onServerEvent((e) => {
-      if (e.folderPath !== folderPath || e.type !== 'log') return
+      if (e.folderPath !== folderPath) return
+      // 서버를 새로 켜면 전에 쌓인 콘솔을 비운다 (전 실행의 오류가 섞여 헷갈리지 않게)
+      if (e.type === 'status' && e.state === 'starting') {
+        pending = []
+        setLog([])
+        return
+      }
+      if (e.type !== 'log') return
       pending.push(e.line)
       if (!frame) frame = requestAnimationFrame(flush)
     })
