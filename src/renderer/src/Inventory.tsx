@@ -65,6 +65,15 @@ function defaultUv(d: Dir, [x1, y1, z1]: number[], [x2, y2, z2]: number[]): numb
   }
 }
 
+// 상자의 한 면이 바로 붙어 있는 다른 상자에 완전히 덮이는지 (덮인 면을 그리면 가장자리로 새어 보인다)
+const AXIS: Record<Dir, [number, 1 | -1]> = { up: [1, 1], down: [1, -1], east: [0, 1], west: [0, -1], south: [2, 1], north: [2, -1] }
+function hidden(b: ModelBox, d: Dir, boxes: ModelBox[]): boolean {
+  const [ax, sign] = AXIS[d]
+  const plane = sign > 0 ? b.to[ax] : b.from[ax]
+  const others = [0, 1, 2].filter((i) => i !== ax)
+  return boxes.some((o) => o !== b && (sign > 0 ? o.from[ax] : o.to[ax]) === plane && others.every((i) => o.from[i] <= b.from[i] && o.to[i] >= b.to[i]))
+}
+
 function ModelIcon({ textures, boxes, rotY, onDrawn }: { textures: Record<string, string>; boxes: ModelBox[]; rotY: number; onDrawn?: (url: string) => void }) {
   const ref = useRef<HTMLCanvasElement>(null)
   const px = Math.round(48 * (window.devicePixelRatio || 1)) // 화면에 보이는 크기(48) x 화면 배율
@@ -130,6 +139,7 @@ function ModelIcon({ textures, boxes, rotY, onDrawn }: { textures: Record<string
       const faces: { depth: number; draw: () => void }[] = []
       for (const b of boxes) {
         for (const [d, f] of Object.entries(b.faces) as [Dir, { tex: string; uv?: number[] }][]) {
+          if (hidden(b, d, boxes)) continue // 다른 상자에 완전히 덮인 면 (맞붙은 곳)
           const n = rotN(NORMAL[d])
           const shade = n[1] > 0 ? 0 : n[0] > 0 ? 0.22 : n[2] < 0 ? 0.42 : -1
           const img = imgs[f.tex]
@@ -262,7 +272,17 @@ function Count({ n, digits }: { n: number; digits: string | null }) {
   return <canvas ref={ref} width={w} height={9} className="inv-count-px" style={{ width: w * 3, height: 27 }} />
 }
 
-function Slot({ item, digits, glint, onHover }: { item?: InvItem; digits: string | null; glint: string | null; onHover: (i: InvItem | null, e?: React.MouseEvent) => void }) {
+function Slot({
+  item,
+  digits,
+  glint,
+  onHover
+}: {
+  item?: InvItem
+  digits: string | null
+  glint: string | null
+  onHover: (i: InvItem | null, e?: React.MouseEvent) => void
+}) {
   return (
     <div className="inv-slot" onMouseMove={(e) => item && onHover(item, e)} onMouseLeave={() => onHover(null)}>
       {item && (
