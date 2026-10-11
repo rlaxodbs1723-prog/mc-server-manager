@@ -996,7 +996,7 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .pd-cols { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: start; margin-bottom: 8px; }
 .pd-left { min-width: 0; }
 .pd-right { min-width: 0; }
-.pd-line { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pd-line { display: flex; align-items: center; justify-content: space-between; gap: 6px 8px; flex-wrap: wrap; min-width: 0; }
 .pd-heal { flex: 0 0 auto; white-space: nowrap; }
 @media (max-width: 1000px) { .pd-cols { grid-template-columns: 1fr; } }
 .pd-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }

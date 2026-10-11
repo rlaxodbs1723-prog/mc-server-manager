@@ -193,9 +193,20 @@ const resolveVar = (textures: Record<string, string>, v: string | undefined): st
   return v?.startsWith('#') ? undefined : v
 }
 
-// 그림 파일 -> data URL. 움직이는 그림(세로로 긴 그림)은 첫 장면만, 풀색처럼 회색 그림은 기본 풀색을 입힌다
-const GRASS = [0x7c, 0xbd, 0x6b]
-async function textureUrl(jars: Jar[], ref: string | undefined, tint = false): Promise<string | undefined> {
+// 그림 파일 -> data URL. 움직이는 그림(세로로 긴 그림)은 첫 장면만. 회색 그림(풀, 잎, 가죽 등)은 게임처럼 색을 입힌다
+const rgb = (hex: number): number[] => [(hex >> 16) & 255, (hex >> 8) & 255, hex & 255]
+function tintImage(img: Electron.NativeImage, color: number): Electron.NativeImage {
+  const [r, g, b] = rgb(color)
+  const size = img.getSize()
+  const bmp = Buffer.from(img.toBitmap()) // BGRA
+  for (let i = 0; i < bmp.length; i += 4) {
+    bmp[i] = (bmp[i] * b) / 255
+    bmp[i + 1] = (bmp[i + 1] * g) / 255
+    bmp[i + 2] = (bmp[i + 2] * r) / 255
+  }
+  return nativeImage.createFromBitmap(bmp, size)
+}
+async function textureUrl(jars: Jar[], ref: string | undefined, tint?: number): Promise<string | undefined> {
   if (!ref) return undefined
   const [ns, p] = splitRef(ref)
   const buf = await readAsset(jars, `assets/${ns}/textures/${p}.png`)
@@ -204,31 +215,44 @@ async function textureUrl(jars: Jar[], ref: string | undefined, tint = false): P
   if (img.isEmpty()) return undefined
   const { width, height } = img.getSize()
   if (height > width) img = img.crop({ x: 0, y: 0, width, height: width })
-  if (tint) {
-    const size = img.getSize()
-    const bmp = Buffer.from(img.toBitmap()) // BGRA
-    for (let i = 0; i < bmp.length; i += 4) {
-      bmp[i] = (bmp[i] * GRASS[2]) / 255
-      bmp[i + 1] = (bmp[i + 1] * GRASS[1]) / 255
-      bmp[i + 2] = (bmp[i + 2] * GRASS[0]) / 255
-    }
-    img = nativeImage.createFromBitmap(bmp, size)
-  }
+  if (tint != null) img = tintImage(img, tint)
   return img.toDataURL()
 }
 
-// 1.21.4부터 생긴 items/<이름>.json: 조건별 모델 중 기본 모델을 고른다
-function pickItemModel(def: unknown): { model?: string; special: boolean } {
+// 게임이 인벤토리에서 색을 입히는 아이템 (블록 모델의 tintindex 면, 평평한 아이템은 몇 번째 그림에)
+// 벚나무·진달래·창백한 참나무 잎처럼 원래 색이 있는 것은 칠하지 않는다
+const GRASS = 0x91bd59
+const FOLIAGE = 0x48b518
+const BLOCK_TINT: Record<string, number> = {
+  grass_block: GRASS, short_grass: GRASS, tall_grass: GRASS, fern: GRASS, large_fern: GRASS,
+  oak_leaves: FOLIAGE, jungle_leaves: FOLIAGE, acacia_leaves: FOLIAGE, dark_oak_leaves: FOLIAGE, vine: FOLIAGE,
+  birch_leaves: 0x80a755, spruce_leaves: 0x619961, mangrove_leaves: 0x92c648, lily_pad: 0x208030
+}
+const LEATHER = 0xa06540
+const WATER = 0x385dc6
+const FLAT_TINT: Record<string, [number, number]> = {
+  short_grass: [0, GRASS], tall_grass: [0, GRASS], fern: [0, GRASS], large_fern: [0, GRASS], vine: [0, FOLIAGE], lily_pad: [0, 0x208030],
+  leather_helmet: [0, LEATHER], leather_chestplate: [0, LEATHER], leather_leggings: [0, LEATHER], leather_boots: [0, LEATHER],
+  leather_horse_armor: [0, LEATHER], potion: [0, WATER], splash_potion: [0, WATER], lingering_potion: [0, WATER], tipped_arrow: [0, WATER]
+}
+
+// 1.21.4부터 생긴 items/<이름>.json: 조건별 모델 중 인벤토리에서 보이는 기본 모델을 고른다
+type Spec = Record<string, unknown>
+function pickItemModel(def: unknown): { model?: string; special: boolean; spec?: Spec } {
   const m = def as Record<string, unknown> | undefined
   if (!m || typeof m !== 'object') return { special: false }
   const type = String(m.type ?? '').replace(/^minecraft:/, '')
   if (type === 'model') return { model: String(m.model), special: false }
-  if (type === 'special') return { model: m.base ? String(m.base) : undefined, special: true }
+  if (type === 'special') return { model: m.base ? String(m.base) : undefined, special: true, spec: m.model as Spec }
   if (type === 'composite') return pickItemModel((m.models as unknown[])?.[0])
   if (type === 'condition') return pickItemModel(m.on_false)
-  if (type === 'select') return pickItemModel(m.fallback ?? (m.cases as { model: unknown }[])?.[0]?.model)
+  if (type === 'select') {
+    const cases = (m.cases as { when: unknown; model: unknown }[]) ?? []
+    // 손에 들 때와 인벤토리에서 모양이 다른 아이템(삼지창 등)은 인벤토리(gui) 모양으로
+    const gui = String(m.property ?? '').endsWith('display_context') ? cases.find((c) => [c.when].flat().includes('gui')) : undefined
+    return pickItemModel(gui?.model ?? m.fallback ?? cases[0]?.model)
+  }
   if (type === 'range_dispatch') return pickItemModel(m.fallback ?? (m.entries as { model: unknown }[])?.[0]?.model)
-  if (type === 'bundle/selected_item') return { special: false }
   return { special: false }
 }
 
@@ -283,46 +307,136 @@ const HEADS: Record<string, [string, number, number, number, number, number, num
   'minecraft:dragon_head': ['minecraft:entity/enderdragon/dragon', 256, 112, 30, 16, 16, 16]
 }
 
-async function headIcon(jars: Jar[], id: string): Promise<ItemIcon | null> {
-  const h = HEADS[id]
-  if (!h) return null
-  const [ref, base, u, v, w, hh, d] = h
+// 몹 텍스처의 "펼친 상자" 그림에서 상자 하나의 면들을 잘라 낸다 (u, v: 그림 위치, w: 너비, h: 높이, d: 깊이)
+type Faces = { top: string; front: string; right: string; left: string; back: string }
+async function entityImage(jars: Jar[], ref: string): Promise<Electron.NativeImage | null> {
   const [ns, p] = splitRef(ref)
-  let buf = await readAsset(jars, `assets/${ns}/textures/${p}.png`)
-  if (!buf && id === 'minecraft:player_head') buf = await readAsset(jars, 'assets/minecraft/textures/entity/steve.png') // 예전 버전 위치
+  const buf = await readAsset(jars, `assets/${ns}/textures/${p}.png`)
   if (!buf) return null
   const img = nativeImage.createFromBuffer(buf)
+  return img.isEmpty() ? null : img
+}
+function uvFaces(img: Electron.NativeImage, base: number, u: number, v: number, w: number, h: number, d: number, tint?: number): Faces {
   const k = img.getSize().width / base
-  if (!k) return null
-  const crop = (x: number, y: number, cw: number, ch: number) => img.crop({ x: x * k, y: y * k, width: cw * k, height: ch * k }).toDataURL()
-  // 펼친 상자 그림: 위(u+d, v), 앞(u+d, v+d), 오른쪽(u, v+d), 왼쪽(u+d+w, v+d), 뒤(u+2d+w, v+d)
-  const tex = {
-    top: crop(u + d, v, w, d),
-    front: crop(u + d, v + d, w, hh),
-    right: crop(u, v + d, d, hh),
-    left: crop(u + d + w, v + d, d, hh),
-    back: crop(u + 2 * d + w, v + d, w, hh)
+  const crop = (x: number, y: number, cw: number, ch: number) => {
+    const c = img.crop({ x: Math.round(x * k), y: Math.round(y * k), width: Math.max(1, Math.round(cw * k)), height: Math.max(1, Math.round(ch * k)) })
+    return (tint != null ? tintImage(c, tint) : c).toDataURL()
   }
-  const full = [0, 0, 16, 16]
-  // 게임 인벤토리처럼 얼굴이 왼쪽 앞을 보게 둔다
   return {
-    kind: 'model',
-    textures: tex,
-    rotY: 225,
-    boxes: [
-      {
-        from: [2, 0, 2], // 인벤토리의 머리는 블록보다 조금 작다
-        to: [14, 12, 14],
-        faces: {
-          up: { tex: 'top', uv: full },
-          east: { tex: 'front', uv: full },
-          north: { tex: 'left', uv: full },
-          south: { tex: 'right', uv: full },
-          west: { tex: 'back', uv: full }
-        }
-      }
-    ]
+    top: crop(u + d, v, w, d),
+    front: crop(u + d, v + d, w, h),
+    right: crop(u, v + d, d, h),
+    left: crop(u + d + w, v + d, d, h),
+    back: crop(u + 2 * d + w, v + d, w, h)
   }
+}
+// 앞면이 왼쪽 앞(동쪽)을 보게 상자를 만든다 (게임 인벤토리의 머리·조각상 방향)
+const FULL = [0, 0, 16, 16]
+function faceBox(key: string, from: number[], to: number[]): ModelBox {
+  return {
+    from,
+    to,
+    faces: {
+      up: { tex: `${key}top`, uv: FULL },
+      east: { tex: `${key}front`, uv: FULL },
+      north: { tex: `${key}left`, uv: FULL },
+      south: { tex: `${key}right`, uv: FULL },
+      west: { tex: `${key}back`, uv: FULL }
+    }
+  }
+}
+function boxesIcon(parts: [string, Faces, number[], number[]][]): ItemIcon {
+  const textures: Record<string, string> = {}
+  for (const [key, f] of parts) for (const [n, url] of Object.entries(f)) textures[`${key}${n}`] = url
+  return { kind: 'model', textures, rotY: 225, boxes: parts.map(([key, , from, to]) => faceBox(key, from, to)) }
+}
+
+// 그림 일부를 정사각형 가운데에 놓은 평평한 아이콘 (배너·방패는 게임 인벤토리에서 앞모습으로 보인다)
+function frontIcon(img: Electron.NativeImage, base: number, x: number, y: number, w: number, h: number, tint?: number): ItemIcon {
+  const k = img.getSize().width / base
+  let c = img.crop({ x: Math.round(x * k), y: Math.round(y * k), width: Math.round(w * k), height: Math.round(h * k) })
+  if (tint != null) c = tintImage(c, tint)
+  const cw = c.getSize().width
+  const ch = c.getSize().height
+  const n = Math.max(cw, ch)
+  const out = Buffer.alloc(n * n * 4) // 투명 바탕
+  const src = c.toBitmap()
+  const ox = Math.floor((n - cw) / 2)
+  const oy = Math.floor((n - ch) / 2)
+  for (let row = 0; row < ch; row++) src.copy(out, ((oy + row) * n + ox) * 4, row * cw * 4, (row + 1) * cw * 4)
+  return { kind: 'flat', layers: [nativeImage.createFromBitmap(out, { width: n, height: n }).toDataURL()] }
+}
+
+// 염료 색 (배너)
+const DYE: Record<string, number> = {
+  white: 0xf9fffe, orange: 0xf9801d, magenta: 0xc74ebd, light_blue: 0x3ab3da, yellow: 0xfed83d, lime: 0x80c71f, pink: 0xf38baa, gray: 0x474f52,
+  light_gray: 0x9d9d97, cyan: 0x169c9c, purple: 0x8932b8, blue: 0x3c44aa, brown: 0x835432, green: 0x5e7c16, red: 0xb02e26, black: 0x1d1d21
+}
+
+// 게임이 코드로 그리는 아이템(상자·머리·셜커 상자·배너·방패 등)을 게임 텍스처로 만든다. 모르는 것은 null
+async function specialIcon(jars: Jar[], id: string, spec: Spec | undefined): Promise<ItemIcon | null> {
+  const type = String(spec?.type ?? '').replace(/^minecraft:/, '')
+  const texName = (v: unknown) => String(v ?? '').replace(/^minecraft:/, '').replace(/^textures\//, '').replace(/\.png$/, '')
+  // 예전 버전(1.21.3까지)은 items/ 정의가 없어서 아이템 이름으로 고른다
+  const name = id.replace(/^minecraft:/, '')
+  if (type === 'chest' || CHESTS[id]) return chestIcon(jars, spec?.texture ? `minecraft:entity/chest/${texName(spec.texture)}` : CHESTS[id])
+  if (type === 'head' || HEADS[id]) {
+    const h = HEADS[id]
+    if (!h) return null
+    const [ref, base, u, v, w, hh, d] = h
+    let img = await entityImage(jars, ref)
+    if (!img && id === 'minecraft:player_head') img = await entityImage(jars, 'minecraft:entity/steve') // 예전 버전 위치
+    if (!img) return null
+    return boxesIcon([['h', uvFaces(img, base, u, v, w, hh, d), [2, 0, 2], [14, 12, 14]]])
+  }
+  if (type === 'shulker_box' || /shulker_box$/.test(name)) {
+    const color = name.replace(/_?shulker_box$/, '')
+    const img = await entityImage(jars, spec?.texture ? `minecraft:entity/shulker/${texName(spec.texture)}` : `minecraft:entity/shulker/shulker${color ? `_${color}` : ''}`)
+    if (!img) return null
+    // 몸통(아래 8칸)과 뚜껑(위 12칸)
+    return boxesIcon([
+      ['b', uvFaces(img, 64, 0, 28, 16, 8, 16), [0, 0, 0], [16, 8, 16]],
+      ['l', uvFaces(img, 64, 0, 0, 16, 12, 16), [0, 4, 0], [16, 16, 16]]
+    ])
+  }
+  if (type === 'banner' || /_banner$/.test(name)) {
+    const color = String(spec?.color ?? name.replace(/_banner$/, ''))
+    const img = (await entityImage(jars, 'minecraft:entity/banner/banner_base')) ?? (await entityImage(jars, 'minecraft:entity/banner_base'))
+    if (!img) return null
+    // 깃발 앞면(20x40)을 염료 색으로
+    return frontIcon(img, 64, 1, 1, 20, 40, DYE[color] ?? 0xffffff)
+  }
+  if (type === 'shield' || name === 'shield') {
+    const img = (await entityImage(jars, 'minecraft:entity/shield/shield_base_nopattern')) ?? (await entityImage(jars, 'minecraft:entity/shield_base_nopattern'))
+    if (!img) return null
+    return frontIcon(img, 64, 1, 1, 12, 22) // 방패 앞면
+  }
+  if (type === 'conduit' || name === 'conduit') {
+    const img = await entityImage(jars, 'minecraft:entity/conduit/base')
+    if (!img) return null
+    return boxesIcon([['c', uvFaces(img, 32, 0, 0, 6, 6, 6), [3, 3, 3], [13, 13, 13]]])
+  }
+  if (type === 'decorated_pot' || name === 'decorated_pot') {
+    const side = await entityImage(jars, 'minecraft:entity/decorated_pot/decorated_pot_side')
+    const base = await entityImage(jars, 'minecraft:entity/decorated_pot/decorated_pot_base')
+    if (!side || !base) return null
+    const s = side.toDataURL()
+    const top = uvFaces(base, 32, 0, 0, 14, 0, 14).top
+    return boxesIcon([['p', { top, front: s, left: s, right: s, back: s }, [1, 0, 1], [15, 16, 15]]])
+  }
+  if (type === 'copper_golem_statue' || /copper_golem_statue$/.test(name)) {
+    const stage = name.match(/(exposed|weathered|oxidized)/)?.[1]
+    const img = spec?.texture
+      ? await entityImage(jars, `minecraft:${texName(spec.texture)}`)
+      : await entityImage(jars, `minecraft:entity/copper_golem/copper_golem${stage ? `_${stage}` : ''}`)
+    if (!img) return null
+    // 머리(8x5x10)와 몸통(8x6x6)
+    return boxesIcon([
+      ['b', uvFaces(img, 64, 0, 15, 8, 6, 6), [4.2, 0, 2.4], [12.6, 8.4, 13.6]],
+      ['h', uvFaces(img, 64, 0, 0, 8, 5, 10), [1.4, 8.4, 2.4], [15.4, 15.4, 13.6]]
+    ])
+  }
+  return null
 }
 
 async function itemIcon(jars: Jar[], id: string): Promise<ItemIcon | null> {
@@ -334,7 +448,8 @@ async function itemIcon(jars: Jar[], id: string): Promise<ItemIcon | null> {
   const flat = async (): Promise<ItemIcon | null> => {
     const layers: string[] = []
     for (let i = 0; i < 5; i++) {
-      const u = await textureUrl(jars, resolveVar(textures, `#layer${i}`))
+      const t = ns === 'minecraft' ? FLAT_TINT[name] : undefined
+      const u = await textureUrl(jars, resolveVar(textures, `#layer${i}`), t && t[0] === i ? t[1] : undefined)
       if (u) layers.push(u)
       else if (i > 0) break
     }
@@ -346,18 +461,9 @@ async function itemIcon(jars: Jar[], id: string): Promise<ItemIcon | null> {
   }
   // 손에 드는 평평한 아이템
   if (textures.layer0 || parents.some((p) => /builtin\/generated$/.test(p))) return flat()
-  // 상자는 게임이 코드로 그려서 모델이 없다. 상자 그림에서 뚜껑과 몸통을 잘라 입체로 만든다
-  const chest = CHESTS[`${ns}:${name}`]
-  if (chest) {
-    const c = await chestIcon(jars, chest)
-    if (c) return c
-  }
-  if (HEADS[`${ns}:${name}`]) {
-    const hd = await headIcon(jars, `${ns}:${name}`)
-    if (hd) return hd
-  }
-  // 방패·머리처럼 코드로 그리는 나머지는 대표 그림이 엉뚱해서 그림 없이 둔다
-  if (picked.special || parents.some((p) => /builtin\/entity$/.test(p))) return null
+  // 게임이 코드로 그리는 아이템: 게임 텍스처로 만든다. 못 만들면 대표 그림이 엉뚱해서 그림 없이 둔다
+  if (picked.special || parents.some((p) => /builtin\/entity$/.test(p)) || CHESTS[`${ns}:${name}`] || HEADS[`${ns}:${name}`])
+    return specialIcon(jars, `${ns}:${name}`, picked.spec)
   if (!elements?.length) return flat()
   // 블록: 모델의 상자들(계단은 2개, 버튼은 작은 1개 등)을 크기 그대로 입체로. 그림은 같은 것끼리 한 번만 보낸다
   const texMap: Record<string, string> = {}
@@ -367,9 +473,10 @@ async function itemIcon(jars: Jar[], id: string): Promise<ItemIcon | null> {
     for (const [dir, f] of Object.entries(el.faces ?? {})) {
       const ref = resolveVar(textures, f.texture)
       if (!ref) continue
-      const key = `${ref}${f.tintindex != null ? '#tint' : ''}`
+      const tint = f.tintindex != null && ns === 'minecraft' ? BLOCK_TINT[name] : undefined
+      const key = `${ref}${tint != null ? '#tint' : ''}`
       if (!(key in texMap)) {
-        const url = await textureUrl(jars, ref, f.tintindex != null)
+        const url = await textureUrl(jars, ref, tint)
         if (!url) continue
         texMap[key] = url
       }
