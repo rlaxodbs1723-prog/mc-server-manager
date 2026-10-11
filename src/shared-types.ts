@@ -142,7 +142,7 @@ export interface ModelBox {
 }
 // 게임과 같은 아이템 그림: 평평한 그림(겹칠 수 있음) 또는 블록 모델(상자 여러 개)
 export type ItemIcon =
-  | { kind: 'flat'; layers: string[] }
+  | { kind: 'flat'; layers: string[]; tint?: { layer: number; color: number } } // tint: 이 그림을 아이템마다 색칠 (물약, 염색한 가죽). 기본 색
   | { kind: 'model'; textures: Record<string, string>; boxes: ModelBox[]; rotY: number }
 
 // 인벤토리 한 칸. slot: 0~8 핫바, 9~35 가방, 100~103 신발~투구, -106 왼손 (엔더 상자는 0~26)
@@ -155,6 +155,7 @@ export interface InvItem {
   enchants: string[]
   damage: number
   glint: boolean // 인챈트처럼 반짝이는지
+  color?: number // 물약 종류·염색 색 (그림의 tint 층에 칠한다)
   icon: ItemIcon | null
 }
 

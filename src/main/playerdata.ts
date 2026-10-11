@@ -76,6 +76,25 @@ const GLINT_ITEMS = new Set(
   ['enchanted_golden_apple', 'enchanted_book', 'nether_star', 'experience_bottle', 'end_crystal', 'written_book', 'debug_stick'].map((n) => `minecraft:${n}`)
 )
 
+// 물약 종류별 색 (게임의 효과 색). long_/strong_ 은 같은 색
+const POTION_COLOR: Record<string, number> = {
+  night_vision: 0xc2ff66, invisibility: 0xf6f6f6, leaping: 0xfdff84, fire_resistance: 0xff9900, swiftness: 0x33ebff, slowness: 0x8bafe0,
+  turtle_master: 0x8e7aa8, water_breathing: 0x98dac0, healing: 0xf82423, harming: 0xa9656a, poison: 0x87a363, regeneration: 0xcd5cab,
+  strength: 0xffc700, weakness: 0x484d48, luck: 0x59c106, slow_falling: 0xf3cfb9, wind_charged: 0xbdc9ff, weaving: 0x78695a, oozing: 0x99ffa3,
+  infested: 0x8c9b8c
+}
+function itemColor(tag: Obj, comp: Obj): number | undefined {
+  const pc = comp['minecraft:potion_contents']
+  const pcObj = obj(pc)
+  const custom = typeof pcObj.custom_color === 'number' ? pcObj.custom_color : typeof tag.CustomPotionColor === 'number' ? tag.CustomPotionColor : undefined
+  if (custom != null) return custom >>> 0 & 0xffffff
+  const potion = typeof pc === 'string' ? pc : typeof pcObj.potion === 'string' ? pcObj.potion : typeof tag.Potion === 'string' ? tag.Potion : undefined
+  if (potion) return POTION_COLOR[potion.replace(/^minecraft:/, '').replace(/^(long|strong)_/, '')]
+  const dyed = comp['minecraft:dyed_color']
+  const dye = typeof dyed === 'number' ? dyed : typeof obj(dyed).rgb === 'number' ? obj(dyed).rgb : obj(tag.display).color
+  return typeof dye === 'number' ? dye & 0xffffff : undefined
+}
+
 interface RawItem {
   id: string
   count: number
@@ -84,6 +103,7 @@ interface RawItem {
   ench: [string, number][]
   damage: number
   glint: boolean
+  color?: number
 }
 
 function rawItem(v: Plain, slot?: number): RawItem | null {
@@ -109,6 +129,7 @@ function rawItem(v: Plain, slot?: number): RawItem | null {
     name: textOf(comp['minecraft:custom_name']) ?? textOf(obj(tag.display).Name),
     ench,
     damage: num(comp['minecraft:damage'] ?? tag.Damage),
+    color: itemColor(tag, comp),
     // 반짝임: 따로 정했으면 그대로, 아니면 인챈트가 있거나 원래 반짝이는 아이템
     glint: typeof comp['minecraft:enchantment_glint_override'] === 'number' ? comp['minecraft:enchantment_glint_override'] !== 0 : ench.length > 0 || GLINT_ITEMS.has(id)
   }
@@ -265,6 +286,7 @@ export async function getPlayerData(folderPath: string, name: string): Promise<P
     enchants: i.ench.map(([e, lv]) => `${enchName(e)} ${roman(lv)}`),
     damage: i.damage,
     glint: i.glint,
+    color: i.color,
     icon: icons[i.id] ?? null
   })
 

@@ -230,6 +230,10 @@ const BLOCK_TINT: Record<string, number> = {
 }
 const LEATHER = 0xa06540
 const WATER = 0x385dc6
+// 아이템마다 색이 다른 것 (물약 종류, 염색)
+const PER_ITEM_COLOR = new Set([
+  'leather_helmet', 'leather_chestplate', 'leather_leggings', 'leather_boots', 'leather_horse_armor', 'potion', 'splash_potion', 'lingering_potion', 'tipped_arrow'
+])
 const FLAT_TINT: Record<string, [number, number]> = {
   short_grass: [0, GRASS], tall_grass: [0, GRASS], fern: [0, GRASS], large_fern: [0, GRASS], vine: [0, FOLIAGE], lily_pad: [0, 0x208030],
   leather_helmet: [0, LEATHER], leather_chestplate: [0, LEATHER], leather_leggings: [0, LEATHER], leather_boots: [0, LEATHER],
@@ -478,7 +482,9 @@ async function itemIcon(jars: Jar[], id: string): Promise<ItemIcon | null> {
     const layers: string[] = []
     for (let i = 0; i < 5; i++) {
       const t = ns === 'minecraft' ? FLAT_TINT[name] : undefined
-      const u = await textureUrl(jars, resolveVar(textures, `#layer${i}`), t && t[0] === i ? t[1] : undefined)
+      // 물약·가죽은 아이템마다 색이 달라서 회색 그대로 보내고 화면에서 칠한다
+      const bake = t && t[0] === i && !PER_ITEM_COLOR.has(name)
+      const u = await textureUrl(jars, resolveVar(textures, `#layer${i}`), bake ? t[1] : undefined)
       if (u) layers.push(u)
       else if (i > 0) break
     }
@@ -486,7 +492,8 @@ async function itemIcon(jars: Jar[], id: string): Promise<ItemIcon | null> {
       const u = await textureUrl(jars, resolveVar(textures, '#particle'))
       if (u) layers.push(u)
     }
-    return layers.length ? { kind: 'flat', layers } : null
+    const t = ns === 'minecraft' && PER_ITEM_COLOR.has(name) ? FLAT_TINT[name] : undefined
+    return layers.length ? { kind: 'flat', layers, ...(t ? { tint: { layer: t[0], color: t[1] } } : {}) } : null
   }
   // 손에 드는 평평한 아이템
   if (textures.layer0 || parents.some((p) => /builtin\/generated$/.test(p))) return flat()

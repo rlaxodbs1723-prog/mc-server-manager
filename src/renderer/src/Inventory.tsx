@@ -183,16 +183,39 @@ function ModelIcon({ textures, boxes, rotY, onDrawn }: { textures: Record<string
   return <canvas ref={ref} width={px} height={px} className="inv-icon" />
 }
 
-export function ItemIconView({ icon, name, glint }: { icon: ItemIcon | null; name: string; glint?: string | null }) {
+// 회색 그림에 색을 곱해 칠한다 (물약 색, 염색 색). 투명한 곳은 그대로
+function Tinted({ src, color }: { src: string; color: number }) {
+  const [url, setUrl] = useState<string | null>(null)
+  useEffect(() => {
+    const img = new Image()
+    img.onload = () => {
+      const cv = document.createElement('canvas')
+      cv.width = img.width
+      cv.height = img.height
+      const c = cv.getContext('2d')!
+      c.drawImage(img, 0, 0)
+      c.globalCompositeOperation = 'multiply'
+      c.fillStyle = `#${color.toString(16).padStart(6, '0')}`
+      c.fillRect(0, 0, cv.width, cv.height)
+      c.globalCompositeOperation = 'destination-in'
+      c.drawImage(img, 0, 0)
+      setUrl(cv.toDataURL())
+    }
+    img.src = src
+  }, [src, color])
+  return url ? <img src={url} alt="" draggable={false} /> : null
+}
+
+export function ItemIconView({ icon, name, glint, color }: { icon: ItemIcon | null; name: string; glint?: string | null; color?: number }) {
   const [drawn, setDrawn] = useState<string | null>(null)
   let view
   if (icon?.kind === 'model') view = <ModelIcon {...icon} onDrawn={glint ? setDrawn : undefined} />
   else if (icon?.kind === 'flat')
     view = (
       <span className="inv-icon inv-flat">
-        {icon.layers.map((src, i) => (
-          <img key={i} src={src} alt="" draggable={false} />
-        ))}
+        {icon.layers.map((src, i) =>
+          icon.tint?.layer === i ? <Tinted key={i} src={src} color={color ?? icon.tint.color} /> : <img key={i} src={src} alt="" draggable={false} />
+        )}
       </span>
     )
   // 그림을 못 찾은 아이템 (일부 모드 아이템 등): 이름 첫 글자
@@ -240,7 +263,7 @@ function Slot({ item, digits, glint, onHover }: { item?: InvItem; digits: string
     <div className="inv-slot" onMouseMove={(e) => item && onHover(item, e)} onMouseLeave={() => onHover(null)}>
       {item && (
         <>
-          <ItemIconView icon={item.icon} name={item.name} glint={item.glint ? glint : null} />
+          <ItemIconView icon={item.icon} name={item.name} glint={item.glint ? glint : null} color={item.color} />
           {item.count > 1 && <Count n={item.count} digits={digits} />}
         </>
       )}
