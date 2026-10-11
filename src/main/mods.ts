@@ -109,6 +109,25 @@ export async function scanForOff(folderPath: string): Promise<boolean> {
   return offSuggestions(folderPath).length > 0
 }
 
+// 서버가 켜지다가 멈췄을 때: 로그에서 "게임 화면용 코드를 서버에서 불러서" 실패한 모드를 찾아 끌지 물어볼 목록에 넣는다
+// 로그 모양: "이름 (모드ID) encountered an error ..." 바로 다음 줄에 "invalid dist DEDICATED_SERVER"
+// 라이브러리가 다른 모드 대신 실패한 경우(NoClassDefFoundError)는 모드 ID가 라이브러리를 가리키므로 잡지 않는다
+export async function suggestFromCrash(folderPath: string, log: string[]): Promise<number> {
+  const text = log.slice(-400).join('\n')
+  const re = /\(([\w.-]+)\) (?:encountered an error[^\n]*|has failed to load correctly)[^\S\n]*\n[^\n]*invalid dist DEDICATED_SERVER/g
+  const ids = new Set([...text.matchAll(re)].map((m) => m[1]))
+  if (!ids.size) return 0
+  const { dir } = load(folderPath)
+  if (!fs.existsSync(dir)) return 0
+  const found: [string, OffReason][] = []
+  for (const f of fs.readdirSync(dir).filter((x) => /\.jar$/i.test(x))) {
+    const id = (await localInfo(path.join(dir, f)).catch(() => ({ id: null }))).id
+    if (id && ids.has(id)) found.push([f, 'startFail'])
+  }
+  suggestOff(folderPath, found)
+  return found.length
+}
+
 // 고른 것만 끄고 목록을 비운다 (고르지 않은 것은 사용자가 켜 두기로 한 것이라 다시 묻지 않는다)
 export function applyOffSuggestions(folderPath: string, fileNames: string[]): Promise<void> {
   return serial(folderPath, async () => {

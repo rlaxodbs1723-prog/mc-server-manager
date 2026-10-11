@@ -380,7 +380,7 @@ export interface InstalledDatapack {
 export interface OffSuggestion {
   fileName: string
   title: string
-  reason: 'client' | 'clientMixin'
+  reason: 'client' | 'clientMixin' | 'startFail'
 }
 
 export interface InstalledMod {
@@ -390,7 +390,7 @@ export interface InstalledMod {
   versionNumber: string
   iconUrl: string | null
   clientRequired: boolean // 접속하는 사람도 설치해야 함
-  offReason: 'client' | 'clientMixin' | null // 앱이 서버에 안 맞아서 꺼 둔 이유 (클라이언트 전용 / 서버에서 튕기는 버전)
+  offReason: 'client' | 'clientMixin' | 'startFail' | null // 앱이 서버에 안 맞아서 꺼 둔 이유 (클라이언트 전용 / 서버에서 튕기는 버전)
   requiredBy: string[] // 이것을 필요로 해서 같이 설치된 경우, 필요로 하는 것들의 이름
   tracked: boolean // 앱으로 설치해서 버전을 바꿀 수 있는지
 }

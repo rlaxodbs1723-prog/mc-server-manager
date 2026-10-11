@@ -10,7 +10,7 @@ import fs from 'fs'
 import yauzl from 'yauzl'
 import * as modrinth from './modrinth'
 
-export type OffReason = 'client' | 'clientMixin'
+export type OffReason = 'client' | 'clientMixin' | 'startFail'
 
 const META = ['fabric.mod.json', 'quilt.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml', 'META-INF/MANIFEST.MF', 'mcmod.info']
 

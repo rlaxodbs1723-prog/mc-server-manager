@@ -279,6 +279,7 @@ function CrashWatcher({ servers }: { servers: ServerListItem[] }) {
     () =>
       window.api.onServerEvent((e) => {
         if (e.type !== 'crashed') return
+        window.dispatchEvent(new Event('off-suggest-check')) // 게임 화면용 모드 때문에 멈췄으면 끌지 묻는다
         const name = servers.find((s) => s.folderPath === e.folderPath)?.name ?? '서버'
         if (e.restarting) toast(`서버가 튕겨서 5초 뒤에 다시 켜요 (${name}) · ${e.reason}`, 'error')
         else setCrash({ name, folderPath: e.folderPath, analysis: e.analysis })

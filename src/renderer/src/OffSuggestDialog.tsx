@@ -5,7 +5,8 @@ import { cleanError } from './util'
 
 const WHY: Record<OffSuggestion['reason'], string> = {
   client: '클라이언트 전용',
-  clientMixin: '서버에서 튕김'
+  clientMixin: '서버에서 튕김',
+  startFail: '켜다가 멈춤'
 }
 
 // 모드를 넣은 뒤 서버를 확인해 보라고 알린다 (모드 탭 → 이 창)

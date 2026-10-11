@@ -29,6 +29,7 @@ import { installModpack } from './modpack'
 import { getServerIcon, setServerIconFrom } from './icon'
 import { notify } from './notify'
 import { analyzeCrash } from './crash'
+import { suggestFromCrash } from './mods'
 import { readYamlValue, writeYamlValue } from './yamlvalue'
 import { appLog, emitEvent, getPlayers, getStartedAt, getState, serverPort, isEulaAccepted, onCrash, onServerEvent, startServer } from './runner'
 
@@ -537,7 +538,9 @@ export function cancelAutoRestarts(): void {
   pendingRestarts.clear()
 }
 
-onCrash((folderPath, { log, startedAt, wasRunning }) => {
+onCrash(async (folderPath, { log, startedAt, wasRunning }) => {
+  // 게임 화면용 모드 때문에 켜다가 멈췄으면 끌지 물어볼 목록에 넣는다 (창은 튕김 알림 뒤에 화면에서 띄운다)
+  await suggestFromCrash(folderPath, log).catch(() => 0)
   const analysis = analyzeCrash(folderPath, log, startedAt)
   const reason = analysis.title
   notify(`${serverName(folderPath)} 서버가 튕겼어요`, reason + (wasRunning ? '' : ' (켜지는 중에 꺼졌어요)'))

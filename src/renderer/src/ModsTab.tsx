@@ -419,6 +419,11 @@ export default function ModsTab({ folderPath, kind, serverOn }: Props) {
                         서버에서 튕김
                       </span>
                     )}
+                    {m.offReason === 'startFail' && (
+                      <span className="mini-tag" title="서버를 켜다가 이 모드 때문에 멈췄어요 (게임 화면용 코드가 들어 있어요). 앱이 꺼 뒀어요.">
+                        켜다가 멈춤
+                      </span>
+                    )}
                     {m.clientRequired && kind.kind === '모드' && (
                       <span className="mini-tag" title="서버에 들어오는 플레이어도 자기 컴퓨터에 설치해야 해요">
                         플레이어도 설치
