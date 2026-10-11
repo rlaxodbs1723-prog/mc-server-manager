@@ -367,6 +367,21 @@ function frontIcon(img: Electron.NativeImage, base: number, x: number, y: number
   return { kind: 'flat', layers: [nativeImage.createFromBitmap(out, { width: n, height: n }).toDataURL()] }
 }
 
+// 몹 모델처럼 여러 상자로 된 것 (드래곤 머리 등). 모델 좌표(y는 아래로, 앞은 -z)를 인벤토리 좌표로 바꾸고 16칸 안에 맞춘다
+// [이름, x, y, z, 너비, 높이, 깊이, 그림 u, v]
+type EntityBox = [string, number, number, number, number, number, number, number, number]
+function entityModelIcon(img: Electron.NativeImage, base: number, parts: EntityBox[]): ItemIcon {
+  // 앞(-z)이 왼쪽 앞(동쪽)을 보게: X = -z, Y = -y, Z = x
+  const conv = parts.map(([key, x, y, z, w, h, d, u, v]) => ({ key, u, v, w, h, d, from: [-(z + d), -(y + h), x], to: [-z, -y, x + w] }))
+  const lo = [0, 1, 2].map((i) => Math.min(...conv.map((c) => c.from[i])))
+  const hi = [0, 1, 2].map((i) => Math.max(...conv.map((c) => c.to[i])))
+  const scale = 16 / Math.max(...[0, 1, 2].map((i) => hi[i] - lo[i]))
+  // 가로·앞뒤는 가운데에, 아래는 바닥에 맞춘다
+  const off = [0, 1, 2].map((i) => (i === 1 ? 0 : (16 - (hi[i] - lo[i]) * scale) / 2))
+  const fit = (p: number[]) => p.map((n, i) => (n - lo[i]) * scale + off[i])
+  return boxesIcon(conv.map((c) => [c.key, uvFaces(img, base, c.u, c.v, c.w, c.h, c.d), fit(c.from), fit(c.to)] as [string, Faces, number[], number[]]))
+}
+
 // 염료 색 (배너)
 const DYE: Record<string, number> = {
   white: 0xf9fffe, orange: 0xf9801d, magenta: 0xc74ebd, light_blue: 0x3ab3da, yellow: 0xfed83d, lime: 0x80c71f, pink: 0xf38baa, gray: 0x474f52,
@@ -384,6 +399,20 @@ async function specialIcon(jars: Jar[], id: string, spec: Spec | undefined): Pro
     const h = HEADS[id]
     if (!h) return null
     const [ref, base, u, v, w, hh, d] = h
+    if (id === 'minecraft:dragon_head') {
+      // 게임의 드래곤 머리 모양: 머리, 주둥이, 아래턱, 콧구멍 2개, 뿔 2개
+      const dragon = await entityImage(jars, ref)
+      if (!dragon) return null
+      return entityModelIcon(dragon, 256, [
+        ['a', -8, -8, -10, 16, 16, 16, 112, 30],
+        ['b', -6, -1, -24, 12, 5, 16, 176, 44],
+        ['c', -6, 4, -24, 12, 4, 16, 176, 65],
+        ['d', -5, -3, -22, 2, 2, 4, 112, 0],
+        ['e', 3, -3, -22, 2, 2, 4, 112, 0],
+        ['f', -5, -12, -4, 2, 4, 6, 0, 0],
+        ['g', 3, -12, -4, 2, 4, 6, 0, 0]
+      ])
+    }
     let img = await entityImage(jars, ref)
     if (!img && id === 'minecraft:player_head') img = await entityImage(jars, 'minecraft:entity/steve') // 예전 버전 위치
     if (!img) return null
