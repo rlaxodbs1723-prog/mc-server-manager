@@ -542,6 +542,8 @@ export interface Api {
   getAppInfo: () => Promise<AppInfo>
   // playit 연결 끊기 (저장한 키를 지우고 터널 프로그램을 끈다)
   unlinkTunnel: () => Promise<void>
+  getClaimUrl: () => Promise<string | null> // playit 승인 페이지 주소 (승인을 기다리는 동안)
+  openClaimPage: () => Promise<void>
   setAppSettings: (patch: Partial<AppSettings>) => Promise<AppSettings>
   openDataFolder: () => Promise<void>
   // 파일 탐색기 (rel은 서버 폴더 기준 경로, ""이면 맨 위)

@@ -94,6 +94,14 @@ function InviteHelp({
 }) {
   const toast = useToast()
   const [linking, setLinking] = useState(false)
+  const [claimUrl, setClaimUrl] = useState<string | null>(null)
+
+  // 승인을 기다리는 동안 승인 페이지 주소를 화면에 보여 준다 (브라우저가 안 열릴 때 직접 열 수 있게)
+  useEffect(() => {
+    if (!linking) return setClaimUrl(null)
+    const t = setInterval(() => window.api.getClaimUrl().then(setClaimUrl).catch(() => undefined), 1000)
+    return () => clearInterval(t)
+  }, [linking])
 
   async function tunnel() {
     setLinking(true)
@@ -121,6 +129,22 @@ function InviteHelp({
           <li>{'앱으로 돌아오면 접속 주소가 떠요. 다음부터는 알아서 열려요.'}</li>
         </ol>
         {linking && <p className="hint">{'브라우저에서 승인을 기다리고 있어요…'}</p>}
+        {linking && claimUrl && (
+          <>
+            <p className="hint">{'브라우저가 안 열리면 아래 주소를 브라우저에 붙여 넣어 주세요.'}</p>
+            <p className="hint" style={{ wordBreak: 'break-all', userSelect: 'text' }}>
+              {claimUrl}
+            </p>
+            <div className="actions" style={{ justifyContent: 'flex-start' }}>
+              <button className="btn sm" onClick={() => window.api.copyText(claimUrl).then(() => toast('주소를 복사했어요'))}>
+                주소 복사
+              </button>
+              <button className="btn sm" onClick={() => window.api.openClaimPage()}>
+                브라우저로 다시 열기
+              </button>
+            </div>
+          </>
+        )}
         {invite.lan.length > 0 && <p className="hint">{`같은 와이파이의 플레이어는 지금도 ${invite.lan.join(', ')}(으)로 접속할 수 있어요.`}</p>}
         <p className="hint">이 컴퓨터에서는 지금도 localhost로 접속할 수 있어요.</p>
       </div>

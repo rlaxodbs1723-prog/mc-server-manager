@@ -46,21 +46,32 @@ async function call<T>(route: string, body: unknown, secret?: string | null): Pr
   throw new Error(`playit ${route} 실패 (${JSON.stringify(json?.data ?? res.status)})`)
 }
 
+// 승인 페이지 주소 (브라우저가 안 열려도 화면에서 복사해 열 수 있게)
+let claimUrl: string | null = null
+export const getClaimUrl = (): string | null => claimUrl
+export function openClaimPage(): Promise<void> {
+  return claimUrl ? shell.openExternal(claimUrl) : Promise.resolve()
+}
+
 // 브라우저에서 승인 받기: 코드를 만들고 승인 페이지를 연 뒤, 승인될 때까지 기다렸다가 키를 받아 저장한다
 export async function linkTunnel(): Promise<void> {
   if (tunnelLinked()) return
   const code = crypto.randomBytes(5).toString('hex')
-  const setup = (): Promise<string> =>
-    call<string>('/claim/setup', { code, agent_type: 'self-managed', version: 'playit 1.0.10' })
+  const setup = (): Promise<string> => call<string>('/claim/setup', { code, agent_type: 'self-managed', version: 'playit 1.0.10' })
   await setup()
-  await shell.openExternal(`https://playit.gg/claim/${code}`)
+  claimUrl = `https://playit.gg/claim/${code}`
+  await shell.openExternal(claimUrl).catch(() => undefined) // 브라우저가 안 열려도 화면의 주소로 승인할 수 있다
   const end = Date.now() + LINK_TIMEOUT_MS
-  for (;;) {
-    if (Date.now() > end) throw new Error('playit 승인을 기다리다 시간이 지났어요. 다시 해 주세요.')
-    const state = await setup().catch(() => 'WaitingForUser')
-    if (state === 'UserAccepted') break
-    if (state === 'UserRejected') throw new Error('playit 승인을 거절했어요.')
-    await sleep(2000)
+  try {
+    for (;;) {
+      if (Date.now() > end) throw new Error('playit 승인을 기다리다 시간이 지났어요. 다시 해 주세요.')
+      const state = await setup().catch(() => 'WaitingForUser')
+      if (state === 'UserAccepted') break
+      if (state === 'UserRejected') throw new Error('playit 승인을 거절했어요.')
+      await sleep(2000)
+    }
+  } finally {
+    claimUrl = null
   }
   const { secret_key } = await call<{ secret_key: string }>('/claim/exchange', { code })
   fs.mkdirSync(dir(), { recursive: true })
@@ -119,8 +130,7 @@ interface RunData {
   tunnels: { id: string; name: string; display_address: string; tunnel_type: string | null; agent_config: { fields: { name: string; value: string }[] } }[]
 }
 
-const localPortOf = (t: RunData['tunnels'][number]): number =>
-  Number(t.agent_config.fields.find((f) => f.name === 'local_port')?.value)
+const localPortOf = (t: RunData['tunnels'][number]): number => Number(t.agent_config.fields.find((f) => f.name === 'local_port')?.value)
 
 // 이 서버 포트로 이어지는 터널을 찾거나 만들고, 에이전트를 켜서 접속 주소를 돌려준다
 export async function openTunnel(folderPath: string, port: number): Promise<string> {
@@ -134,23 +144,26 @@ export async function openTunnel(folderPath: string, port: number): Promise<stri
   // 포트를 바꾸면 예전 포트의 터널이 남는다. 지금 켜진 서버들이 쓰지 않는, 이 앱이 만든 터널은 지운다
   const inUse = new Set(users.values())
   for (const t of run.tunnels)
-    if (t.name.startsWith('cubepanel-') && !inUse.has(localPortOf(t)))
-      await call('/tunnels/delete', { tunnel_id: t.id }, secret).catch(() => {})
+    if (t.name.startsWith('cubepanel-') && !inUse.has(localPortOf(t))) await call('/tunnels/delete', { tunnel_id: t.id }, secret).catch(() => {})
   // 막 켠 에이전트가 playit에 버전을 알리기 전에는 AgentVersionTooOld로 거절되므로, 잠깐 기다리며 다시 시도한다
   const createEnd = Date.now() + ADDRESS_TIMEOUT_MS
   while (!run.tunnels.some((t) => localPortOf(t) === port)) {
     try {
-      await call('/tunnels/create', {
-        name: `cubepanel-${port}`,
-        tunnel_type: 'minecraft-java',
-        port_type: 'tcp',
-        port_count: 1,
-        origin: { type: 'agent', data: { agent_id: run.agent_id, local_ip: '127.0.0.1', local_port: port } },
-        enabled: true,
-        alloc: null,
-        firewall_id: null,
-        proxy_protocol: null
-      }, secret)
+      await call(
+        '/tunnels/create',
+        {
+          name: `cubepanel-${port}`,
+          tunnel_type: 'minecraft-java',
+          port_type: 'tcp',
+          port_count: 1,
+          origin: { type: 'agent', data: { agent_id: run.agent_id, local_ip: '127.0.0.1', local_port: port } },
+          enabled: true,
+          alloc: null,
+          firewall_id: null,
+          proxy_protocol: null
+        },
+        secret
+      )
       break
     } catch (e) {
       if (!/AgentVersionTooOld|AgentNotFound/.test(String(e)) || Date.now() > createEnd) throw e
