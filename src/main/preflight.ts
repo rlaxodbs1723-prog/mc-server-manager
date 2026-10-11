@@ -124,9 +124,15 @@ async function checkMods(folderPath: string, forge: boolean): Promise<Pick<Prefl
     }
   }
   const duplicates = [...owners].filter(([id, o]) => o.files.length > 1 && !BUILT_IN.has(id)).map(([, o]) => ({ mod: o.name, files: o.files }))
+  // Sinytra Connector가 있으면 Forge 서버에서 Fabric 모드가 돈다: Fabric 쪽 이름(cloth-config2, fabric 등)은 Forge 쪽 같은 모드(cloth_config, fabric_api)로 보고 같은 것으로 친다
+  const norm = (id: string): string => id.toLowerCase().replace(/[^a-z0-9]/g, '').replace(/\d+$/, '')
+  const connector = have.has('connectormod') || have.has('connector')
+  const haveNorm = new Set([...have].map(norm))
+  if (connector && haveNorm.has('fabricapi')) haveNorm.add('fabric')
+  const covered = (id: string): boolean => have.has(id) || (connector && haveNorm.has(norm(id)))
   const out: PreflightResult['missing'] = []
   for (const m of on) {
-    const needs = [...new Set(m.needs)].filter((id) => !BUILT_IN.has(id) && !have.has(id)).map((id) => (off.has(id) ? `${id} (꺼져 있음)` : id))
+    const needs = [...new Set(m.needs)].filter((id) => !BUILT_IN.has(id) && !covered(id)).map((id) => (off.has(id) ? `${id} (꺼져 있음)` : id))
     if (needs.length) out.push({ mod: m.name, needs })
   }
   return { missing: out, duplicates }

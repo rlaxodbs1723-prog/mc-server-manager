@@ -113,9 +113,16 @@ export async function scanForOff(folderPath: string): Promise<boolean> {
 // 로그 모양: "이름 (모드ID) encountered an error ..." 바로 다음 줄에 "invalid dist DEDICATED_SERVER"
 // 라이브러리가 다른 모드 대신 실패한 경우(NoClassDefFoundError)는 모드 ID가 라이브러리를 가리키므로 잡지 않는다
 export async function suggestFromCrash(folderPath: string, log: string[]): Promise<number> {
-  const text = log.slice(-400).join('\n')
+  const text = log.slice(-1500).join('\n')
   const re = /\(([\w.-]+)\) (?:encountered an error[^\n]*|has failed to load correctly)[^\S\n]*\n[^\n]*invalid dist DEDICATED_SERVER/g
   const ids = new Set([...text.matchAll(re)].map((m) => m[1]))
+  // 모드 불러오기 실패 목록: "이름 (모드ID) has failed to load correctly" 다음 줄이 게임 화면 클래스 오류이거나, 모드별 상세 칸의 오류 메시지가 게임 화면 클래스
+  for (const m of text.matchAll(/\(([\w.-]+)\) has failed to load correctly\s*\n[^\n]*(?:invalid dist DEDICATED_SERVER|NoClassDefFoundError: net\/minecraft\/client\/)/g)) ids.add(m[1])
+  for (const m of text.matchAll(/-- MOD ([\w.-]+) --(?:(?!\n-- )[\s\S]){0,20000}?Exception message: [^\n]*(?:invalid dist DEDICATED_SERVER|ClassNotFoundException: net\.minecraft\.client\.)/g)) ids.add(m[1])
+  // 믹스인이 서버에 없는 클래스를 끌어들인 경우: 오류 줄에 이름이 없고, 스택에 "handler$해시$모드ID$..." 로 모드 ID가 찍힌다
+  if (!ids.size && /invalid dist DEDICATED_SERVER/.test(text)) {
+    for (const m of text.matchAll(/handler\$[0-9a-f]+\$([a-z][a-z0-9_]*)\$/g)) ids.add(m[1])
+  }
   if (!ids.size) return 0
   const { dir } = load(folderPath)
   if (!fs.existsSync(dir)) return 0
@@ -123,6 +130,11 @@ export async function suggestFromCrash(folderPath: string, log: string[]): Promi
   for (const f of fs.readdirSync(dir).filter((x) => /\.jar$/i.test(x))) {
     const id = (await localInfo(path.join(dir, f)).catch(() => ({ id: null }))).id
     if (id && ids.has(id)) found.push([f, 'startFail'])
+  }
+  // 튕긴 증거가 있으니, 전에 "켜 두기"로 고른 것도 다시 묻는다
+  if (found.length) {
+    const drop = new Set([...found.map(([f]) => f), ...[...ids].map((id) => `id:${id}`)])
+    fs.writeFileSync(path.join(folderPath, KEEP_FILE), JSON.stringify(readKeep(folderPath).filter((k) => !drop.has(k))))
   }
   suggestOff(folderPath, found)
   return found.length
