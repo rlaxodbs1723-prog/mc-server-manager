@@ -41,7 +41,7 @@
   - 들어왔던 플레이어 창(관리 탭 버튼, 사용자가 다시 원함), 초대 주소 옆 "내 접속: localhost"
   - 접속 확인(레이더)이 실패하면 빨간 표시로 바꾸고 터널 안내 창을 띄움 (playit 연결돼 있으면 바로 터널). 전에는 알림만 떠서 터널을 못 열었음
 - 1.0.9 빌드 뒤 커밋(다시 빌드 필요): 아이템 그림 수정 전부, 선택 버튼 낱말 안 자르기, 배고픔 회복 버튼 줄바꿈
-- 1.0.10 예정(커밋됨, 아직 빌드 안 함): 켜기 전 점검 오탐 수정(설명에 줄바꿈 든 정보 파일 읽기, Forge 서버는 mods.toml 먼저, 안에 든 jar만 모드인 jar), 켜다가 멈춘 모드 감지(서버 튕김 로그의 "이름 (모드ID) encountered an error" 다음 줄이 invalid dist DEDICATED_SERVER면 그 모드를 끌지 묻는 목록에 넣음: mods.suggestFromCrash, 이유 startFail). 한계: 라이브러리가 대신 실패하는 경우(Framework ← controllable)는 못 잡음. 후보: Missing Mods Checker 팩(선릿밸리)의 CurseForge 모드 받기 안내
+- 1.0.10 (빌드함): 켜기 전 점검 오탐 수정(설명에 줄바꿈 든 정보 파일 읽기, Forge 서버는 mods.toml 먼저, 안에 든 jar만 모드인 jar), 켜다가 멈춘 모드 감지(서버 튕김 로그의 "이름 (모드ID) encountered an error" 다음 줄이 invalid dist DEDICATED_SERVER면 그 모드를 끌지 묻는 목록에 넣음: mods.suggestFromCrash, 이유 startFail). 한계: 라이브러리가 대신 실패하는 경우(Framework ← controllable)는 못 잡음. 후보: Missing Mods Checker 팩(선릿밸리)의 CurseForge 모드 받기 안내
 - 아이템 그림 점검 방법: 스크래치패드에서 electron으로 getItemIcons를 돌려 모든 아이템(1,658개)을 표로 그려 보고, 모델 파일을 훑어 처리 안 하는 기능(회전, display 등)을 찾았다
 
 ## 사용자가 뺀 것 (다시 넣지 말 것)
