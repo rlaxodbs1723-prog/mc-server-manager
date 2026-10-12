@@ -59,7 +59,7 @@ async function open(folderPath: string, name: string): Promise<void> {
     }
     return set(folderPath, { state: 'failed', message, lan, port })
   }
-  set(folderPath, { state: 'open', address: withPort(result.externalIp, port), lan })
+  set(folderPath, { state: 'open', address: withPort(result.externalIp, port), lan, port })
 }
 
 // 공유기로 못 연 원인. 터널을 다시 시도할 때 터널 에러가 겹겹이 붙지 않게 따로 둔다
@@ -71,7 +71,7 @@ async function openViaTunnel(folderPath: string, port: number, lan: string[], up
   try {
     const address = await openTunnel(folderPath, port)
     if (status.get(folderPath)?.state !== 'opening') return closeTunnel(folderPath) // 그사이 서버가 꺼졌다
-    set(folderPath, { state: 'open', address, lan, tunnel: true })
+    set(folderPath, { state: 'open', address, lan, port, tunnel: true })
   } catch (e) {
     closeTunnel(folderPath)
     set(folderPath, { state: 'failed', message: `${upnpMessage} (터널: ${(e as Error).message})`, lan, port })

@@ -92,7 +92,7 @@ export type ServerState = 'stopped' | 'starting' | 'running' | 'stopping'
 export type InviteStatus =
   | { state: 'off' }
   | { state: 'opening'; lan: string[] }
-  | { state: 'open'; address: string; lan: string[]; tunnel?: boolean } // tunnel: playit 터널 주소
+  | { state: 'open'; address: string; lan: string[]; port: number; tunnel?: boolean } // tunnel: playit 터널 주소 / port: 이 컴퓨터에서 서버가 쓰는 포트
   | { state: 'failed'; message: string; lan: string[]; port: number }
 
 export type ServerEvent =

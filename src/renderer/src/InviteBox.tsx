@@ -1,4 +1,4 @@
-import { AlertTriangle, Copy, Radar } from 'lucide-react'
+import { AlertTriangle, Copy, Info, Radar } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { InviteStatus } from '../../shared-types'
 import { Modal, useToast } from './ui'
@@ -32,7 +32,11 @@ export default function InviteBox({ folderPath }: { folderPath: string }) {
   }
 
   if (invite.state === 'off') return null
-  const lanHint = invite.lan.length ? `같은 와이파이에서는 ${invite.lan.join(', ')} · 이 컴퓨터에서는 localhost` : '이 컴퓨터에서는 localhost'
+  // 서버 포트가 기본(25565)이 아니면 주소 뒤에 :포트를 붙여야 접속된다
+  const port = 'port' in invite ? invite.port : 25565
+  const suffix = port === 25565 ? '' : `:${port}`
+  const localAddr = `localhost${suffix}`
+  const lanHint = invite.lan.length ? `같은 와이파이에서는 ${invite.lan.map((ip) => ip + suffix).join(', ')} · 이 컴퓨터에서는 ${localAddr}` : `이 컴퓨터에서는 ${localAddr}`
 
   if (invite.state === 'failed')
     return (
@@ -68,12 +72,18 @@ export default function InviteBox({ folderPath }: { folderPath: string }) {
       <button
         className="invite-self"
         onClick={async () => {
-          await window.api.copyText('localhost')
-          toast('localhost를 복사했어요. 이 컴퓨터에서 접속할 때 쓰세요!')
+          await window.api.copyText(localAddr)
+          toast(`${localAddr}를 복사했어요. 이 컴퓨터에서 접속할 때 쓰세요!`)
         }}
         title={`이 컴퓨터에서 접속할 때는 이 주소를 쓰세요 (눌러서 복사) · ${lanHint}`}
       >
-        내 접속: localhost
+        내 접속: {localAddr}
+      </button>
+      <button
+        onClick={() => toast(`이 컴퓨터에서 마인크래프트로 접속할 때는 바깥 주소 대신 "${localAddr}"를 입력하세요. 같은 와이파이의 다른 컴퓨터는 ${invite.lan.length ? invite.lan.map((ip) => ip + suffix).join(' 또는 ') : '이 컴퓨터의 내부 주소'}를 쓰고, 다른 곳의 친구는 위의 접속 주소를 쓰면 돼요.${suffix ? ' 서버 포트가 기본(25565)이 아니라서 :' + port + '까지 꼭 써야 해요.' : ''}`)}
+        title="이 주소를 언제 쓰는지 알려 줘요"
+      >
+        <Info size={14} />
       </button>
       <button onClick={check} disabled={checking} title="밖에서 접속되는지 확인">
         {checking ? <span className="spinner" /> : <Radar size={14} />}
@@ -145,8 +155,8 @@ function InviteHelp({
             </div>
           </>
         )}
-        {invite.lan.length > 0 && <p className="hint">{`같은 와이파이의 플레이어는 지금도 ${invite.lan.join(', ')}(으)로 접속할 수 있어요.`}</p>}
-        <p className="hint">이 컴퓨터에서는 지금도 localhost로 접속할 수 있어요.</p>
+        {invite.lan.length > 0 && <p className="hint">{`같은 와이파이의 플레이어는 지금도 ${invite.lan.map((ip) => ip + (invite.port === 25565 ? '' : `:${invite.port}`)).join(', ')}(으)로 접속할 수 있어요.`}</p>}
+        <p className="hint">이 컴퓨터에서는 지금도 {invite.port === 25565 ? 'localhost' : `localhost:${invite.port}`}로 접속할 수 있어요.</p>
       </div>
       <div className="actions">
         <button className="btn primary" onClick={tunnel} disabled={linking}>
