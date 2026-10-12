@@ -75,8 +75,7 @@ const SECTIONS: Section[] = [
       { key: 'pause-when-empty-seconds', label: '아무도 없을 때 멈추기', desc: '모두 나가고 1분이 지나면 월드 시간이 멈춰서 컴퓨터가 덜 힘들어요.', type: 'toggle', def: '60', onValue: '60' },
       { key: 'enable-status', label: '서버 목록에 정보 보이기', desc: '끄면 서버 목록에서 인원·설명이 안 보이고 "연결할 수 없음"처럼 보여요. 들어오는 건 돼요.', type: 'bool', def: true },
       { key: 'accepts-transfers', label: '다른 서버에서 넘어오기 허용', desc: '다른 서버가 플레이어를 이 서버로 보내는 것(/transfer)을 받아들여요.', type: 'bool', def: false },
-      { key: 'log-ips', label: '접속 IP 기록', desc: '로그에 접속한 사람의 IP 주소를 남겨요.', type: 'bool', def: true },
-      { key: 'server-port', label: '서버 포트 (접속 주소)', desc: '플레이어가 들어오는 포트예요. 서버를 여러 개 동시에 켤 때만 바꾸세요.', type: 'number', def: 25565, min: 1024, max: 65535 }
+      { key: 'log-ips', label: '접속 IP 기록', desc: '로그에 접속한 사람의 IP 주소를 남겨요.', type: 'bool', def: true }
     ]
   },
   { title: '자동', icon: <Timer size={18} />, fields: [] },
@@ -192,7 +191,6 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
   const [tab, setTab] = useState(SECTIONS[1].title) // 처음에는 게임 탭
   const [askReset, setAskReset] = useState(false)
   const [askDiscard, setAskDiscard] = useState(false)
-  const [focusKey, setFocusKey] = useState<string | null>(null) // 이 설정 칸으로 데려가서 반짝 표시
 
   const load = () => {
     window.api.getHardcore(folderPath).then((h) => setHardcore(h.hardcore))
@@ -255,10 +253,7 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
       const port = Number(props['server-port'] || 25565)
       const clash = settings.otherAutoStart.filter((o) => o.port === port).map((o) => o.name)
       if (clash.length) {
-        setTab('접속')
-        setFocusKey('server-port')
-        setTimeout(() => setFocusKey(null), 2000)
-        return toast(`${clash.join(', ')} 서버와 서버 포트(${port})가 겹쳐요. 서버 포트를 바꾸거나 "앱을 켜면 이 서버도 켜기"를 꺼 주세요.`, 'error')
+        return toast(`${clash.join(', ')} 서버와 서버 포트(${port})가 겹쳐요. 서버 이름 위의 서버 포트 칸에서 바꾸거나 "앱을 켜면 이 서버도 켜기"를 꺼 주세요.`, 'error')
       }
     }
     setSaving(true)
@@ -422,11 +417,7 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
         {tab === '자동' && (
           <AutomationRows
             port={Number(props['server-port'] || 25565)}
-            onGoPort={() => {
-              setTab('접속')
-              setFocusKey('server-port')
-              setTimeout(() => setFocusKey(null), 2000)
-            }}
+            onGoPort={requestClose}
             portClash={settings.otherAutoStart.filter((o) => o.port === Number(props['server-port'] || 25565)).map((o) => o.name)}
             value={{ ...settings.automation, ...autoEdit }}
             changed={autoEdit}
@@ -473,7 +464,7 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
           </div>
         )}
         {fields.map((f) =>
-          <FieldRow key={f.key} field={f} value={valueOf(f, props)} changed={f.key in edits} focus={focusKey === f.key} onChange={(v) => set(f.key, v)} />
+          <FieldRow key={f.key} field={f} value={valueOf(f, props)} changed={f.key in edits} onChange={(v) => set(f.key, v)} />
         )}
         {!fileExists && <p className="hint" style={{ padding: '14px 0' }}>서버를 한 번 켜면 설정 항목이 더 생겨요.</p>}
       </>
@@ -732,7 +723,7 @@ function AutomationRows({ value: a, changed, port, portClash, onGoPort, onChange
         <Modal onClose={() => setClash(false)}>
           <h2>포트가 겹쳐서 켤 수 없어요</h2>
           <p className="body">
-            앱을 켤 때 같이 켜지는 {portClash.join(', ')} 서버가 이 서버와 같은 서버 포트({port})를 써요. 같은 포트로는 한 서버만 켜질 수 있어요. 이 서버의 서버 포트를 바꾼 뒤 다시 켜 주세요 (예: {port + 1}).
+            앱을 켤 때 같이 켜지는 {portClash.join(', ')} 서버가 이 서버와 같은 서버 포트({port})를 써요. 같은 포트로는 한 서버만 켜질 수 있어요. 설정을 닫고 서버 이름 위의 서버 포트 칸에서 바꾼 뒤 다시 켜 주세요 (예: {port + 1}).
           </p>
           <div className="actions">
             <button className="btn" onClick={() => setClash(false)}>
@@ -746,7 +737,7 @@ function AutomationRows({ value: a, changed, port, portClash, onGoPort, onChange
                 onGoPort()
               }}
             >
-              서버 포트 바꾸러 가기
+              설정 닫고 포트 바꾸기
             </button>
           </div>
         </Modal>
