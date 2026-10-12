@@ -46,12 +46,16 @@ export async function handleInbox(req, env) {
   const hit = cache && (await cache.match(key))
   if (hit) return hit
   try {
-    const [notices, patches] = await Promise.all([channelPosts(env.NOTICE_CHANNEL_ID, bot), channelPosts(env.PATCH_CHANNEL_ID, bot)])
+    // 한쪽 채널을 못 읽어도(채널 번호 오류·권한) 다른 쪽은 보여 준다. 둘 다 못 읽을 때만 오류로 답한다
+    const [a, b] = await Promise.allSettled([channelPosts(env.NOTICE_CHANNEL_ID, bot), channelPosts(env.PATCH_CHANNEL_ID, bot)])
+    if (a.status === 'rejected' && b.status === 'rejected') throw a.reason
+    const notices = a.status === 'fulfilled' ? a.value : []
+    const patches = b.status === 'fulfilled' ? b.value : []
     const res = new Response(JSON.stringify({ notices, patches }), {
       headers: { 'Content-Type': 'application/json', 'Cache-Control': `public, max-age=${CACHE_SEC}` }
     })
     // 비어 있으면 (설정 중이거나 아직 글이 없으면) 기억하지 않아서 바로 다시 물을 수 있게 한다
-    if (cache && (notices.length || patches.length)) await cache.put(key, res.clone())
+    if (cache && a.status === 'fulfilled' && b.status === 'fulfilled' && (notices.length || patches.length)) await cache.put(key, res.clone())
     return res
   } catch {
     return new Response('discord error', { status: 502 })
