@@ -46,6 +46,7 @@
 - 1.0.12 (배포함): 모드팩 고르기 진행 표시·정렬 수정, 콘솔 ERROR 노란색·같은 줄 x2 묶기, localhost:포트 안내(i), 만들다 끊긴 서버 정리 알림, 서버 포트 칸(꺼졌을 때 주소 자리, 켜면 주소로), 설정의 포트 항목 삭제, CurseForge 모드가 든 서버의 .mrpack 내보내기 수정, 작업 번호 겹침 수정, 빠진 영어·중국어 번역 보충. 한계: 강제 종료 시 Java 설치 프로세스가 남을 수 있음
 - 1.0.13 (배포함): 윗줄에 디스코드 서버 입장 버튼(초대 링크 https://discord.gg/Z6EdhRP9Ep 하나만 openExternal 허용). 알림함 채널은 Cloudflare 변수 NOTICE_CHANNEL_ID·PATCH_CHANNEL_ID로 읽음(채널을 새로 만들면 변수 바꾸고 재배포)
 - 1.0.14 (배포함): 새 서버 만들기 화면 맨 위에 "초기 버전" 안내 상자(디스코드 서버 가입·버그 제보하기 버튼, 제보 창은 window 이벤트 open-bug-report로 엶), 버그 제보 창에 디스코드 가입 안내. 디스코드 로고는 DiscordLogo.tsx
+- 1.0.15 (배포함): 터널 키가 playit에서 무효(InvalidAgentKey)면 저장된 키를 지우고 승인부터 다시 받음(tunnel.ts openTunnel, invite.ts useTunnel). 터널 안내 창은 열릴 때 승인 코드를 미리 만들어(prepareClaim) 링크를 바로 보여 줌. 시험용 환경 변수: MCSM_FAKE_INVITE=double-nat(공유기 실패 흉내), MCSM_FAKE_LINK=1(playit 연결 안 된 척, 승인 대기 화면)
 - 아이템 그림 점검 방법: 스크래치패드에서 electron으로 getItemIcons를 돌려 모든 아이템(1,658개)을 표로 그려 보고, 모델 파일을 훑어 처리 안 하는 기능(회전, display 등)을 찾았다
 
 ## 사용자가 뺀 것 (다시 넣지 말 것)
