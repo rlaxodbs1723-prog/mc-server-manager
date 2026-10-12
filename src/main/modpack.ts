@@ -64,7 +64,16 @@ export async function browseModpacks(o: ModpackBrowseOptions): Promise<{ total: 
     o.offset,
     () => browseModrinth({ ...o, offset: o.offset * 20 }),
     () => curseforge.browseModpacks({ ...o, offset: o.offset * 20 }),
-    o.site
+    o.site,
+    undefined,
+    // 두 사이트 결과를 합치면 번갈아 섞여서 다운로드순이 깨진다: 고른 기준으로 다시 정렬한다
+    o.sort === 'downloads'
+      ? (a, b) => b.downloads - a.downloads
+      : o.sort === 'follows'
+        ? (a, b) => b.follows - a.follows
+        : o.sort === 'updated'
+          ? (a, b) => b.updated - a.updated
+          : undefined
   )
 }
 

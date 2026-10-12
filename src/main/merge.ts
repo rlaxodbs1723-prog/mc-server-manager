@@ -27,7 +27,9 @@ export async function mergedSearch<T extends { title: string; author?: string }>
   fromCurseForge: () => Promise<{ total: number; hits: T[] }>,
   site: SearchSite = 'all',
   // 같은 모드가 양쪽에 다 있을 때 CurseForge 쪽을 보여 줄지 (없으면 Modrinth 쪽. 서버에 필요한지 정보가 있어서)
-  preferCf?: (mr: T, cf: T) => Promise<boolean>
+  preferCf?: (mr: T, cf: T) => Promise<boolean>,
+  // 정렬 기준이 정해져 있으면(다운로드순 등) 합친 뒤에 그 기준으로 다시 줄 세운다. 없으면 두 사이트를 번갈아 섞은 그대로
+  order?: (a: T, b: T) => number
 ): Promise<{ total: number; more: boolean; hits: (T & { source: 'modrinth' | 'curseforge' })[] }> {
   const useCf = hasCurseForgeKey() && site !== 'modrinth'
   const useMr = site !== 'curseforge'
@@ -54,6 +56,7 @@ export async function mergedSearch<T extends { title: string; author?: string }>
     else if (m.hits[i]) hits.push({ ...m.hits[i], source: 'modrinth' })
     if (cOnly[i]) hits.push({ ...cOnly[i], source: 'curseforge' })
   }
+  if (order) hits.sort(order)
   // 어느 한쪽이라도 다음 페이지가 남아 있으면 더 불러온다
   const next = (page + 1) * PAGE
   return { total: m.total + c.total, more: next < m.total || next < c.total, hits }
