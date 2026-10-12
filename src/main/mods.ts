@@ -944,14 +944,16 @@ export async function exportClientPack(folderPath: string, format: 'mrpack' | 'z
     shell.showItemInFolder(res.filePath)
     return res.filePath
   }
-  const infos = await modrinth.versionFiles(known.map((t) => t.versionId))
+  // CurseForge에서 받은 모드(cf:…)는 Modrinth 주소가 없으니 파일째로 넣는다
+  const mrKnown = known.filter((t) => !cf.isCf(t.versionId))
+  const infos = await modrinth.versionFiles(mrKnown.map((t) => t.versionId))
 
-  const files = known.flatMap((t) => {
+  const files = mrKnown.flatMap((t) => {
     const f = infos.get(t.versionId)
     if (!f) return []
     return [{ path: `mods/${f.fileName}`, hashes: { sha1: f.sha1, sha512: f.sha512 }, env: { client: 'required', server: 'required' }, downloads: [f.url], fileSize: f.size }]
   })
-  const missing = known.filter((t) => !infos.has(t.versionId)).map((t) => t.fileName) // 주소를 못 얻은 것은 파일째로
+  const missing = known.filter((t) => cf.isCf(t.versionId) || !infos.has(t.versionId)).map((t) => t.fileName) // CurseForge 모드·주소를 못 얻은 것은 파일째로
   const index = {
     formatVersion: 1,
     game: 'minecraft',
