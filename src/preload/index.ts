@@ -111,6 +111,7 @@ const api: Api = {
   mapFiles: (modId) => ipcRenderer.invoke('mapFiles', modId),
   prepareMap: (modId, fileId, title) => ipcRenderer.invoke('prepareMap', modId, fileId, title),
   onMapProgress: (fn) => subscribe('mapProgress', fn),
+  onModpackProgress: (fn) => subscribe('modpackProgress', fn),
   cancelMap: () => ipcRenderer.invoke('cancelMap'),
   importWorld: (folderPath, source) => ipcRenderer.invoke('importWorld', folderPath, source),
   getHardcore: (folderPath) => ipcRenderer.invoke('getHardcore', folderPath),

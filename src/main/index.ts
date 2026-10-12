@@ -281,8 +281,10 @@ ipcMain.handle('browseModpacks', (_event, o: ModpackBrowseOptions) =>
 )
 ipcMain.handle('gameVersions', () => gameVersions())
 ipcMain.handle('modpackVersions', (_event, projectId: string, source: string) => modpackVersions(String(projectId), source === 'curseforge' ? 'curseforge' : 'modrinth'))
-ipcMain.handle('prepareCurseForgeModpack', (_event, modId: string, fileId: string) => prepareFromCurseForge(Number(modId), Number(fileId)))
-ipcMain.handle('prepareModpack', (_event, versionId: string) => prepareFromModrinth(String(versionId)))
+ipcMain.handle('prepareCurseForgeModpack', (event, modId: string, fileId: string) =>
+  prepareFromCurseForge(Number(modId), Number(fileId), (p) => event.sender.send('modpackProgress', p))
+)
+ipcMain.handle('prepareModpack', (event, versionId: string) => prepareFromModrinth(String(versionId), (p) => event.sender.send('modpackProgress', p)))
 ipcMain.handle('prepareModpackFile', (_event, file: string) => prepareFromUpload(String(file)))
 ipcMain.handle('pickModpackFile', async (event) => {
   const win = BrowserWindow.fromWebContents(event.sender)

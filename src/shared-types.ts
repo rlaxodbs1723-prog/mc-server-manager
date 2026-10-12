@@ -560,6 +560,7 @@ export interface Api {
   // 받아서 풀어 둔다 (진행은 onMapProgress). 가져오기는 importWorld로
   prepareMap: (modId: number, fileId: number, title: string) => Promise<SaveWorld>
   onMapProgress: (fn: (p: { done: number; total?: number }) => void) => () => void
+  onModpackProgress: (fn: (p: { stage: string; done?: number; total?: number }) => void) => () => void
   cancelMap: () => Promise<void>
   importWorld: (folderPath: string, source: string) => Promise<void>
   // 하드코어는 월드 파일에 저장돼서 월드를 지우지 않고 바로 바꾼다 (서버가 꺼져 있을 때만)

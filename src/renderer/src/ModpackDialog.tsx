@@ -9,6 +9,7 @@ import SiteSwitch from './SiteSwitch'
 import { useMouseBack } from './mouseback'
 import { appendHits, cleanError, useStored } from './util'
 
+const mbText = (b: number): string => (b >= 1024 ** 3 ? `${(b / 1024 ** 3).toFixed(1)}GB` : `${Math.max(1, Math.round(b / 1024 ** 2))}MB`)
 const compact = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(2)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : String(n))
 const LOADERS = [
   { id: 'fabric', label: 'Fabric' },
@@ -46,6 +47,7 @@ export default function ModpackDialog({ existingNames, onClose }: { existingName
   const { tasks, startCreate } = useTasks()
   const [view, setView] = useState<View>('browse')
   const [busy, setBusy] = useState('')
+  const [progress, setProgress] = useState<{ stage: string; done?: number; total?: number } | null>(null) // 모드팩을 받고 푸는 진행
   const [info, setInfo] = useState<ModpackInfo | null>(null)
   const [pack, setPack] = useState<ModpackBrowseHit | null>(null)
   const [versions, setVersions] = useState<ModpackVersion[] | null>(null)
@@ -65,6 +67,8 @@ export default function ModpackDialog({ existingNames, onClose }: { existingName
   // 모드팩을 풀어서 계획을 받으면 확인 화면으로
   async function prepare(key: string, job: () => Promise<ModpackInfo | null>) {
     setBusy(key)
+    setProgress(null)
+    const off = window.api.onModpackProgress(setProgress)
     try {
       const i = await job()
       if (!i) return
@@ -74,6 +78,8 @@ export default function ModpackDialog({ existingNames, onClose }: { existingName
     } catch (e) {
       toast(cleanError(e), 'error')
     } finally {
+      off()
+      setProgress(null)
       setBusy('')
     }
   }
@@ -129,6 +135,17 @@ export default function ModpackDialog({ existingNames, onClose }: { existingName
               </div>
             </div>
             <p className="body">{pack.description}</p>
+            {busy && (
+              <div className="map-progress">
+                <div className={`bar ${progress?.total ? '' : 'indeterminate'}`}>
+                  <i style={progress?.total ? { width: `${Math.min(100, Math.round(((progress.done ?? 0) / progress.total) * 100))}%` } : undefined} />
+                </div>
+                <span className="hint">
+                  {progress ? progress.stage : '준비하는 중'}
+                  {progress?.total ? ` · ${mbText(progress.done ?? 0)} / ${mbText(progress.total)}` : ''}
+                </span>
+              </div>
+            )}
             {versions === null ? (
               <Loading text="버전을 불러오고 있어요" />
             ) : versions.length === 0 ? (
@@ -149,7 +166,7 @@ export default function ModpackDialog({ existingNames, onClose }: { existingName
                       </div>
                       <button className="btn sm primary" onClick={() => prepare(v.id, () => (isCf ? window.api.prepareCurseForgeModpack(pack.projectId, v.id) : window.api.prepareModpack(v.id)))} disabled={!!busy || (!isCf && !loader)}>
                         {busy === v.id && <span className="spinner" />}
-                        {busy === v.id ? '받는 중…' : loader || isCf ? '고르기' : '지원 안 함'}
+                        {busy === v.id ? '준비 중…' : loader || isCf ? '고르기' : '지원 안 함'}
                       </button>
                     </div>
                   )

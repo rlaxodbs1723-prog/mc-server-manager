@@ -268,12 +268,12 @@ export async function modpackFiles(modId: number): Promise<ModpackVersion[]> {
 }
 
 // 모드팩 zip을 받아 dest에 저장한다
-export async function downloadPackFile(modId: number, fileId: number, dest: string): Promise<void> {
+export async function downloadPackFile(modId: number, fileId: number, dest: string, onBytes?: (done: number, total?: number) => void): Promise<void> {
   const res = await call<{ data: CfFile }>(`/mods/${Math.floor(modId)}/files/${Math.floor(fileId)}`)
   const f = res.data
   if (!f.downloadUrl) throw new Error('이 모드팩은 제작자가 다른 앱에서 받는 것을 막아 두었어요.')
   if (!/^https:\/\/[^/]*(forgecdn\.net|curseforge\.com)\//.test(f.downloadUrl)) throw new Error('알 수 없는 다운로드 주소예요.')
-  await downloadFile({ url: f.downloadUrl, dest, sha1: cfSha1(f) })
+  await downloadFile({ url: f.downloadUrl, dest, sha1: cfSha1(f), onBytes })
 }
 
 // ---------- 모드·플러그인·데이터팩 (모드 탭 등에서 쓰는 공통 기능) ----------

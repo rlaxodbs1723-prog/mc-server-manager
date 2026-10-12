@@ -123,31 +123,41 @@ const countJars = (dir: string, sub: string): number => {
   return fs.existsSync(mods) ? fs.readdirSync(mods).filter((f) => /\.jar$/i.test(f)).length : 0
 }
 
-export async function prepareFromModrinth(versionId: string): Promise<ModpackInfo> {
+// 모드팩을 준비하는 동안의 진행 (화면에 보여 준다): 받는 중이면 done/total(바이트), 아니면 단계 이름만
+export interface PrepProgress {
+  stage: string
+  done?: number
+  total?: number
+}
+
+export async function prepareFromModrinth(versionId: string, onProgress?: (p: PrepProgress) => void): Promise<ModpackInfo> {
   const v = await modrinth.getVersion(versionId)
   if (!v.file || !/\.mrpack$/i.test(v.file.fileName)) throw new Error('모드팩 파일(.mrpack)이 없는 버전이에요.')
   const id = newId()
   const file = path.join(packDir(id), 'pack.mrpack')
   fs.mkdirSync(packDir(id), { recursive: true })
-  await downloadFile({ url: v.file.url, dest: file, sha1: v.file.sha1 ?? undefined })
-  return prepareFile(id, file, { source: 'modrinth', projectId: v.projectId, versionId: v.id, versionName: v.versionNumber })
+  await downloadFile({ url: v.file.url, dest: file, sha1: v.file.sha1 ?? undefined, onBytes: (done, total) => onProgress?.({ stage: '모드팩 받는 중', done, total }) })
+  return prepareFile(id, file, { source: 'modrinth', projectId: v.projectId, versionId: v.id, versionName: v.versionNumber }, undefined, onProgress)
 }
 
 // CurseForge 모드팩을 받아서 준비한다
-export async function prepareFromCurseForge(modId: number, fileId: number): Promise<ModpackInfo> {
+export async function prepareFromCurseForge(modId: number, fileId: number, onProgress?: (p: PrepProgress) => void): Promise<ModpackInfo> {
   const id = newId()
   const file = path.join(packDir(id), 'pack.zip')
   fs.mkdirSync(packDir(id), { recursive: true })
-  await curseforge.downloadPackFile(modId, fileId, file)
+  await curseforge.downloadPackFile(modId, fileId, file, (done, total) => onProgress?.({ stage: '모드팩 받는 중', done, total }))
   // 제작자가 서버 팩을 올려 두었으면 그것도 받는다 (서버에 맞게 정리돼 있고, 다른 앱에서 받을 수 없게 막힌 모드도 들어 있는 경우가 많다)
   // 서버 팩을 못 받으면(막혀 있음 등) 모드를 하나씩 받는 원래 방식으로 한다
   let serverZip: string | undefined
   const serverPackId = (await curseforge.getFile(modId, fileId).catch(() => null))?.serverPackFileId
   if (serverPackId) {
     const dest = path.join(packDir(id), 'server.zip')
-    serverZip = await curseforge.downloadPackFile(modId, serverPackId, dest).then(() => dest).catch(() => undefined)
+    serverZip = await curseforge
+      .downloadPackFile(modId, serverPackId, dest, (done, total) => onProgress?.({ stage: '서버 파일 받는 중', done, total }))
+      .then(() => dest)
+      .catch(() => undefined)
   }
-  return prepareFile(id, file, { source: 'curseforge', projectId: String(modId), versionId: String(fileId) }, serverZip)
+  return prepareFile(id, file, { source: 'curseforge', projectId: String(modId), versionId: String(fileId) }, serverZip, onProgress)
 }
 
 // 사용자가 올린 파일 (.mrpack 또는 CurseForge 모드팩 .zip)
@@ -159,11 +169,19 @@ export async function prepareFromUpload(source: string): Promise<ModpackInfo> {
   return prepareFile(id, src)
 }
 
-async function prepareFile(id: string, file: string, origin: Omit<ModpackOrigin, 'installedAt' | 'name'> = { source: 'file' }, serverZip?: string): Promise<ModpackInfo> {
+async function prepareFile(
+  id: string,
+  file: string,
+  origin: Omit<ModpackOrigin, 'installedAt' | 'name'> = { source: 'file' },
+  serverZip?: string,
+  onProgress?: (p: PrepProgress) => void
+): Promise<ModpackInfo> {
   const dir = packDir(id)
   const unpacked = path.join(dir, 'pack')
   try {
+    onProgress?.({ stage: '압축 푸는 중' })
     await extractZip(file, unpacked)
+    onProgress?.({ stage: '모드 목록 확인 중' })
     let plan: Plan
     if (fs.existsSync(path.join(unpacked, 'modrinth.index.json'))) plan = planModrinth(unpacked)
     else if (fs.existsSync(path.join(unpacked, 'manifest.json'))) plan = await planCurseForge(unpacked)
@@ -187,6 +205,7 @@ async function prepareFile(id: string, file: string, origin: Omit<ModpackOrigin,
     // CurseForge 모드팩에 딸린 서버 팩: 버전·로더는 모드팩 정보를 쓰고, 파일은 서버 팩에서 가져온다
     if (serverZip) {
       const sdir = path.join(dir, 'server')
+      onProgress?.({ stage: '서버 파일 압축 푸는 중' })
       await extractZip(serverZip, sdir)
       const root = findPackRoot(sdir)
       if (root) plan = { ...plan, files: [], overrides: [path.relative(dir, root)], manual: [], skipped: 0, serverPack: true }
