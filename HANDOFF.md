@@ -44,6 +44,7 @@
 - 1.0.10 (배포함): 켜기 전 점검 오탐 수정(설명에 줄바꿈 든 정보 파일 읽기, Forge 서버는 mods.toml 먼저, 안에 든 jar만 모드인 jar), 켜다가 멈춘 모드 감지(서버 튕김 로그의 "이름 (모드ID) encountered an error" 다음 줄이 invalid dist DEDICATED_SERVER면 그 모드를 끌지 묻는 목록에 넣음: mods.suggestFromCrash, 이유 startFail). 한계: 라이브러리가 대신 실패하는 경우(Framework ← controllable)는 못 잡음. 후보: Missing Mods Checker 팩(선릿밸리)의 CurseForge 모드 받기 안내
 - 1.0.11 (배포함): Connector(connectormod) 있는 서버의 켜기 전 점검 오탐 수정, mods.toml 주석 무시, 켜다가 멈춘 클라이언트 모드 감지 강화, 버그 제보에 @관리자 호출(BUG_PING_ROLE)
 - 1.0.12 (배포함): 모드팩 고르기 진행 표시·정렬 수정, 콘솔 ERROR 노란색·같은 줄 x2 묶기, localhost:포트 안내(i), 만들다 끊긴 서버 정리 알림, 서버 포트 칸(꺼졌을 때 주소 자리, 켜면 주소로), 설정의 포트 항목 삭제, CurseForge 모드가 든 서버의 .mrpack 내보내기 수정, 작업 번호 겹침 수정, 빠진 영어·중국어 번역 보충. 한계: 강제 종료 시 Java 설치 프로세스가 남을 수 있음
+- 1.0.13 (배포함): 윗줄에 디스코드 서버 입장 버튼(초대 링크 https://discord.gg/Z6EdhRP9Ep 하나만 openExternal 허용). 알림함 채널은 Cloudflare 변수 NOTICE_CHANNEL_ID·PATCH_CHANNEL_ID로 읽음(채널을 새로 만들면 변수 바꾸고 재배포)
 - 아이템 그림 점검 방법: 스크래치패드에서 electron으로 getItemIcons를 돌려 모든 아이템(1,658개)을 표로 그려 보고, 모델 파일을 훑어 처리 안 하는 기능(회전, display 등)을 찾았다
 
 ## 사용자가 뺀 것 (다시 넣지 말 것)
