@@ -34,7 +34,7 @@ import * as whitelist from './whitelist'
 import { getManageInfo, runAction } from './manage'
 import { getVersions } from './mojang'
 import { acceptEula, anyRunning, getLog, getState, onServerEvent, sendCommand, stopAll, stopServer } from './runner'
-import { changeVersion, deleteServer, cancelAutoRestarts, setServerOrder, duplicateServer, renameServer, createServer, getSettings, readServerInfo, listServers, cleanupUnfinished, resetWorld, saveSettings, serversRoot, startServerAt } from './servers'
+import { changeVersion, deleteServer, cancelAutoRestarts, setServerOrder, duplicateServer, renameServer, createServer, getSettings, readServerInfo, listServers, cleanupUnfinished, getCleanupReport, resetWorld, saveSettings, serversRoot, startServerAt } from './servers'
 import { assertFree, busyJobs, setOnJobDone, withLock } from './lock'
 import { getSiteStatus } from './sitestatus'
 import { runPreflight } from './preflight'
@@ -294,6 +294,7 @@ ipcMain.handle('pickModpackFile', async (event) => {
 })
 ipcMain.handle('cancelCreate', (_event, taskId: string) => cancelTask(String(taskId)))
 ipcMain.handle('listServers', () => listServers())
+ipcMain.handle('cleanupReport', () => getCleanupReport())
 ipcMain.handle('setServerOrder', (_event, folderPaths: string[]) => setServerOrder(Array.isArray(folderPaths) ? folderPaths.map((p) => checkServerFolder(String(p))) : []))
 
 ipcMain.handle('openFolder', async (_event, folderPath: string) => {

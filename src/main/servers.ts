@@ -262,12 +262,23 @@ export async function changeVersion(folderPath: string, mcVersion: string, loade
 
 // 앱을 켤 때: 만드는 도중에 앱이 꺼져 "만드는 중" 표시가 남은 폴더를 지운다.
 // (목록에는 안 보이는데 같은 이름으로 다시 만들 수 없게 막는 원인이었다)
+// 폴더 하나를 못 지워도(다른 프로그램이 쓰는 중) 나머지는 계속 정리하고, 결과를 화면에 알릴 수 있게 남겨 둔다
+let cleanupReport: { removed: string[]; failed: string[] } = { removed: [], failed: [] }
+export const getCleanupReport = (): { removed: string[]; failed: string[] } => cleanupReport
 export function cleanupUnfinished(): void {
+  const report = { removed: [] as string[], failed: [] as string[] }
+  cleanupReport = report
   const root = serversRoot()
   if (!fs.existsSync(root)) return
   for (const dir of fs.readdirSync(root)) {
     const folder = path.join(root, dir)
-    if (fs.existsSync(path.join(folder, CREATING_FILE))) fs.rmSync(folder, { recursive: true, force: true })
+    if (!fs.existsSync(path.join(folder, CREATING_FILE))) continue
+    try {
+      fs.rmSync(folder, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 })
+      report.removed.push(dir)
+    } catch {
+      report.failed.push(dir)
+    }
   }
 }
 

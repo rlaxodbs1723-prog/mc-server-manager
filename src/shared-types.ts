@@ -431,6 +431,7 @@ export interface Api {
   createServer: (options: CreateServerOptions, taskId: string) => Promise<ServerInfo>
   onCreateProgress: (fn: (taskId: string, p: Progress) => void) => () => void
   listServers: () => Promise<ServerListItem[]>
+  cleanupReport: () => Promise<{ removed: string[]; failed: string[] }> // 앱을 켤 때 만들다 끊긴 서버 폴더를 정리한 결과
   openFolder: (folderPath: string) => Promise<void>
   // 서버 폴더를 휴지통으로 보낸다 (확인은 화면에서 먼저 받는다)
   deleteServer: (folderPath: string) => Promise<void>

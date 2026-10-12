@@ -275,6 +275,17 @@ export default function App() {
 function CrashWatcher({ servers }: { servers: ServerListItem[] }) {
   const toast = useToast()
   const [crash, setCrash] = useState<{ name: string; folderPath: string; analysis: CrashAnalysis } | null>(null)
+  // 앱을 켰더니 서버를 만들다 끊긴 흔적이 있었으면 알려 준다 (말없이 사라지면 어디 갔는지 알 수 없다)
+  useEffect(() => {
+    window.api
+      .cleanupReport()
+      .then((r) => {
+        if (r.removed.length) toast(`만들다 끊긴 서버를 정리했어요: ${r.removed.join(', ')}. 새 서버 만들기에서 다시 만들어 주세요.`, 'info')
+        if (r.failed.length) toast(`만들다 끊긴 서버 폴더를 지우지 못했어요(다른 프로그램이 쓰는 중): ${r.failed.join(', ')}`, 'error')
+      })
+      .catch(() => undefined)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   useEffect(
     () =>
       window.api.onServerEvent((e) => {

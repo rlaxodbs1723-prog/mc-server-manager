@@ -14,6 +14,7 @@ const api: Api = {
   createServer: (options, taskId) => ipcRenderer.invoke('createServer', options, taskId),
   onCreateProgress: (fn) => subscribe<{ taskId: string; progress: Progress }>('createProgress', (d) => fn(d.taskId, d.progress)),
   listServers: () => ipcRenderer.invoke('listServers'),
+  cleanupReport: () => ipcRenderer.invoke('cleanupReport'),
   openFolder: (folderPath) => ipcRenderer.invoke('openFolder', folderPath),
   deleteServer: (folderPath) => ipcRenderer.invoke('deleteServer', folderPath),
   cancelCreate: (taskId) => ipcRenderer.invoke('cancelCreate', taskId),
