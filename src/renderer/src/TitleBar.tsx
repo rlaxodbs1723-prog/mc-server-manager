@@ -1,4 +1,4 @@
-import { Copy, Download, Minus, Settings, Square, WifiOff, X } from 'lucide-react'
+import { Copy, Download, MessageCircle, Minus, Settings, Square, WifiOff, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import AppSettingsDialog from './AppSettingsDialog'
 import BugReportDialog from './BugReportDialog'
@@ -95,6 +95,10 @@ export default function TitleBar() {
         )}
       <TaskButton />
       <InboxButton />
+      <button className="bug-btn" onClick={() => window.api.openExternal('https://discord.gg/Z6EdhRP9Ep')} onDoubleClick={(e) => e.stopPropagation()} title="디스코드 서버에서 질문하고, 새 소식을 받아 보세요">
+        <MessageCircle size={13} style={{ marginRight: 5, verticalAlign: -2 }} />
+        디스코드
+      </button>
       <button className="bug-btn" onClick={() => setShowBug(true)} onDoubleClick={(e) => e.stopPropagation()}>
         문의/버그 제보
       </button>

@@ -42,6 +42,7 @@ import { autoStartServers, setStarter } from './automation'
 import { createBackup, deleteBackup, getBackupSettings, listBackups, openBackupFolder, restoreBackup, setBackupSettings } from './backup'
 import { tr } from './i18n'
 
+const DISCORD_INVITE = 'https://discord.gg/Z6EdhRP9Ep'
 let quitting = false // 서버를 끄고 닫기로 확정됨
 let creating = 0 // 지금 만들고 있는 서버 수 (만드는 중에 닫으면 확인한다)
 let mainWin: BrowserWindow | null = null
@@ -405,6 +406,8 @@ ipcMain.handle('pickWorldZip', (event) => pickWorldZip(BrowserWindow.fromWebCont
 ipcMain.handle('openExternal', (_event, url: string) => {
   // 화면이 아무 주소나 열지 못하게 CurseForge 주소만 연다
   if (/^https:\/\/([a-z0-9-]+\.)*curseforge\.com\//i.test(String(url))) return shell.openExternal(String(url))
+  // 우리 디스코드 서버 초대 링크 (이 주소 하나만)
+  if (String(url) === DISCORD_INVITE) return shell.openExternal(DISCORD_INVITE)
   // 버그 제보 답장의 첨부 파일 (디스코드)
   if (/^https:\/\/(cdn|media)\.discordapp\.(com|net)\//i.test(String(url))) return shell.openExternal(String(url))
 })

@@ -1574,5 +1574,7 @@
  "로 접속할 수 있어요.": ".",
  "준비하는 중": "Preparing",
  "서버를 켜다가 이 모드 때문에 멈췄어요 (게임 화면용 코드가 들어 있어요). 앱이 꺼 뒀어요.": "The server stopped while starting because of this mod (it contains game-screen code). The app turned it off.",
- "켜다가 멈춤": "Stopped on start"
+ "켜다가 멈춤": "Stopped on start",
+ "디스코드": "Discord",
+ "디스코드 서버에서 질문하고, 새 소식을 받아 보세요": "Ask questions and get news on our Discord server"
 }
