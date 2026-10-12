@@ -1,6 +1,7 @@
 import { Paperclip, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { BugFile, MyBugReport } from '../../shared-types'
+import DiscordLogo from './DiscordLogo'
 import DropZone from './DropZone'
 import { Modal, useToast } from './ui'
 import { cleanError } from './util'
@@ -154,6 +155,13 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
             </button>
           </div>
           <p className="hint">앱 버전과 윈도우 정보가 같이 보내져요. 사진·영상은 파일당 4MB까지예요. 답장이 오면 알려 드려요.</p>
+          <div className="bug-discord">
+            <span>디스코드 서버에 가입하면 더 빨리 답변을 받을 수 있어요.</span>
+            <button className="btn sm" onClick={() => window.api.openExternal('https://discord.gg/Z6EdhRP9Ep')}>
+              <DiscordLogo />
+              디스코드 서버 가입
+            </button>
+          </div>
         </div>
       </DropZone>
       <div className="actions">
