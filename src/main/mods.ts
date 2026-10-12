@@ -946,7 +946,8 @@ export async function exportClientPack(folderPath: string, format: 'mrpack' | 'z
   }
   // CurseForge에서 받은 모드(cf:…)는 Modrinth 주소가 없으니 파일째로 넣는다
   const mrKnown = known.filter((t) => !cf.isCf(t.versionId))
-  const infos = await modrinth.versionFiles(mrKnown.map((t) => t.versionId))
+  // Modrinth에 못 닿아도 내보내기는 되게, 주소를 못 얻으면 아래에서 파일째로 넣는다
+  const infos = await modrinth.versionFiles(mrKnown.map((t) => t.versionId)).catch(() => new Map<string, modrinth.PackFileInfo>())
 
   const files = mrKnown.flatMap((t) => {
     const f = infos.get(t.versionId)

@@ -38,6 +38,8 @@ interface TasksApi {
 const TasksContext = createContext<TasksApi>({ tasks: [], markCancelling: () => {}, startCreate: () => {}, runJob: (_f, _t, _d, work) => work(() => {}), busyOf: () => null, dismiss: () => {}, open: () => {} })
 export const useTasks = () => useContext(TasksContext)
 
+// 화면을 새로고침(Ctrl+R)해도 메인에서 돌고 있는 작업과 번호가 겹치지 않게 시작 시각을 앞에 붙인다
+const idBase = Date.now().toString(36)
 let nextId = 1
 
 // 남은 시간은 메인이 단계별 속도와 지난번 기록으로 계산해 보내 준다 (progress.etaSeconds)
@@ -75,7 +77,7 @@ export function TasksProvider({ children, onCreated, onOpen, servers }: Provider
 
   const startCreate = useCallback(
     (options: CreateServerOptions) => {
-      const id = String(nextId++)
+      const id = `${idBase}-${nextId++}`
       const t0 = Date.now()
       setTasks((list) => [...list, { id, kind: 'create', options, name: options.name, software: options.software, status: 'running', progress: null, startedAt: t0 }])
       window.api
@@ -97,7 +99,7 @@ export function TasksProvider({ children, onCreated, onOpen, servers }: Provider
   )
 
   const runJob = useCallback(async <T,>(folderPath: string, title: string, doneText: string | ((r: T) => string | null), work: (report: (p: Progress) => void) => Promise<T>): Promise<T> => {
-    const id = String(nextId++)
+    const id = `${idBase}-${nextId++}`
     const s = callbacks.current.servers.find((x) => x.folderPath === folderPath)
     setTasks((list) => [
       ...list,
