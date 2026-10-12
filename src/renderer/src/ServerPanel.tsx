@@ -43,8 +43,9 @@ interface Props {
 function lineClass(line: string): string | undefined {
   if (line.startsWith('> ')) return 'l-cmd'
   if (line.startsWith('[앱]')) return 'l-app'
-  if (/\bERROR\b|Exception|\bFATAL\b|^\s+at /.test(line)) return 'l-error'
-  if (/\bWARN\b/.test(line)) return 'l-warn'
+  // 서버를 멈추는 진짜 문제(예외, 치명 오류, 오류가 난 곳 표시)만 빨강. 모드가 평소에 찍는 [.../ERROR] 줄은 흔하고 대부분 서버가 계속 돌아서 노랑
+  if (/\bFATAL\b|Exception|^\s+at /.test(line)) return 'l-error'
+  if (/\bERROR\b|\bWARN\b/.test(line)) return 'l-warn'
   return undefined
 }
 
