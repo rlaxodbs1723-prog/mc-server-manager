@@ -34,7 +34,9 @@ function fromFabric(text: string): Omit<ModMeta, 'name'> & { name?: string } {
   return { name: j.name, provides: [j.id, ...(Array.isArray(j.provides) ? j.provides : [])].filter(Boolean), needs: Object.keys(j.depends ?? {}) }
 }
 
-function fromToml(text: string): Omit<ModMeta, 'name'> & { name?: string } {
+function fromToml(raw: string): Omit<ModMeta, 'name'> & { name?: string } {
+  // 주석 처리된 줄(# ...)은 빼고 읽는다: Shrines처럼 필요한 모드를 주석으로 꺼 둔 모드가 "없다"고 잘못 뜨던 문제
+  const text = raw.replace(/^[ 	]*#.*$/gm, '')
   const provides = [...text.matchAll(/\[\[mods\]\][^[]*?modId\s*=\s*"([^"]+)"/g)].map((m) => m[1])
   const name = text.match(/\[\[mods\]\][^[]*?displayName\s*=\s*"([^"]+)"/)?.[1]
   const needs: string[] = []
