@@ -1546,7 +1546,6 @@
  ")를 써요. 같은 포트로는 한 서버만 켜질 수 있어요. 설정을 닫고 서버 이름 위의 서버 포트 칸에서 바꾼 뒤 다시 켜 주세요 (예:": ") as this one. Only one server can run on a port. Close settings, change it in the server port box under the server name, and start again (e.g.",
  "설정 닫고 포트 바꾸기": "Close settings and change port",
  "서버 포트": "Server port",
- "서버를 끈 다음에 바꿀 수 있어요": "You can change this after stopping the server",
  "플레이어가 접속하는 포트예요. 서버를 여러 개 동시에 켤 때만 바꾸세요": "The port players connect to. Only change it when running several servers at once",
  "포트는 1024~65535 사이의 숫자로 적어 주세요": "Enter a port number between 1024 and 65535",
  "{0} 서버와 포트({1})가 겹쳐요. 다른 숫자로 해 주세요": "Port {1} overlaps with server {0}. Please use a different number",

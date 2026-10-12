@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { useToast } from './ui'
 import { cleanError } from './util'
 
-// 접속 주소 위에 두는 서버 포트 칸. 포트는 서버를 켤 때 정해지므로 켜져 있는 동안은 잠가 둔다
-export default function PortField({ folderPath, locked }: { folderPath: string; locked: boolean }) {
+// 서버가 꺼져 있을 때 접속 주소 자리에 보이는 서버 포트 칸. 서버를 켜면 접속 주소로 바뀐다
+export default function PortField({ folderPath }: { folderPath: string }) {
   const toast = useToast()
   const [saved, setSaved] = useState(25565)
   const [text, setText] = useState('25565')
@@ -17,7 +17,7 @@ export default function PortField({ folderPath, locked }: { folderPath: string; 
         setText(String(p))
       })
       .catch(() => undefined)
-  }, [folderPath, locked])
+  }, [folderPath])
 
   async function commit() {
     const port = Number(text)
@@ -43,13 +43,12 @@ export default function PortField({ folderPath, locked }: { folderPath: string; 
   }
 
   return (
-    <label className="port-field" title={locked ? '서버를 끈 다음에 바꿀 수 있어요' : '플레이어가 접속하는 포트예요. 서버를 여러 개 동시에 켤 때만 바꾸세요'}>
+    <label className="port-field" title="플레이어가 접속하는 포트예요. 서버를 여러 개 동시에 켤 때만 바꾸세요">
       <span>서버 포트</span>
       <input
         type="text"
         inputMode="numeric"
         value={text}
-        disabled={locked}
         onChange={(e) => setText(e.target.value.replace(/\D/g, '').slice(0, 5))}
         onBlur={commit}
         onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}

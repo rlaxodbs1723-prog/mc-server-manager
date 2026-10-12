@@ -374,13 +374,10 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
       <header className="server-head">
         <SoftwareBadge software={software} size={52} name={server.name} icon={server.icon} />
         <div className="title">
-          <div className="title-row">
-            <h1 className="editable" onClick={() => setNaming('rename')} title="눌러서 이름 바꾸기">
-              <span className="n">{server.name}</span>
-              <Pencil size={16} className="edit-icon" />
-            </h1>
-            <PortField folderPath={folderPath} locked={on || starting} />
-          </div>
+          <h1 className="editable" onClick={() => setNaming('rename')} title="눌러서 이름 바꾸기">
+            <span className="n">{server.name}</span>
+            <Pencil size={16} className="edit-icon" />
+          </h1>
           <div className="subline">
             <span className={`pill ${state}`}>
               <span className={`dot ${state}`} />
@@ -390,7 +387,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
               {SOFTWARE_INFO[software].label} {server.mcVersion}
               {server.loaderVersion ? ` · ${server.loaderVersion}` : ''}
             </span>
-            <InviteBox folderPath={folderPath} />
+            {on ? <InviteBox folderPath={folderPath} /> : <PortField folderPath={folderPath} />}
           </div>
         </div>
         <div className="head-actions">
