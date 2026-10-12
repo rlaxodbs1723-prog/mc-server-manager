@@ -10,7 +10,7 @@ import { getHardcore, setHardcore } from './hardcore'
 import { getGameRuleLang } from './lang'
 import { checkReachable, closeAllPorts, getInvite, initInvite, useTunnel } from './invite'
 import { track as trackUsage } from './usage'
-import { getClaimUrl, openClaimPage, tunnelLinked, unlinkTunnel } from './tunnel'
+import { getClaimUrl, openClaimPage, prepareClaim, tunnelLinked, unlinkTunnel } from './tunnel'
 import { getInbox } from './inbox'
 import { getLoaderVersions } from './loaders'
 import * as mods from './mods'
@@ -431,6 +431,7 @@ ipcMain.handle('hasCurseForgeKey', () => hasCurseForgeKey())
 ipcMain.handle('removeCurseForgeKey', () => removeCurseForgeKey())
 ipcMain.handle('unlinkTunnel', () => unlinkTunnel())
 ipcMain.handle('getClaimUrl', () => getClaimUrl())
+ipcMain.handle('prepareClaim', () => prepareClaim())
 ipcMain.handle('openClaimPage', () => openClaimPage())
 ipcMain.handle('getAppInfo', () => ({
   settings: getAppSettings(),

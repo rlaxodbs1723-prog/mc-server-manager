@@ -48,18 +48,40 @@ async function call<T>(route: string, body: unknown, secret?: string | null): Pr
   throw new Error(`playit ${route} 실패 (${JSON.stringify(json?.data ?? res.status)})`)
 }
 
-// 승인 페이지 주소 (브라우저가 안 열려도 화면에서 복사해 열 수 있게)
+// 승인 페이지 주소 (브라우저가 안 열려도 화면에서 눌러 열 수 있게)
 let claimUrl: string | null = null
+let pendingCode: string | null = null // 미리 만들어 둔 승인 코드. 안내 창이 열릴 때 만들고, 터널로 열기를 누르면 그대로 쓴다
+const FAKE_URL = 'https://playit.gg/claim/0123456789'
 export const getClaimUrl = (): string | null => claimUrl
 export function openClaimPage(): Promise<void> {
   return claimUrl ? shell.openExternal(claimUrl) : Promise.resolve()
+}
+
+const claimSetup = (code: string): Promise<string> => call<string>('/claim/setup', { code, agent_type: 'self-managed', version: 'playit 1.0.10' })
+
+// 승인 코드를 만들어 승인 페이지 주소를 돌려준다 (이미 연결돼 있으면 null). 같은 코드를 다시 쓰고, 안 되면 새로 만든다
+export async function prepareClaim(): Promise<string | null> {
+  if (tunnelLinked()) return null
+  if (FAKE_LINK) return FAKE_URL
+  if (pendingCode) {
+    try {
+      await claimSetup(pendingCode)
+      return (claimUrl = `https://playit.gg/claim/${pendingCode}`)
+    } catch {
+      pendingCode = null
+    }
+  }
+  const code = crypto.randomBytes(5).toString('hex')
+  await claimSetup(code)
+  pendingCode = code
+  return (claimUrl = `https://playit.gg/claim/${code}`)
 }
 
 // 브라우저에서 승인 받기: 코드를 만들고 승인 페이지를 연 뒤, 승인될 때까지 기다렸다가 키를 받아 저장한다
 export async function linkTunnel(): Promise<void> {
   if (tunnelLinked()) return
   if (FAKE_LINK) {
-    claimUrl = 'https://playit.gg/claim/0123456789'
+    claimUrl = FAKE_URL
     try {
       await sleep(10 * 60 * 1000)
     } finally {
@@ -67,23 +89,25 @@ export async function linkTunnel(): Promise<void> {
     }
     throw new Error('시험용 승인 대기가 끝났어요.')
   }
-  const code = crypto.randomBytes(5).toString('hex')
-  const setup = (): Promise<string> => call<string>('/claim/setup', { code, agent_type: 'self-managed', version: 'playit 1.0.10' })
-  await setup()
-  claimUrl = `https://playit.gg/claim/${code}`
-  await shell.openExternal(claimUrl).catch(() => undefined) // 브라우저가 안 열려도 화면의 주소로 승인할 수 있다
+  await prepareClaim()
+  const code = pendingCode as string
+  await shell.openExternal(`https://playit.gg/claim/${code}`).catch(() => undefined) // 브라우저가 안 열려도 화면의 주소로 승인할 수 있다
   const end = Date.now() + LINK_TIMEOUT_MS
   try {
     for (;;) {
       if (Date.now() > end) throw new Error('playit 승인을 기다리다 시간이 지났어요. 다시 해 주세요.')
-      const state = await setup().catch(() => 'WaitingForUser')
+      const state = await claimSetup(code).catch(() => 'WaitingForUser')
       if (state === 'UserAccepted') break
       if (state === 'UserRejected') throw new Error('playit 승인을 거절했어요.')
       await sleep(2000)
     }
+  } catch (e) {
+    pendingCode = null
+    throw e
   } finally {
     claimUrl = null
   }
+  pendingCode = null
   const { secret_key } = await call<{ secret_key: string }>('/claim/exchange', { code })
   fs.mkdirSync(dir(), { recursive: true })
   fs.writeFileSync(secretFile(), secret_key)

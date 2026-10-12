@@ -97,6 +97,7 @@ const api: Api = {
   getAppInfo: () => ipcRenderer.invoke('getAppInfo'),
   unlinkTunnel: () => ipcRenderer.invoke('unlinkTunnel'),
   getClaimUrl: () => ipcRenderer.invoke('getClaimUrl'),
+  prepareClaim: () => ipcRenderer.invoke('prepareClaim'),
   openClaimPage: () => ipcRenderer.invoke('openClaimPage'),
   setAppSettings: (patch) => ipcRenderer.invoke('setAppSettings', patch),
   openDataFolder: () => ipcRenderer.invoke('openDataFolder'),

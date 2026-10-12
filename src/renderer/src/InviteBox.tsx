@@ -106,10 +106,15 @@ function InviteHelp({
   const [linking, setLinking] = useState(false)
   const [claimUrl, setClaimUrl] = useState<string | null>(null)
 
-  // 승인을 기다리는 동안 승인 페이지 주소를 화면에 보여 준다 (브라우저가 안 열릴 때 직접 열 수 있게)
+  // 창이 열리자마자 승인 링크를 보여 주려고 승인 코드를 미리 만든다 (playit에 못 닿으면 링크 없이 둔다)
   useEffect(() => {
-    if (!linking) return setClaimUrl(null)
-    const t = setInterval(() => window.api.getClaimUrl().then(setClaimUrl).catch(() => undefined), 1000)
+    window.api.prepareClaim().then((u) => u && setClaimUrl(u)).catch(() => undefined)
+  }, [])
+
+  // 승인을 기다리는 동안 주소가 바뀌었는지 확인한다 (키가 무효라 승인부터 다시 받을 때 새 주소가 생긴다)
+  useEffect(() => {
+    if (!linking) return
+    const t = setInterval(() => window.api.getClaimUrl().then((u) => u && setClaimUrl(u)).catch(() => undefined), 1000)
     return () => clearInterval(t)
   }, [linking])
 
@@ -139,27 +144,19 @@ function InviteHelp({
           <li>{'앱으로 돌아오면 접속 주소가 떠요. 다음부터는 알아서 열려요.'}</li>
         </ol>
         {linking && <p className="hint">{'브라우저에서 승인을 기다리고 있어요…'}</p>}
-        {linking && claimUrl && (
-          <>
-            <p className="hint">{'터널이 열리지 않으면 아래 링크를 클릭해 주세요.'}</p>
-            <p className="hint" style={{ wordBreak: 'break-all', userSelect: 'text' }}>
-              <a className="claim-link" href={claimUrl} onClick={(e) => (e.preventDefault(), window.api.openClaimPage())}>
-                {claimUrl}
-              </a>
-            </p>
-            <div className="actions" style={{ justifyContent: 'flex-start' }}>
-              <button className="btn sm" onClick={() => window.api.copyText(claimUrl).then(() => toast('주소를 복사했어요'))}>
-                주소 복사
-              </button>
-              <button className="btn sm" onClick={() => window.api.openClaimPage()}>
-                브라우저로 다시 열기
-              </button>
-            </div>
-          </>
-        )}
         {invite.lan.length > 0 && <p className="hint">{`같은 와이파이의 플레이어는 지금도 ${invite.lan.map((ip) => ip + (invite.port === 25565 ? '' : `:${invite.port}`)).join(', ')}(으)로 접속할 수 있어요.`}</p>}
         <p className="hint">이 컴퓨터에서는 지금도 {invite.port === 25565 ? 'localhost' : `localhost:${invite.port}`}로 접속할 수 있어요.</p>
       </div>
+      {claimUrl && (
+        <div className="invite-help">
+          <p className="hint">{'터널이 열리지 않으면 아래 링크를 클릭해 주세요.'}</p>
+          <p className="hint" style={{ wordBreak: 'break-all', userSelect: 'text' }}>
+            <a className="claim-link" href={claimUrl} onClick={(e) => (e.preventDefault(), window.api.openClaimPage())}>
+              {claimUrl}
+            </a>
+          </p>
+        </div>
+      )}
       <div className="actions">
         <button className="btn primary" onClick={tunnel} disabled={linking}>
           {linking ? <span className="spinner" /> : null}

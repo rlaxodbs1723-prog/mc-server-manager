@@ -544,6 +544,7 @@ export interface Api {
   // playit 연결 끊기 (저장한 키를 지우고 터널 프로그램을 끈다)
   unlinkTunnel: () => Promise<void>
   getClaimUrl: () => Promise<string | null> // playit 승인 페이지 주소 (승인을 기다리는 동안)
+  prepareClaim: () => Promise<string | null> // 승인 코드를 미리 만들고 승인 페이지 주소를 돌려준다 (이미 연결돼 있으면 null)
   openClaimPage: () => Promise<void>
   setAppSettings: (patch: Partial<AppSettings>) => Promise<AppSettings>
   openDataFolder: () => Promise<void>
