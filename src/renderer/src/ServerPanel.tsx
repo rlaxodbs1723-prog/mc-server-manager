@@ -4,6 +4,7 @@ import { SOFTWARE_INFO, type ModKindInfo, type PreflightResult, type Progress, t
 import { suggest, usageOf } from './consoleHelp'
 import EulaDialog from './EulaDialog'
 import InviteBox from './InviteBox'
+import PortField from './PortField'
 import FirstRunGuide from './FirstRunGuide'
 import ManageTab from './ManageTab'
 import ChatLogTab from './ChatLogTab'
@@ -377,6 +378,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
             <span className="n">{server.name}</span>
             <Pencil size={16} className="edit-icon" />
           </h1>
+          <PortField folderPath={folderPath} locked={on || starting} />
           <div className="subline">
             <span className={`pill ${state}`}>
               <span className={`dot ${state}`} />

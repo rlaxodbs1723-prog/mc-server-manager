@@ -1073,3 +1073,6 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .chatlog-keep { width: 170px; }
 .inv-count-px { position: absolute; right: -3px; bottom: -3px; image-rendering: pixelated; pointer-events: none; }
 .invite-inline button.invite-self { width: auto; padding: 0 8px; margin-left: 4px; font-size: 12px; color: var(--text-3); background: var(--surface-2); white-space: nowrap; }
+.port-field { display: inline-flex; align-items: center; gap: 6px; margin: 2px 0 6px; font-size: 12px; color: var(--text-3); }
+.port-field input { width: 64px; padding: 2px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-2); color: var(--text); font: inherit; font-size: 13px; }
+.port-field input:disabled { opacity: 0.55; cursor: not-allowed; }
