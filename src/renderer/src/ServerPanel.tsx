@@ -63,12 +63,42 @@ function highlight(line: string, q: string) {
   return out
 }
 
+// 같은 줄이 여러 번 나오면 한 줄로 묶고 뒤에 x2, x3… 로 보여 준다 (화면에만 적용, 로그 파일과 검색은 그대로)
+// 경고·오류 줄은 사이에 다른 줄이 끼어 있어도 최근 60줄 안에서 같은 줄이면 묶고, 그 밖의 줄은 바로 앞 줄과 같을 때만 묶는다
+// 오류가 난 곳 목록(at ...)은 같은 줄이 많아도 흐름이 깨지지 않게 묶지 않는다
+function collapseLines(log: string[]): { line: string; count: number }[] {
+  const out: { line: string; count: number }[] = []
+  const recent = new Map<string, number>() // 줄 내용(시간 뺀 것) → out에서의 위치
+  for (const line of log) {
+    const key = line.replace(/^\[\d{2}:\d{2}:\d{2}\]\s*/, '').trim()
+    const cls = lineClass(line)
+    const problem = (cls === 'l-warn' || cls === 'l-error') && !/^\s+at /.test(line)
+    const last = out[out.length - 1]
+    if (key && last && last.line.replace(/^\[\d{2}:\d{2}:\d{2}\]\s*/, '').trim() === key) {
+      last.count++
+      continue
+    }
+    if (problem && key) {
+      const at = recent.get(key)
+      if (at !== undefined && out.length - at <= 60) {
+        out[at].count++
+        continue
+      }
+      recent.set(key, out.length)
+    }
+    out.push({ line, count: 1 })
+  }
+  return out
+}
+
 const ConsoleLines = memo(function ConsoleLines({ log, query }: { log: string[]; query: string }) {
+  const rows = useMemo(() => collapseLines(log), [log])
   return (
     <>
-      {log.map((line, i) => (
-        <div key={i} className={lineClass(line)}>
-          {highlight(line, query)}
+      {rows.map((r, i) => (
+        <div key={i} className={lineClass(r.line)}>
+          {highlight(r.line, query)}
+          {r.count > 1 && <span className="l-count">x{r.count}</span>}
         </div>
       ))}
     </>

@@ -267,6 +267,7 @@ button:disabled { cursor: default; }
 .console > div { content-visibility: auto; contain-intrinsic-size: auto 20px; }
 .console .l-warn { color: #e3b341; }
 .console .l-error { color: #ff7b72; }
+.console .l-count { margin-left: 8px; padding: 0 7px; border-radius: 9px; background: rgba(255, 255, 255, 0.14); color: #e6edf3; font-size: 11px; font-weight: 700; }
 .console .l-cmd { color: #79c0ff; }
 .console .l-app { color: #7ee2a8; }
 .console-empty { flex: 1; display: grid; place-items: center; color: var(--text-3); font-size: 14px; }
