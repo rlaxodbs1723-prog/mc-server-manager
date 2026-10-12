@@ -28,6 +28,12 @@ export default function TitleBar() {
       setUpdate(u)
     })
   }, [])
+  // 다른 화면(새 서버 만들기 안내 등)에서 제보 창을 열어 달라고 할 때
+  useEffect(() => {
+    const open = (): void => setShowBug(true)
+    window.addEventListener('open-bug-report', open)
+    return () => window.removeEventListener('open-bug-report', open)
+  }, [])
   useEffect(() => {
     window.api.getSiteStatus().then(setSites).catch(() => undefined)
     return window.api.onSiteStatus(setSites)

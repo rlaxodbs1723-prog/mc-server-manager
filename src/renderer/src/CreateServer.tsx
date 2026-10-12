@@ -28,6 +28,16 @@ export default function CreateServer({ existingNames }: Props) {
         <p className="page-sub">어떤 서버를 만들지 골라 주세요. 나머지는 차근차근 안내해 드릴게요.</p>
       </div>
 
+      <div className="beta-note">
+        <div>
+          <b>아직 초기 버전이라 버그가 있을 수 있어요</b>
+          <span>쓰다가 이상한 점이 있으면 버그 제보를 많이 해 주세요. 보내 주신 제보로 빨리 고칠게요!</span>
+        </div>
+        <button className="btn sm primary" onClick={() => window.dispatchEvent(new Event('open-bug-report'))}>
+          버그 제보하기
+        </button>
+      </div>
+
       <section>
         {GROUPS.map((g) => (
           <div className="sw-group" key={g.label}>
