@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { SOFTWARE_INFO, type Software } from '../../shared-types'
+import DiscordLogo from './DiscordLogo'
 import ModpackDialog from './ModpackDialog'
 import SetupWizard from './SetupWizard'
 import { Package } from 'lucide-react'
@@ -23,19 +24,25 @@ export default function CreateServer({ existingNames }: Props) {
 
   return (
     <div className="create">
-      <div>
-        <h1 className="page-title">새 서버 만들기</h1>
-        <p className="page-sub">어떤 서버를 만들지 골라 주세요. 나머지는 차근차근 안내해 드릴게요.</p>
-      </div>
-
       <div className="beta-note">
         <div>
           <b>아직 초기 버전이라 버그가 있을 수 있어요</b>
           <span>쓰다가 이상한 점이 있으면 버그 제보를 많이 해 주세요. 보내 주신 제보로 빨리 고칠게요!</span>
         </div>
-        <button className="btn sm primary" onClick={() => window.dispatchEvent(new Event('open-bug-report'))}>
-          버그 제보하기
-        </button>
+        <div className="beta-actions">
+          <button className="btn sm" onClick={() => window.api.openExternal('https://discord.gg/Z6EdhRP9Ep')}>
+            <DiscordLogo />
+            디스코드 서버 가입
+          </button>
+          <button className="btn sm primary" onClick={() => window.dispatchEvent(new Event('open-bug-report'))}>
+            버그 제보하기
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <h1 className="page-title">새 서버 만들기</h1>
+        <p className="page-sub">어떤 서버를 만들지 골라 주세요. 나머지는 차근차근 안내해 드릴게요.</p>
       </div>
 
       <section>

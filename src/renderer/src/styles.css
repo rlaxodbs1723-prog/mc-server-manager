@@ -1079,6 +1079,8 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .bug-discord { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; padding: 8px 10px 8px 12px; border-radius: 10px; background: var(--primary-soft); color: var(--text-2); font-size: 12.5px; }
 .bug-discord .btn { flex-shrink: 0; display: inline-flex; align-items: center; }
 .beta-note { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border-radius: 12px; background: var(--warning-soft); color: var(--text-2); font-size: 13px; }
-.beta-note > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.beta-note > div:first-child { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .beta-note b { color: var(--warning); font-size: 14px; }
 .beta-note .btn { flex-shrink: 0; }
+.beta-actions { display: flex; flex-shrink: 0; gap: 8px; }
+.beta-actions .btn { display: inline-flex; align-items: center; }
