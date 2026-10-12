@@ -85,6 +85,12 @@ export async function useTunnel(folderPath: string): Promise<void> {
   await linkTunnel()
   if (getInvite(folderPath).state !== 'failed') return // 승인을 기다리는 사이 서버가 꺼졌거나 이미 열렸다
   await openViaTunnel(folderPath, invite.port, invite.lan, upnpCause.get(folderPath) ?? invite.message)
+  // 저장된 키가 무효라 연결이 풀렸으면(키는 지워졌다) 승인부터 다시 받아 한 번 더 시도한다
+  if (getInvite(folderPath).state === 'failed' && !tunnelLinked()) {
+    await linkTunnel()
+    if (getInvite(folderPath).state !== 'failed') return
+    await openViaTunnel(folderPath, invite.port, invite.lan, upnpCause.get(folderPath) ?? invite.message)
+  }
 }
 
 async function close(folderPath: string): Promise<void> {

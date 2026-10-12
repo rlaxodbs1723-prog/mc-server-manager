@@ -134,6 +134,19 @@ const localPortOf = (t: RunData['tunnels'][number]): number => Number(t.agent_co
 
 // 이 서버 포트로 이어지는 터널을 찾거나 만들고, 에이전트를 켜서 접속 주소를 돌려준다
 export async function openTunnel(folderPath: string, port: number): Promise<string> {
+  try {
+    return await openTunnelWith(folderPath, port)
+  } catch (e) {
+    // 저장해 둔 키가 playit에서 무효가 됐다(계정·에이전트를 지웠거나 승인을 취소함). 그대로 두면 승인 화면이 안 열리고 같은 오류만 나서 키를 지운다
+    if (/InvalidAgentKey/.test(String(e))) {
+      unlinkTunnel()
+      throw new Error('playit 연결이 풀렸어요. 다시 연결해야 해요.')
+    }
+    throw e
+  }
+}
+
+async function openTunnelWith(folderPath: string, port: number): Promise<string> {
   const secret = readSecret()
   if (!secret) throw new Error('playit 연결이 안 되어 있어요.')
   await downloadFile({ url: AGENT_URL, dest: agentExe(), sha256: AGENT_SHA256 })
