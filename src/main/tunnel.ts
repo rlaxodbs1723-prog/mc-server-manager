@@ -29,7 +29,9 @@ const readSecret = (): string | null => {
   }
 }
 
-export const tunnelLinked = (): boolean => readSecret() != null
+// 시험용: MCSM_FAKE_LINK=1 로 켜면 playit이 연결 안 된 것처럼 굴고, 승인 대기 화면(링크)만 보여 준다 (화면 확인용, 실제 연결은 건드리지 않는다)
+const FAKE_LINK = process.env.MCSM_FAKE_LINK === '1'
+export const tunnelLinked = (): boolean => !FAKE_LINK && readSecret() != null
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
 
@@ -56,6 +58,15 @@ export function openClaimPage(): Promise<void> {
 // 브라우저에서 승인 받기: 코드를 만들고 승인 페이지를 연 뒤, 승인될 때까지 기다렸다가 키를 받아 저장한다
 export async function linkTunnel(): Promise<void> {
   if (tunnelLinked()) return
+  if (FAKE_LINK) {
+    claimUrl = 'https://playit.gg/claim/0123456789'
+    try {
+      await sleep(10 * 60 * 1000)
+    } finally {
+      claimUrl = null
+    }
+    throw new Error('시험용 승인 대기가 끝났어요.')
+  }
   const code = crypto.randomBytes(5).toString('hex')
   const setup = (): Promise<string> => call<string>('/claim/setup', { code, agent_type: 'self-managed', version: 'playit 1.0.10' })
   await setup()
