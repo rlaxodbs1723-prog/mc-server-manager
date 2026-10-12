@@ -1582,5 +1582,6 @@
  "아직 초기 버전이라 버그가 있을 수 있어요": "This is still an early version, so bugs may exist",
  "쓰다가 이상한 점이 있으면 버그 제보를 많이 해 주세요. 보내 주신 제보로 빨리 고칠게요!": "If anything looks off, please send lots of bug reports. We'll fix issues quickly with your help!",
  "버그 제보하기": "Report a bug",
- "playit 연결이 풀렸어요. 다시 연결해야 해요.": "The playit connection was lost. You need to connect again."
+ "playit 연결이 풀렸어요. 다시 연결해야 해요.": "The playit connection was lost. You need to connect again.",
+ "터널이 열리지 않으면 아래 링크를 클릭해 주세요.": "If the tunnel does not open, click the link below."
 }

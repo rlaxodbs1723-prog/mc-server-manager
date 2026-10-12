@@ -141,9 +141,11 @@ function InviteHelp({
         {linking && <p className="hint">{'브라우저에서 승인을 기다리고 있어요…'}</p>}
         {linking && claimUrl && (
           <>
-            <p className="hint">{'브라우저가 안 열리면 아래 주소를 브라우저에 붙여 넣어 주세요.'}</p>
+            <p className="hint">{'터널이 열리지 않으면 아래 링크를 클릭해 주세요.'}</p>
             <p className="hint" style={{ wordBreak: 'break-all', userSelect: 'text' }}>
-              {claimUrl}
+              <a className="claim-link" href={claimUrl} onClick={(e) => (e.preventDefault(), window.api.openClaimPage())}>
+                {claimUrl}
+              </a>
             </p>
             <div className="actions" style={{ justifyContent: 'flex-start' }}>
               <button className="btn sm" onClick={() => window.api.copyText(claimUrl).then(() => toast('주소를 복사했어요'))}>

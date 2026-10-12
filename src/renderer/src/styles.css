@@ -1084,3 +1084,5 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .beta-note .btn { flex-shrink: 0; }
 .beta-actions { display: flex; flex-shrink: 0; gap: 8px; }
 .beta-actions .btn { display: inline-flex; align-items: center; }
+.claim-link { color: var(--primary); text-decoration: underline; cursor: pointer; }
+.claim-link:hover { filter: brightness(1.2); }
