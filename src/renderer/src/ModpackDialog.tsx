@@ -225,7 +225,7 @@ export default function ModpackDialog({ existingNames, onClose }: { existingName
               {!name.trim() && <p className="error-text">서버 이름을 입력해 주세요.</p>}
               {taken.has(norm(name)) && <p className="error-text">같은 이름의 서버가 있어요</p>}
             </div>
-            <AddressMemory memoryHint="모드팩은 보통 4~6GB를 추천해요." onChange={setExtra} />
+            <AddressMemory onChange={setExtra} />
             <p className="hint">플레이어들도 같은 모드팩을 설치해야 들어올 수 있어요.</p>
             <div className="actions">
               <button className="btn" onClick={onClose}>

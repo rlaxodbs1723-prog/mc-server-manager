@@ -364,7 +364,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
       {step === 4 && (
         <>
           <h2>접속 주소와 메모리</h2>
-          <AddressMemory memoryHint={software === 'vanilla' || isBuild ? 'Vanilla·Paper는 2GB면 충분해요.' : '모드가 많으면 4~6GB를 추천해요.'} onChange={setExtra} />
+          <AddressMemory onChange={setExtra} />
         </>
       )}
 
