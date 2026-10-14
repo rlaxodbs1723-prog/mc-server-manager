@@ -15,12 +15,6 @@ interface Props {
   onClose: () => void
 }
 
-const GAMEMODES = [
-  { value: 'survival', label: '서바이벌', emoji: '⛏️' },
-  { value: 'creative', label: '크리에이티브', emoji: '🧱' },
-  { value: 'adventure', label: '모험', emoji: '🗺️' },
-  { value: 'spectator', label: '관전', emoji: '👻' }
-]
 const DIFFICULTIES = [
   { value: 'peaceful', label: '평화로움' },
   { value: 'easy', label: '쉬움' },
@@ -81,7 +75,6 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
   const [icon, setIcon] = useState<{ path: string; preview: string } | null>(null) // 고른 서버 아이콘
 
   // 2~4단계
-  const [gamemode, setGamemode] = useState('survival')
   const [difficulty, setDifficulty] = useState('easy')
   const [hardcore, setHardcore] = useState(false)
   const [levelType, setLevelType] = useState('minecraft:normal')
@@ -158,7 +151,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
       loaderVersion: software === 'vanilla' ? undefined : loaderVersion,
       iconFrom: icon?.path,
       properties: {
-        gamemode,
+        gamemode: 'survival', // 게임 모드 선택은 없애고 서바이벌로 고정
         difficulty: hardcore ? 'hard' : difficulty, // 하드코어는 어려움으로 고정된다
         hardcore: String(hardcore),
         'level-type': levelType,
@@ -294,14 +287,6 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
       {step === 1 && (
         <>
           <h2>플레이 방식</h2>
-          <div className="mode-grid" style={{ marginTop: 14 }}>
-            {GAMEMODES.map((g) => (
-              <button key={g.value} className={`mode-card ${gamemode === g.value ? 'active' : ''}`} onClick={() => setGamemode(g.value)}>
-                <span className="mode-emoji">{g.emoji}</span>
-                <b>{g.label}</b>
-              </button>
-            ))}
-          </div>
           <div className="reset-fields">
             <div>
               <div className="label">난이도</div>
