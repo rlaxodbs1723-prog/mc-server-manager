@@ -173,7 +173,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
                   setIcon(null)
                 }}
               >
-                <SoftwareBadge software={software} size={44} name={name} icon={icon?.preview} />
+                <SoftwareBadge software={software} size={72} name={name} icon={icon?.preview} />
                 <span className="wizard-icon-edit">
                   <ImagePlus size={12} />
                 </span>
@@ -181,17 +181,17 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
               <div>
                 {/* 입력하는 이름을 바로 보여 준다. 비어 있으면 종류 이름으로 */}
                 <h2 className="wizard-name">{name.trim() || `${info.label} 서버`}</h2>
-              </div>
-              <div className="wizard-image-actions">
-                <button type="button" className="btn sm" onClick={pickIcon}>
-                  <ImagePlus size={14} />
-                  {icon ? '이미지 변경' : '이미지 추가'}
-                </button>
-                {icon && (
-                  <button type="button" className="btn sm ghost" onClick={() => setIcon(null)}>
-                    삭제
+                <div className="wizard-image-actions">
+                  <button type="button" className="btn sm" onClick={pickIcon}>
+                    <ImagePlus size={14} />
+                    {icon ? '이미지 변경' : '이미지 추가'}
                   </button>
-                )}
+                  {icon && (
+                    <button type="button" className="btn sm ghost" onClick={() => setIcon(null)}>
+                      삭제
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
             <div className="reset-fields">
@@ -219,6 +219,17 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
                     같은 이름의 서버가 이미 있음. 다른 이름 입력 필요
                   </p>
                 )}
+              </div>
+              <div>
+                <div className="label">서버 설명</div>
+                <input
+                  className="input"
+                  style={{ height: 42 }}
+                  value={motd}
+                  placeholder={name.trim()}
+                  onChange={(e) => setMotd(e.target.value)}
+                  maxLength={60}
+                />
               </div>
               <div>
                 <div className="label">마인크래프트 버전</div>
@@ -267,17 +278,6 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
               )}
               {loadError && <p className="error-text">{loadError}</p>}
               <DomainField onChange={setDomain} />
-              <div>
-                <div className="label">서버 설명</div>
-                <input
-                  className="input"
-                  style={{ height: 42 }}
-                  value={motd}
-                  placeholder={name.trim()}
-                  onChange={(e) => setMotd(e.target.value)}
-                  maxLength={60}
-                />
-              </div>
             </div>
           </div>
           <div className="wizard-col">
