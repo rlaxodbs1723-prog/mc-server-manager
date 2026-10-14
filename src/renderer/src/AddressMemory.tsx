@@ -57,7 +57,7 @@ export default function AddressMemory({ memoryHint, onChange }: { memoryHint: st
       <div className="setting-row col" style={{ padding: 0, border: 0 }}>
         <div className="setting-text">
           <div className="setting-label">
-            서버 주소 이름 <span className="muted">(선택)</span>
+            서버 주소 이름
           </div>
           <div className="setting-desc">숫자 대신 외우기 쉬운 이름으로 접속하게 해요. 비워 두면 숫자 주소(IP)로 접속해요.</div>
         </div>
