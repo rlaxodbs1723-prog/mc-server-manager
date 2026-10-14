@@ -173,9 +173,9 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
                   setIcon(null)
                 }}
               >
-                <SoftwareBadge software={software} size={72} name={name} icon={icon?.preview} />
+                <SoftwareBadge software={software} size={104} name={name} icon={icon?.preview} />
                 <span className="wizard-icon-edit">
-                  <ImagePlus size={12} />
+                  <ImagePlus size={16} />
                 </span>
               </button>
               <div>
@@ -183,7 +183,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
                 <h2 className="wizard-name">{name.trim() || `${info.label} 서버`}</h2>
                 <div className="wizard-image-actions">
                   <button type="button" className="btn sm" onClick={pickIcon}>
-                    <ImagePlus size={14} />
+                    <ImagePlus size={16} />
                     {icon ? '이미지 변경' : '이미지 추가'}
                   </button>
                   {icon && (
@@ -205,7 +205,6 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
                     setNameTouched(true)
                   }}
                   maxLength={60}
-                  placeholder="예: 야생 서버"
                   autoFocus
                 />
                 {/* 같은 이름이 있어서 버튼이 안 눌리는 이유만 보여 준다 */}
@@ -233,7 +232,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
                   onChange={setVersion}
                   disabled={!versions.length}
                   placeholder="불러오는 중…"
-                  searchPlaceholder="버전 검색 (예: 1.20)"
+                  searchPlaceholder="버전 검색"
                   options={versions.map((v, i) => ({
                     value: v.id,
                     label: v.id,
