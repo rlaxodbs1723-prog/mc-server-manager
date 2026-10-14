@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { SOFTWARE_INFO, type Software } from '../../shared-types'
+import { SOFTWARE_INFO, type DetectedServer, type Software } from '../../shared-types'
 import DiscordLogo from './DiscordLogo'
+import ImportServerDialog from './ImportServerDialog'
 import ModpackDialog from './ModpackDialog'
 import SetupWizard from './SetupWizard'
-import { Package } from 'lucide-react'
-import { SoftwareBadge } from './ui'
+import { FolderInput, Package } from 'lucide-react'
+import { SoftwareBadge, useToast } from './ui'
+import { cleanError } from './util'
 
 // 만들기 화면에서 묶어 보여 줄 순서
 const GROUPS: { label: string; items: Software[] }[] = [
@@ -21,6 +23,19 @@ interface Props {
 export default function CreateServer({ existingNames }: Props) {
   const [picked, setPicked] = useState<Software | null>(null)
   const [modpack, setModpack] = useState(false)
+  const toast = useToast()
+  const [importing, setImporting] = useState<{ folder: string; detected: DetectedServer } | null>(null)
+
+  // 폴더를 고르면 안을 살펴 종류·버전을 알아내고 가져오기 창을 연다
+  async function pickImport() {
+    const folder = await window.api.pickServerFolder().catch(() => null)
+    if (!folder) return
+    try {
+      setImporting({ folder, detected: await window.api.detectServer(folder) })
+    } catch (e) {
+      toast(cleanError(e), 'error')
+    }
+  }
 
   return (
     <div className="create">
@@ -74,8 +89,22 @@ export default function CreateServer({ existingNames }: Props) {
             </button>
           </div>
         </div>
+        <div className="sw-group">
+          <div className="sw-group-label">가져오기</div>
+          <div className="sw-grid">
+            <button className="sw-tile" onClick={pickImport}>
+              <span className="sw-badge" style={{ width: 40, height: 40, borderRadius: 12, color: '#f5a524', background: '#f5a52424' }}>
+                <FolderInput size={22} />
+              </span>
+              <div>
+                <div className="t">기존 서버</div>
+              </div>
+            </button>
+          </div>
+        </div>
       </section>
       {modpack && <ModpackDialog existingNames={existingNames} onClose={() => setModpack(false)} />}
+      {importing && <ImportServerDialog folder={importing.folder} detected={importing.detected} existingNames={existingNames} onClose={() => setImporting(null)} />}
 
       {picked && (
         <SetupWizard

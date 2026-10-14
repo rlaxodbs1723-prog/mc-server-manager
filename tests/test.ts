@@ -39,6 +39,7 @@ import { langFromLocale, translator } from '../src/i18n'
 import { tr as mainTr } from '../src/main/i18n'
 import { BUG_MAX_BYTES, bugFileInfo, bugMessage, sendBugReport } from '../src/main/bugreport'
 import { handleDomain } from '../relay/domain.mjs'
+import { checkImportFolder, detectServer } from '../src/main/importserver'
 import { claimDomain, cleanDomainName, getDomain, refreshDomain, releaseDomain } from '../src/main/domain'
 import enTable from '../src/i18n/en.json'
 import zhTable from '../src/i18n/zh.json'
@@ -134,6 +135,7 @@ async function quick(): Promise<void> {
   })
   await i18nChecks()
   await domainChecks()
+  await importChecks()
   await check('버그 제보: 디스코드 메시지 (앱 정보 자동, 길이 자르기, 아무도 안 부르기, 파일 검사)', async () => {
     type Embed = { title: string; description: string; fields: { name: string; value: string }[] }
     const m = bugMessage('모드 & 설치 @everyone', '설명\n둘째 줄', ['a.png'])
@@ -319,6 +321,104 @@ async function domainChecks(): Promise<void> {
       expect(threw, `${JSON.stringify(bad)}을(를) 받아들였어요`)
     }
   })
+}
+
+// ---------- 기존 서버 가져오기 ----------
+async function importChecks(): Promise<void> {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'mcsm-import-'))
+  const mk = (name: string, files: Record<string, string | Buffer>): string => {
+    const dir = path.join(base, name)
+    for (const [rel, data] of Object.entries(files)) {
+      fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true })
+      fs.writeFileSync(path.join(dir, rel), data)
+    }
+    return dir
+  }
+  const root = path.join(base, 'app-servers')
+  const jarWithVersion = (id: string): Promise<Buffer> =>
+    new Promise((resolve, reject) => {
+      const zip = new yazl.ZipFile()
+      zip.addBuffer(Buffer.from(JSON.stringify({ id, name: id })), 'version.json')
+      zip.end()
+      const chunks: Buffer[] = []
+      zip.outputStream.on('data', (c: Buffer) => chunks.push(c)).on('end', () => resolve(Buffer.concat(chunks))).on('error', reject)
+    })
+
+  await check('가져오기: 서버 종류와 버전 알아내기 (Forge·NeoForge·Fabric·Purpur·Paper·바닐라·로그)', async () => {
+    const d = (dir: string) => detectServer(dir, root)
+    const forge = await d(mk('forge', { 'libraries/net/minecraftforge/forge/1.20.1-47.2.0/win_args.txt': 'x', 'server.properties': '' }))
+    expect(forge.software === 'forge' && forge.mcVersion === '1.20.1' && forge.loaderVersion === '47.2.0', `Forge: ${JSON.stringify(forge)}`)
+    const neo = await d(mk('neo', { 'libraries/net/neoforged/neoforge/21.1.50/win_args.txt': 'x' }))
+    expect(neo.software === 'neoforge' && neo.mcVersion === '1.21.1' && neo.loaderVersion === '21.1.50', `NeoForge: ${JSON.stringify(neo)}`)
+    const neo0 = await d(mk('neo0', { 'libraries/net/neoforged/neoforge/21.0.5/win_args.txt': 'x' }))
+    expect(neo0.mcVersion === '1.21', `NeoForge 21.0: ${neo0.mcVersion}`)
+    const fabric = await d(mk('fabric', { 'fabric-server-launch.jar': 'x', 'server.jar': 'x', 'libraries/net/fabricmc/fabric-loader/0.15.11/a.jar': 'x', 'libraries/net/fabricmc/intermediary/1.20.4/a.jar': 'x' }))
+    expect(fabric.software === 'fabric' && fabric.mcVersion === '1.20.4' && fabric.loaderVersion === '0.15.11', `Fabric: ${JSON.stringify(fabric)}`)
+    const purpur = await d(mk('purpur', { 'purpur-1.20.4-2176.jar': 'x' }))
+    expect(purpur.software === 'purpur' && purpur.mcVersion === '1.20.4' && purpur.loaderVersion === '2176', `Purpur: ${JSON.stringify(purpur)}`)
+    const paper = await d(mk('paper', { 'paper-1.21-100.jar': 'x' }))
+    expect(paper.software === 'paper' && paper.mcVersion === '1.21' && paper.loaderVersion === '100', `Paper: ${JSON.stringify(paper)}`)
+    const paper2 = await d(mk('paper2', { 'server.jar': 'x', 'paper.yml': '', 'version_history.json': JSON.stringify({ currentVersion: 'git-Paper-123 (MC: 1.20.4)' }) }))
+    expect(paper2.software === 'paper' && paper2.mcVersion === '1.20.4' && paper2.loaderVersion === '123', `Paper 기록: ${JSON.stringify(paper2)}`)
+    const vanilla = await d(mk('vanilla', { 'server.jar': await jarWithVersion('1.19.4'), 'server.properties': 'level-name=map\n', 'map/level.dat': 'x' }))
+    expect(vanilla.software === 'vanilla' && vanilla.mcVersion === '1.19.4' && vanilla.hasWorld, `바닐라: ${JSON.stringify(vanilla)}`)
+    const logOnly = await d(mk('logonly', { 'custom.jar': 'x', 'logs/latest.log': '[12:00:00] [main/INFO]: Starting minecraft server version 1.18.2\n' }))
+    expect(logOnly.software === null && logOnly.mcVersion === '1.18.2', `로그: ${JSON.stringify(logOnly)}`)
+  })
+
+  await check('가져오기: 고를 수 없는 폴더는 막기 (없는 폴더·드라이브·앱 폴더 안팎·서버가 아닌 폴더)', async () => {
+    fs.mkdirSync(path.join(root, 'inner'), { recursive: true })
+    fs.writeFileSync(path.join(root, 'inner', 'server.properties'), '')
+    const bad = (dir: string): boolean => {
+      try {
+        checkImportFolder(dir, root)
+        return false
+      } catch {
+        return true
+      }
+    }
+    expect(bad(path.join(base, 'nope')), '없는 폴더를 받아들였어요')
+    expect(bad(path.parse(base).root), '드라이브 전체를 받아들였어요')
+    expect(bad(path.join(root, 'inner')), '앱 서버 폴더 안을 받아들였어요')
+    expect(bad(base), '앱 서버 폴더를 품은 폴더를 받아들였어요')
+    expect(bad(mk('empty', { 'readme.txt': 'x' })), '서버가 아닌 폴더를 받아들였어요')
+  })
+
+  await check('가져오기: 폴더 복사·정보 파일·포트 겹침 피하기·원본 그대로·실패하면 흔적 없음', async () => {
+    const src = mk('mine', {
+      'server.jar': 'jar',
+      'server.properties': 'server-port=25565\nlevel-name=world\n',
+      'eula.txt': 'eula=true\n',
+      'world/level.dat': 'level',
+      'mods/a.jar': 'mod',
+      'logs/latest.log': 'old log',
+      'world/session.lock': 'lock'
+    })
+    const first = await createServer({ name: '가져오기 시험', software: 'paper', mcVersion: '1.21', loaderVersion: '100', importFrom: src, memoryMb: 3072 }, () => undefined)
+    const f = first.folderPath
+    expect(fs.existsSync(path.join(f, 'world', 'level.dat')) && fs.existsSync(path.join(f, 'mods', 'a.jar')) && fs.existsSync(path.join(f, 'server.jar')), '파일을 복사하지 않았어요')
+    expect(!fs.existsSync(path.join(f, 'logs')) && !fs.existsSync(path.join(f, 'world', 'session.lock')) && !fs.existsSync(path.join(f, '.creating')), '빼야 할 파일이 따라왔거나 만드는 중 표시가 남았어요')
+    const info = JSON.parse(fs.readFileSync(path.join(f, 'server-manager.json'), 'utf8')) as { software: string; mcVersion: string; memoryMb: number; defaultsVersion: number }
+    expect(info.software === 'paper' && info.mcVersion === '1.21' && info.memoryMb === 3072 && info.defaultsVersion >= 2, `정보 파일: ${JSON.stringify(info)}`)
+    expect(fs.readFileSync(path.join(f, 'server.properties'), 'utf8').includes('server-port=25565') && !/white-list/.test(fs.readFileSync(path.join(f, 'server.properties'), 'utf8')), '첫 서버의 설정이 바뀌었어요')
+    expect(fs.existsSync(path.join(src, 'logs', 'latest.log')) && fs.existsSync(path.join(src, 'world', 'session.lock')), '원본이 바뀌었어요')
+    const second = await createServer({ name: '가져오기 시험', software: 'paper', mcVersion: '1.21', loaderVersion: '100', importFrom: src }, () => undefined)
+    expect(second.folderPath !== f, '같은 이름이라 폴더가 겹쳤어요')
+    expect(/server-port=2556[6-9]/.test(fs.readFileSync(path.join(second.folderPath, 'server.properties'), 'utf8')), '같은 포트를 그대로 썼어요')
+    const noJar = mk('nojar', { 'server.properties': '', 'readme.txt': 'x' })
+    const before = fs.readdirSync(path.dirname(f)).length
+    let msg = ''
+    try {
+      await createServer({ name: '가져오기 실패', software: 'paper', mcVersion: '1.21', loaderVersion: '100', importFrom: noJar }, () => undefined)
+    } catch (e) {
+      msg = (e as Error).message
+    }
+    expect(/서버 jar/.test(msg), `jar가 없을 때 안내가 이상해요: ${msg}`)
+    expect(fs.readdirSync(path.dirname(f)).length === before, '실패했는데 폴더가 남았어요')
+    await deleteServer(f)
+    await deleteServer(second.folderPath)
+  })
+  fs.rmSync(base, { recursive: true, force: true })
 }
 
 async function i18nChecks(): Promise<void> {

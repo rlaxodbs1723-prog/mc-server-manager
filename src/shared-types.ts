@@ -39,6 +39,17 @@ export interface CreateServerOptions {
   iconFrom?: string // 서버 아이콘으로 쓸 그림 파일 (만들기 창에서 고른 것)
   memoryMb?: number // 최대 메모리 (없으면 컴퓨터에 맞는 기본값)
   domainName?: string // 만들고 나서 달아 줄 이름 주소의 이름 (이름.cubepanel.kr). 없으면 숫자 주소를 쓴다
+  importFrom?: string // 기존 서버 폴더를 가져올 때 그 폴더 (복사해서 쓴다. 원본은 그대로 둔다)
+}
+
+// 기존 서버 폴더를 살펴 알아낸 것 (틀릴 수 있어서 화면에서 고친다)
+export interface DetectedServer {
+  software: Software | null
+  mcVersion: string | null
+  loaderVersion: string | null
+  name: string // 폴더 이름
+  sizeMb: number
+  hasWorld: boolean
 }
 
 // 이름 주소: key는 이 서버만 아는 비밀 열쇠 (중계 서버에는 해시만 남는다)
@@ -485,6 +496,9 @@ export interface Api {
   checkReachable: (folderPath: string) => Promise<{ ok: boolean; message: string }>
   // 이름 주소: 서버를 만들기 전에 이 이름을 쓸 수 있는지 (true면 비어 있음)
   checkDomainName: (name: string) => Promise<boolean>
+  // 기존 서버 가져오기: 폴더 고르기(취소하면 null), 폴더에서 종류·버전 알아내기
+  pickServerFolder: () => Promise<string | null>
+  detectServer: (folderPath: string) => Promise<DetectedServer>
   getDomain: (folderPath: string) => Promise<{ name: string; host: string } | null>
   claimDomain: (folderPath: string, name: string) => Promise<string>
   // 서버 만들기 창의 메모리 슬라이더 범위

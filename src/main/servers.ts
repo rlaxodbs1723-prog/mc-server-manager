@@ -26,6 +26,7 @@ import { autoBackupBeforeStart, backupRoot, createBackup, listBackups } from './
 import { assertFree } from './lock'
 import { assertWorldFits, importWorld } from './worldimport'
 import { installModpack } from './modpack'
+import { checkImportFolder, copyServerFolder } from './importserver'
 import { getServerIcon, setServerIconFrom } from './icon'
 import { notify } from './notify'
 import { analyzeCrash } from './crash'
@@ -100,10 +101,95 @@ function freePort(): number {
   return port
 }
 
+// 가져온 서버가 앱에서 켜지는 파일 모양인지 확인하고, 모자란 것만 채운다
+async function prepareImportedLaunch(dir: string, software: Software, mcVersion: string, loaderVersion: string | undefined, report: (p: Progress) => void): Promise<void> {
+  const jar = path.join(dir, 'server.jar')
+  if (software === 'vanilla' || software === 'paper' || software === 'purpur') {
+    if (fs.existsSync(jar)) return
+    // 앱은 server.jar를 실행한다. 이름이 다른 서버 jar(paper-1.21-100.jar 등)를 server.jar로도 복사해 둔다
+    const found = fs.readdirSync(dir).find((f) => /\.jar$/i.test(f) && /^(paper|purpur|spigot|craftbukkit|minecraft_server|server)/i.test(f) && !/installer|launch/i.test(f))
+    if (!found) throw new Error('서버 jar 파일을 폴더에서 찾지 못했어요.')
+    fs.copyFileSync(path.join(dir, found), jar)
+    return
+  }
+  const meta = await getVersionMeta(mcVersion).catch(() => null)
+  if (needsVanillaJar(software) && !fs.existsSync(jar)) {
+    const dl = meta?.downloads.server
+    if (!dl) throw new Error(`${mcVersion} 버전의 마인크래프트 서버 파일을 받을 수 없어요. 버전을 확인해 주세요.`)
+    await downloadFile({
+      url: dl.url,
+      dest: jar,
+      sha1: dl.sha1,
+      onBytes: (done) => report({ message: '마인크래프트 서버 파일을 받고 있어요', done, total: dl.size, unit: 'bytes', phase: 'vanilla' })
+    })
+  }
+  const ready =
+    software === 'fabric'
+      ? fs.existsSync(path.join(dir, 'fabric-server-launch.jar'))
+      : software === 'quilt'
+        ? fs.existsSync(path.join(dir, 'quilt-server-launch.jar'))
+        : (() => {
+            try {
+              launchTarget(software, dir, mcVersion, loaderVersion)
+              return true
+            } catch {
+              return false
+            }
+          })()
+  if (ready) return
+  if (!loaderVersion || !meta) throw new Error(`${SOFTWARE_INFO[software].label} 서버 실행 파일이 없어서 설치가 필요해요. 로더 버전을 골라 주세요.`)
+  const java = await ensureJava(runtimeRoot(), javaComponentOf(meta), (message, done, total) => report({ message, done, total, unit: 'files', phase: 'java' }))
+  await installLoader(software, mcVersion, loaderVersion, dir, java, (message, phase, done, total) => report({ message, phase, done, total, unit: done != null ? 'bytes' : undefined }))
+}
+
+// 기존 서버 폴더를 앱의 서버 폴더로 복사해 앱 서버로 만든다 (원본은 그대로 둔다)
+async function importExisting(options: CreateServerOptions, report: (p: Progress) => void): Promise<ServerInfo> {
+  const { name, software, mcVersion, loaderVersion, memoryMb } = options
+  if (!SOFTWARE_INFO[software]) throw new Error('지원하지 않는 서버 종류예요.')
+  if (!mcVersion) throw new Error('마인크래프트 버전을 골라 주세요.')
+  const src = checkImportFolder(options.importFrom as string, serversRoot())
+  const folderPath = freeFolder(name)
+  const oldBackups = backupRoot(folderPath)
+  if (fs.existsSync(oldBackups)) await shell.trashItem(oldBackups).catch(() => undefined)
+  fs.mkdirSync(folderPath, { recursive: true })
+  fs.writeFileSync(path.join(folderPath, CREATING_FILE), new Date().toISOString())
+  try {
+    report({ message: '서버 파일을 복사하고 있어요', phase: 'install' })
+    await copyServerFolder(src, folderPath, (done, total) => report({ message: '서버 파일을 복사하고 있어요', done, total, unit: 'bytes', phase: 'install' }))
+    await prepareImportedLaunch(folderPath, software, mcVersion, loaderVersion, report)
+  } catch (e) {
+    try {
+      fs.rmSync(folderPath, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 })
+    } catch {
+      // .creating 표시가 남아 있어서 다음 실행 때 지워진다
+    }
+    throw e
+  }
+  const info: ServerInfo = {
+    name: name.trim(),
+    software,
+    mcVersion,
+    ...(software !== 'vanilla' && loaderVersion && { loaderVersion }),
+    memoryMb: memoryMb ? Math.round(Math.min(memoryRange().maxMb, Math.max(MIN_MEMORY_MB, Number(memoryMb) || 0))) || defaultMemoryMb() : defaultMemoryMb(),
+    defaultsVersion: DEFAULTS_BY_VERSION.length, // 가져온 서버의 설정은 앱 기본값으로 덮어쓰지 않는다
+    folderPath,
+    createdAt: new Date().toISOString()
+  }
+  fs.writeFileSync(path.join(folderPath, INFO_FILE), JSON.stringify(info, null, 2))
+  // 원래 쓰던 포트를 다른 서버가 이미 쓰고 있으면 겹치지 않는 포트로 바꾼다
+  const mine = serverPort(folderPath)
+  if (listServers().some((s) => s.folderPath !== folderPath && serverPort(s.folderPath) === mine)) writeProperties(folderPath, { 'server-port': String(freePort()) })
+  fs.rmSync(path.join(folderPath, CREATING_FILE), { force: true })
+  report({ message: '완료' })
+  return info
+}
+
 export async function createServer(
-  { name, software, mcVersion, loaderVersion, properties, importWorldFrom, modpackId, iconFrom, memoryMb }: CreateServerOptions,
+  options: CreateServerOptions,
   report: (p: Progress) => void
 ): Promise<ServerInfo> {
+  if (options.importFrom) return importExisting(options, report)
+  const { name, software, mcVersion, loaderVersion, properties, importWorldFrom, modpackId, iconFrom, memoryMb } = options
   if (!SOFTWARE_INFO[software]) throw new Error('지원하지 않는 서버 종류예요.')
   if (software !== 'vanilla' && !loaderVersion) throw new Error(`${SOFTWARE_INFO[software].label} 버전을 골라 주세요.`)
   if (importWorldFrom) await assertWorldFits(importWorldFrom, mcVersion) // 폴더를 만들기 전에 막는다

@@ -1105,3 +1105,6 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .wizard-world .world-source > .drop-box { flex: 1; min-height: 0; }
 .hint.name-ok { color: var(--success); }
 .hint.name-bad { color: var(--danger); }
+.import-summary { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 12px; background: var(--surface-2); min-width: 0; }
+.import-summary .path { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+.import-summary .meta { font-size: 13px; color: var(--text-secondary); }

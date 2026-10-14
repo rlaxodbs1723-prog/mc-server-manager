@@ -10,6 +10,7 @@ import { getHardcore, setHardcore } from './hardcore'
 import { getGameRuleLang } from './lang'
 import { checkReachable, closeAllPorts, getInvite, initInvite, useTunnel } from './invite'
 import { checkDomainName, claimDomain, getDomain, releaseDomain } from './domain'
+import { detectServer } from './importserver'
 import { track as trackUsage } from './usage'
 import { getClaimUrl, openClaimPage, prepareClaim, tunnelLinked, unlinkTunnel } from './tunnel'
 import { getInbox } from './inbox'
@@ -246,7 +247,7 @@ ipcMain.handle('createServer', async (event, options: CreateServerOptions, taskI
   try {
     const info = await runCancellable(String(taskId), () => createServer(options, track))
     // Fabric API 같은 기본 모드를 미리 깐다. 실패해도 서버는 만들어졌으니 넘어간다 (나중에 모드 탭에서 설치 가능)
-    if ((options.software === 'fabric' || options.software === 'quilt') && !options.modpackId) {
+    if ((options.software === 'fabric' || options.software === 'quilt') && !options.modpackId && !options.importFrom) {
       track({ message: '기본 모드를 설치하고 있어요', phase: 'base' })
       await mods.installBaseMods(info.folderPath).catch(() => null)
     }
@@ -361,6 +362,13 @@ ipcMain.handle('getLog', (_event, folderPath: string) => getLog(checkServerFolde
 ipcMain.handle('getInvite', (_event, folderPath: string) => getInvite(checkServerFolder(folderPath)))
 ipcMain.handle('checkReachable', (_event, folderPath: string) => checkReachable(checkServerFolder(folderPath)))
 ipcMain.handle('checkDomainName', (_event, name: string) => checkDomainName(String(name)))
+ipcMain.handle('pickServerFolder', async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  const opts = { title: tr('가져올 서버 폴더를 골라 주세요'), properties: ['openDirectory' as const] }
+  const res = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts)
+  return res.canceled || !res.filePaths[0] ? null : res.filePaths[0]
+})
+ipcMain.handle('detectServer', (_event, folderPath: string) => detectServer(String(folderPath), serversRoot()))
 ipcMain.handle('getDomain', (_event, folderPath: string) => getDomain(checkServerFolder(folderPath)))
 ipcMain.handle('claimDomain', (_event, folderPath: string, name: string) => claimDomain(checkServerFolder(folderPath), String(name)))
 ipcMain.handle('getMemoryRange', () => memoryRange())
