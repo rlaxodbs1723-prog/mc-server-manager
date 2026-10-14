@@ -72,6 +72,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
   const [maxPlayers, setMaxPlayers] = useState('10')
   const [motd, setMotd] = useState('')
   const [onlineMode, setOnlineMode] = useState(true)
+  const [hardcore, setHardcore] = useState(false)
   const [domain, setDomain] = useState<{ domainName?: string; blocked: boolean }>({ blocked: true }) // 서버 주소 이름
   const [memoryMb, setMemoryMb] = useState<number | undefined>(undefined)
 
@@ -140,8 +141,8 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
       iconFrom: icon?.path,
       properties: {
         gamemode: 'survival', // 게임 모드 선택은 없애고 서바이벌로 고정
-        difficulty: 'easy', // 난이도·하드코어는 서버를 만든 뒤 관리 탭에서 바꾼다
-        hardcore: 'false',
+        difficulty: hardcore ? 'hard' : 'easy', // 난이도는 서버를 만든 뒤 관리 탭에서 바꾼다. 하드코어는 어려움으로 고정된다
+        hardcore: String(hardcore),
         'level-type': levelType,
         'generate-structures': String(structures),
         'level-seed': seed.trim(),
@@ -312,6 +313,9 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
               <div className="reset-fields">
                 <Row title="정품 인증" hint="켜면 정품 계정만 입장 가능, 끄면 스킨 비활성화">
                   <Switch checked={onlineMode} onChange={setOnlineMode} />
+                </Row>
+                <Row title="하드코어" hint="죽으면 부활 불가">
+                  <Switch checked={hardcore} onChange={setHardcore} />
                 </Row>
                 <MemoryField onChange={setMemoryMb} />
               </div>
