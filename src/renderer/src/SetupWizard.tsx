@@ -210,17 +210,17 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
             <div>
               {/* 입력하는 이름을 바로 보여 준다. 비어 있으면 종류 이름으로 */}
               <h2 className="wizard-name">{name.trim() || `${info.label} 서버`}</h2>
-              <div className="wizard-image-actions">
-                <button type="button" className="btn sm" onClick={pickIcon}>
-                  <ImagePlus size={14} />
-                  {icon ? '이미지 변경' : '이미지 추가'}
+            </div>
+            <div className="wizard-image-actions">
+              <button type="button" className="btn sm" onClick={pickIcon}>
+                <ImagePlus size={14} />
+                {icon ? '이미지 변경' : '이미지 추가'}
+              </button>
+              {icon && (
+                <button type="button" className="btn sm ghost" onClick={() => setIcon(null)}>
+                  삭제
                 </button>
-                {icon && (
-                  <button type="button" className="btn sm ghost" onClick={() => setIcon(null)}>
-                    삭제
-                  </button>
-                )}
-              </div>
+              )}
             </div>
           </div>
           <div className="reset-fields">

@@ -1086,5 +1086,5 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .domain-row { display: flex; align-items: center; gap: 8px; margin: 10px 0 6px; }
 .domain-row .input { flex: 1; min-width: 0; }
 .domain-suffix { color: var(--text-2); font-weight: 600; white-space: nowrap; }
-.wizard-image-actions { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.wizard-image-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-shrink: 0; }
 .wizard-image-actions .btn { display: inline-flex; align-items: center; gap: 5px; }
