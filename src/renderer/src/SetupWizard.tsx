@@ -208,12 +208,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
                   placeholder="예: 야생 서버"
                   autoFocus
                 />
-                {/* 다음 버튼이 왜 안 눌리는지 알 수 있게 이유를 보여 준다 */}
-                {nameTouched && !name.trim() && (
-                  <p className="error-text" style={{ marginTop: 6 }}>
-                    서버 이름 입력 필요
-                  </p>
-                )}
+                {/* 같은 이름이 있어서 버튼이 안 눌리는 이유만 보여 준다 */}
                 {nameTaken && (
                   <p className="error-text" style={{ marginTop: 6 }}>
                     같은 이름의 서버가 이미 있음. 다른 이름 입력 필요
