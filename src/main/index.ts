@@ -8,7 +8,8 @@ import { CreateEta } from './eta'
 import { listGameRules, setGameRule } from './gamerules'
 import { getHardcore, setHardcore } from './hardcore'
 import { getGameRuleLang } from './lang'
-import { checkReachable, closeAllPorts, getInvite, initInvite, useTunnel } from './invite'
+import { checkReachable, closeAllPorts, getInvite, initInvite, setInviteDomain, useTunnel } from './invite'
+import { claimDomain, getDomain, releaseDomain } from './domain'
 import { track as trackUsage } from './usage'
 import { getClaimUrl, openClaimPage, prepareClaim, tunnelLinked, unlinkTunnel } from './tunnel'
 import { getInbox } from './inbox'
@@ -351,6 +352,18 @@ ipcMain.handle('getLog', (_event, folderPath: string) => getLog(checkServerFolde
 
 ipcMain.handle('getInvite', (_event, folderPath: string) => getInvite(checkServerFolder(folderPath)))
 ipcMain.handle('checkReachable', (_event, folderPath: string) => checkReachable(checkServerFolder(folderPath)))
+ipcMain.handle('getDomain', (_event, folderPath: string) => getDomain(checkServerFolder(folderPath)))
+ipcMain.handle('claimDomain', async (_event, folderPath: string, name: string) => {
+  const target = checkServerFolder(folderPath)
+  const host = await claimDomain(target, String(name))
+  setInviteDomain(target, host) // 서버가 이미 열려 있으면 바로 이름 주소로 보여 준다
+  return host
+})
+ipcMain.handle('releaseDomain', async (_event, folderPath: string) => {
+  const target = checkServerFolder(folderPath)
+  await releaseDomain(target)
+  setInviteDomain(target, undefined)
+})
 ipcMain.handle('useTunnel', (_event, folderPath: string) => useTunnel(checkServerFolder(folderPath)))
 ipcMain.handle('getStats', (_event, folderPath: string) => getStats(checkServerFolder(folderPath)))
 ipcMain.handle('getManageInfo', (_event, folderPath: string) => getManageInfo(checkServerFolder(folderPath)))

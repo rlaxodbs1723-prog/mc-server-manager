@@ -3,6 +3,7 @@ import type { InviteStatus, ServerEvent } from '../shared-types'
 import { getState, onServerEvent, serverPort } from './runner'
 import { HEADERS } from './download'
 import { closePort, localIPv4, openPort } from './upnp'
+import { refreshDomain } from './domain'
 import { closeAllTunnels, closeTunnel, linkTunnel, openTunnel, tunnelLinked } from './tunnel'
 
 const status = new Map<string, InviteStatus>() // 서버 폴더 -> 초대 상태
@@ -60,6 +61,17 @@ async function open(folderPath: string, name: string): Promise<void> {
     return set(folderPath, { state: 'failed', message, lan, port })
   }
   set(folderPath, { state: 'open', address: withPort(result.externalIp, port), lan, port })
+  // 이름 주소를 만들어 뒀으면 지금 IP로 갱신하고, 끝나면 접속 주소를 이름 주소로 보여 준다 (실패해도 IP 주소가 그대로 쓰인다)
+  void refreshDomain(folderPath).then((host) => setInviteDomain(folderPath, host ?? undefined))
+}
+
+// 접속 주소를 이름 주소로 바꿔 보여 준다 (열린 상태일 때만. host가 없으면 IP 주소로 되돌린다)
+export function setInviteDomain(folderPath: string, host: string | undefined): void {
+  const cur = status.get(folderPath)
+  if (cur?.state !== 'open' || cur.tunnel) return // 터널 주소는 이름 주소로 못 바꾼다
+  const { domain: _old, ...rest } = cur
+  void _old
+  set(folderPath, host ? { ...rest, domain: host } : rest)
 }
 
 // 공유기로 못 연 원인. 터널을 다시 시도할 때 터널 에러가 겹겹이 붙지 않게 따로 둔다

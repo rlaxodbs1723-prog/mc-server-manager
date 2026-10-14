@@ -39,6 +39,12 @@ export interface CreateServerOptions {
   iconFrom?: string // 서버 아이콘으로 쓸 그림 파일 (만들기 창에서 고른 것)
 }
 
+// 이름 주소: key는 이 서버만 아는 비밀 열쇠 (중계 서버에는 해시만 남는다)
+export interface DomainInfo {
+  name: string
+  key: string
+}
+
 export interface ServerInfo {
   name: string
   software: Software
@@ -55,6 +61,7 @@ export interface ServerInfo {
   javaArgs?: string // 사용자가 더 넣은 자바 옵션 (예: -XX:+UseZGC)
   automation?: Partial<ServerAutomation>
   logKeepDays?: number // 며칠 지난 로그를 지울지 (없으면 30일, 0이면 지우지 않음)
+  domain?: DomainInfo // 이름 주소(이름.cubepanel.kr)를 만들었으면 그 이름과 주인 열쇠
   folderPath: string
   createdAt: string
 }
@@ -92,7 +99,7 @@ export type ServerState = 'stopped' | 'starting' | 'running' | 'stopping'
 export type InviteStatus =
   | { state: 'off' }
   | { state: 'opening'; lan: string[] }
-  | { state: 'open'; address: string; lan: string[]; port: number; tunnel?: boolean } // tunnel: playit 터널 주소 / port: 이 컴퓨터에서 서버가 쓰는 포트
+  | { state: 'open'; address: string; lan: string[]; port: number; tunnel?: boolean; domain?: string } // tunnel: playit 터널 주소 / port: 이 컴퓨터에서 서버가 쓰는 포트 / domain: 이름 주소(이름.cubepanel.kr)
   | { state: 'failed'; message: string; lan: string[]; port: number }
 
 export type ServerEvent =
@@ -474,6 +481,10 @@ export interface Api {
   getInvite: (folderPath: string) => Promise<InviteStatus>
   // 바깥 인터넷에서 이 서버에 접속되는지 확인한다
   checkReachable: (folderPath: string) => Promise<{ ok: boolean; message: string }>
+  // 이름 주소: 이 서버의 이름 주소(없으면 null), 만들기, 없애기
+  getDomain: (folderPath: string) => Promise<{ name: string; host: string } | null>
+  claimDomain: (folderPath: string, name: string) => Promise<string>
+  releaseDomain: (folderPath: string) => Promise<void>
   // 공유기로 못 열 때 playit 터널로 연다 (처음이면 브라우저에서 승인)
   useTunnel: (folderPath: string) => Promise<void>
   // 켜진 서버의 CPU·메모리·TPS (꺼져 있으면 null)

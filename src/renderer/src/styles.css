@@ -1086,3 +1086,8 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .beta-actions .btn { display: inline-flex; align-items: center; }
 .claim-link { color: var(--primary); text-decoration: underline; cursor: pointer; }
 .claim-link:hover { filter: brightness(1.2); }
+.port-domain { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; margin-left: 6px; border: 1px solid var(--line-strong); border-radius: 999px; background: transparent; color: var(--text-2); font: inherit; font-size: 12px; cursor: pointer; }
+.port-domain:hover { background: var(--surface-2); color: var(--text); }
+.domain-row { display: flex; align-items: center; gap: 8px; margin: 14px 0 6px; }
+.domain-row .input { flex: 1; min-width: 0; }
+.domain-suffix { color: var(--text-2); font-weight: 600; white-space: nowrap; }

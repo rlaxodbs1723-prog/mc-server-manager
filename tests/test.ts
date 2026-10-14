@@ -33,10 +33,13 @@ import * as mods from '../src/main/mods'
 import { curseForgeKeySource, getFile, hasCurseForgeKey, mapFiles, removeCurseForgeKey, searchMaps, setCurseForgeKey } from '../src/main/curseforge'
 import { createBackup, deleteBackup, getBackupSettings, listBackups, restoreBackup, setBackupSettings } from '../src/main/backup'
 import { analyzeCrash } from '../src/main/crash'
+import http from 'http'
 import { execFileSync } from 'child_process'
 import { langFromLocale, translator } from '../src/i18n'
 import { tr as mainTr } from '../src/main/i18n'
 import { BUG_MAX_BYTES, bugFileInfo, bugMessage, sendBugReport } from '../src/main/bugreport'
+import { handleDomain } from '../relay/domain.mjs'
+import { claimDomain, cleanDomainName, getDomain, refreshDomain, releaseDomain } from '../src/main/domain'
 import enTable from '../src/i18n/en.json'
 import zhTable from '../src/i18n/zh.json'
 
@@ -130,6 +133,7 @@ async function quick(): Promise<void> {
     fs.rmSync(dir, { recursive: true, force: true })
   })
   await i18nChecks()
+  await domainChecks()
   await check('버그 제보: 디스코드 메시지 (앱 정보 자동, 길이 자르기, 아무도 안 부르기, 파일 검사)', async () => {
     type Embed = { title: string; description: string; fields: { name: string; value: string }[] }
     const m = bugMessage('모드 & 설치 @everyone', '설명\n둘째 줄', ['a.png'])
@@ -160,6 +164,152 @@ async function quick(): Promise<void> {
 // ---------- 언어 (영어·중국어) ----------
 // 번역하지 않는 것: 정규식, EULA 파일 내용, 조사 고르기용 조각, 언어 고르는 칸 (어느 언어에서든 그대로 보여야 한다)
 const NO_TR = new Set(["(?:Mod|모드) '([^\\n]+?)' \\({0}\\)", '# MC CubePanel에서 사용자가 EULA(https://aka.ms/MinecraftEULA)에 동의함 # {0} eula=true', '을/를', '이/가', '은/는', '으로/로', '한국어', '언어 · Language'])
+// ---------- 이름 주소 (중계 서버: 가짜 Cloudflare로 확인) ----------
+interface FakeRecord { id: string; type: string; name: string; content?: string; data?: { port: number }; comment?: string }
+function fakeCloudflare(seed: FakeRecord[] = []): { records: FakeRecord[]; writes: string[]; fetch: typeof fetch } {
+  const records: FakeRecord[] = [...seed]
+  const writes: string[] = []
+  let n = 1000
+  const ok = (result: unknown, total?: number) => new Response(JSON.stringify({ success: true, result, result_info: { total_count: total ?? (Array.isArray(result) ? result.length : 0) } }))
+  const f = async (url: string | URL | Request, init?: RequestInit): Promise<Response> => {
+    const u = new URL(String(url))
+    const method = init?.method ?? 'GET'
+    const id = u.pathname.split('/dns_records/')[1]
+    if (method === 'GET') {
+      const name = u.searchParams.get('name')
+      const content = u.searchParams.get('content')
+      if (name) return ok(records.filter((r) => r.name === name))
+      if (content) return ok(records.filter((r) => r.content === content))
+      return ok(records.slice(0, 1), records.length)
+    }
+    const body = init?.body ? JSON.parse(String(init.body)) : {}
+    writes.push(`${method} ${body.type ?? ''}`.trim())
+    if (method === 'POST') {
+      const rec = { id: String(n++), ...body }
+      records.push(rec)
+      return ok(rec)
+    }
+    const i = records.findIndex((r) => r.id === id)
+    if (i < 0) return new Response(JSON.stringify({ success: false }), { status: 404 })
+    if (method === 'PATCH') Object.assign(records[i], body)
+    const out = records[i]
+    if (method === 'DELETE') records.splice(i, 1)
+    return ok(out)
+  }
+  return { records, writes, fetch: f as typeof fetch }
+}
+
+async function domainChecks(): Promise<void> {
+  const env = { CF_DNS_TOKEN: 't', CF_ZONE_ID: 'z', DOMAIN_BASE: 'cubepanel.kr' }
+  const K1 = 'a'.repeat(32)
+  const K2 = 'b'.repeat(32)
+  const call = async (cf: ReturnType<typeof fakeCloudflare>, body: object, ip = '1.2.3.4') => {
+    const res = await handleDomain(new Request('https://x/api/domain', { method: 'POST', headers: { 'cf-connecting-ip': ip }, body: JSON.stringify(body) }), env, cf.fetch)
+    return { status: res.status, body: (await res.json()) as { ok?: boolean; error?: string; host?: string } }
+  }
+  await check('이름 주소: 만들기·포트 바꾸기(SRV)·같은 값이면 쓰지 않기·없애기', async () => {
+    const cf = fakeCloudflare()
+    const a = await call(cf, { action: 'claim', name: 'myserver', key: K1 })
+    expect(a.status === 200 && a.body.host === 'myserver.cubepanel.kr', `만들지 못했어요: ${JSON.stringify(a)}`)
+    expect(cf.records.length === 1 && cf.records[0].type === 'A' && cf.records[0].content === '1.2.3.4', '주소 기록이 이상해요')
+    expect(cf.records[0].comment?.startsWith('cp:') === true && !cf.records[0].comment.includes(K1), '주인 표시가 없거나 열쇠가 그대로 적혔어요')
+    cf.writes.length = 0
+    await call(cf, { action: 'claim', name: 'myserver', key: K1 })
+    expect(cf.writes.length === 0, `바뀐 게 없는데 썼어요: ${cf.writes}`)
+    await call(cf, { action: 'claim', name: 'myserver', key: K1, port: 30000 })
+    const srv = cf.records.find((r) => r.type === 'SRV')
+    expect(srv?.name === '_minecraft._tcp.myserver.cubepanel.kr' && srv.data?.port === 30000, `SRV가 없어요: ${JSON.stringify(cf.records)}`)
+    await call(cf, { action: 'claim', name: 'myserver', key: K1, port: 25565 })
+    expect(!cf.records.some((r) => r.type === 'SRV'), '기본 포트로 돌아왔는데 SRV가 남았어요')
+    const ip2 = await call(cf, { action: 'claim', name: 'myserver', key: K1 }, '5.6.7.8')
+    expect(ip2.status === 200 && cf.records[0].content === '5.6.7.8', 'IP가 바뀌었는데 갱신하지 않았어요')
+    const bad = await call(cf, { action: 'release', name: 'myserver', key: K2 })
+    expect(bad.status === 403 && cf.records.length === 1, '다른 열쇠로 지울 수 있었어요')
+    const rel = await call(cf, { action: 'release', name: 'myserver', key: K1 })
+    expect(rel.status === 200 && cf.records.length === 0, '주인이 지우지 못했어요')
+  })
+  await check('이름 주소: 남의 이름·우리가 안 만든 기록·막은 이름·이상한 요청', async () => {
+    const cf = fakeCloudflare([{ id: 'w', type: 'CNAME', name: 'mine.cubepanel.kr', content: 'pages.dev' }])
+    await call(cf, { action: 'claim', name: 'taken-one', key: K1 })
+    const other = await call(cf, { action: 'claim', name: 'taken-one', key: K2 })
+    expect(other.status === 409 && other.body.error === 'taken', '남이 만든 이름을 가져갔어요')
+    const foreign = await call(cf, { action: 'claim', name: 'mine', key: K1 })
+    expect(foreign.status === 409 && cf.records.find((r) => r.id === 'w')?.content === 'pages.dev', '우리가 안 만든 기록을 건드렸어요')
+    for (const n of ['www', 'admin', 'ab', '-abc', 'abc-', 'a'.repeat(21), '한글이름', 'a b', 'UPUP_']) {
+      const r = await call(cf, { action: 'claim', name: n, key: K1 })
+      expect(r.status === 400, `${n}을(를) 받아들였어요: ${r.status}`)
+    }
+    expect((await call(cf, { action: 'claim', name: 'okname', key: 'short' })).status === 400, '짧은 열쇠를 받아들였어요')
+    expect((await call(cf, { action: 'claim', name: 'okname', key: K1, port: 80 })).status === 400, '낮은 포트를 받아들였어요')
+    expect((await call(cf, { action: 'claim', name: 'okname', key: K1 }, '2001:db8::1')).status === 400, 'IPv6를 받아들였어요')
+    const get = await handleDomain(new Request('https://x/api/domain'), env, cf.fetch)
+    expect(get.status === 405, 'GET을 받아들였어요')
+    expect((await handleDomain(new Request('https://x/api/domain', { method: 'POST', body: '{}' }), {}, cf.fetch)).status === 503, '설정이 없는데 동작했어요')
+  })
+  await check('이름 주소: 같은 인터넷 주소는 3개까지, 기록이 너무 많으면 새 이름을 막기', async () => {
+    const cf = fakeCloudflare()
+    for (const n of ['name-one', 'name-two', 'name-three']) expect((await call(cf, { action: 'claim', name: n, key: K1 })).status === 200, `${n}을(를) 만들지 못했어요`)
+    const fourth = await call(cf, { action: 'claim', name: 'name-four', key: K1 })
+    expect(fourth.status === 429, `4번째 이름을 막지 않았어요: ${fourth.status}`)
+    expect((await call(cf, { action: 'claim', name: 'name-four', key: K1 }, '9.9.9.9')).status === 200, '다른 인터넷 주소도 막았어요')
+    const full = fakeCloudflare(Array.from({ length: 900 }, (_, i) => ({ id: `f${i}`, type: 'TXT', name: `t${i}.cubepanel.kr`, content: 'x' })))
+    expect((await call(full, { action: 'claim', name: 'late-one', key: K1 })).status === 503, '기록이 가득 찼는데 새 이름을 만들었어요')
+  })
+  await check('이름 주소: 앱이 만들고·기억하고·서버를 켤 때 갱신하고·이름을 바꾸고·없애기 (가짜 중계 서버)', async () => {
+    const cf = fakeCloudflare()
+    const server = http.createServer(async (req, res) => {
+      const chunks: Buffer[] = []
+      for await (const c of req) chunks.push(c as Buffer)
+      const r = await handleDomain(new Request('http://x/api/domain', { method: 'POST', headers: { 'cf-connecting-ip': '8.8.4.4' }, body: Buffer.concat(chunks) }), env, cf.fetch)
+      res.writeHead(r.status, { 'Content-Type': 'application/json' })
+      res.end(await r.text())
+    })
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+    const port = (server.address() as { port: number }).port
+    process.env.MCSM_DOMAIN_RELAY = `http://127.0.0.1:${port}/api/domain`
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcsm-domain-'))
+    try {
+      fs.writeFileSync(path.join(dir, 'server-manager.json'), JSON.stringify({ name: 't', software: 'vanilla', mcVersion: '1.21', createdAt: '' }))
+      fs.writeFileSync(path.join(dir, 'server.properties'), 'server-port=30001\n')
+      expect(getDomain(dir) === null, '만들기 전에 주소가 있어요')
+      const host = await claimDomain(dir, '  AppName ')
+      expect(host === 'appname.cubepanel.kr' && getDomain(dir)?.host === host, `주소를 기억하지 않았어요: ${host}`)
+      expect(cf.records.some((r) => r.type === 'SRV' && r.data?.port === 30001), '서버 포트(30001)로 SRV를 만들지 않았어요')
+      expect(!fs.readFileSync(path.join(dir, 'server-manager.json'), 'utf8').includes('"domain": undefined'), '정보 파일이 이상해요')
+      cf.writes.length = 0
+      expect((await refreshDomain(dir)) === host && cf.writes.length === 0, '서버를 켤 때 갱신이 이상해요')
+      const second = await claimDomain(dir, 'newname')
+      expect(second === 'newname.cubepanel.kr' && !cf.records.some((r) => r.name.startsWith('appname.')), '이름을 바꿨는데 예전 이름이 남았어요')
+      await releaseDomain(dir)
+      expect(getDomain(dir) === null && cf.records.length === 0, '없애지 못했어요')
+      expect((await refreshDomain(dir)) === null, '이름이 없는데 갱신했어요')
+      let msg = ''
+      try {
+        await claimDomain(dir, 'www')
+      } catch (e) {
+        msg = (e as Error).message
+      }
+      expect(/쓸 수 없는 이름/.test(msg), `막은 이름의 안내 문구가 이상해요: ${msg}`)
+    } finally {
+      delete process.env.MCSM_DOMAIN_RELAY
+      server.close()
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+  await check('이름 주소: 앱에서 이름 다듬기 (대문자는 소문자로, 한글·기호는 막기)', () => {
+    expect(cleanDomainName('  MyServer  ') === 'myserver', '대문자를 소문자로 바꾸지 않았어요')
+    for (const bad of ['', 'ab', '한글서버', 'a_b_c', '-abc', 'abc-', 'a'.repeat(21)]) {
+      let threw = false
+      try {
+        cleanDomainName(bad)
+      } catch {
+        threw = true
+      }
+      expect(threw, `${JSON.stringify(bad)}을(를) 받아들였어요`)
+    }
+  })
+}
+
 async function i18nChecks(): Promise<void> {
   const tables = { en: enTable as Record<string, string>, zh: zhTable as Record<string, string> }
   await check('언어: 코드의 한글 문장이 모두 번역돼 있다 (새로 넣고 번역 안 한 것 없음)', () => {

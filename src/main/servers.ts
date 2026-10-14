@@ -625,6 +625,7 @@ export async function duplicateServer(folderPath: string, name: string): Promise
     const info = readServerInfo(target)
     info.name = String(name).trim().slice(0, 60)
     info.createdAt = new Date().toISOString()
+    delete info.domain // 이름 주소는 원본 서버의 것이다 (복제본이 같은 주인 열쇠를 갖지 않게)
     fs.writeFileSync(path.join(target, INFO_FILE), JSON.stringify(info, null, 2))
     fs.rmSync(path.join(target, CREATING_FILE), { force: true })
     return { ...info, folderPath: target }

@@ -1,6 +1,7 @@
-import { AlertTriangle, Copy, Info, Radar } from 'lucide-react'
+import { AlertTriangle, Copy, Globe, Info, Radar } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { InviteStatus } from '../../shared-types'
+import DomainDialog from './DomainDialog'
 import { Modal, useToast } from './ui'
 import { cleanError } from './util'
 
@@ -10,6 +11,7 @@ export default function InviteBox({ folderPath }: { folderPath: string }) {
   const [invite, setInvite] = useState<InviteStatus>({ state: 'off' })
   const [checking, setChecking] = useState(false)
   const [help, setHelp] = useState(false)
+  const [domainOpen, setDomainOpen] = useState(false)
 
   useEffect(() => {
     window.api.getInvite(folderPath).then(setInvite)
@@ -57,17 +59,23 @@ export default function InviteBox({ folderPath }: { folderPath: string }) {
     )
 
   return (
-    <span className="invite-inline" title={`접속 주소\n${lanHint}`}>
-      <b>{invite.address}</b>
+    <span className="invite-inline" title={`접속 주소${invite.domain ? ` (숫자 주소: ${invite.address})` : ''}\n${lanHint}`}>
+      <b>{invite.domain ?? invite.address}</b>
       <button
         onClick={async () => {
-          await window.api.copyText(invite.address)
+          await window.api.copyText(invite.domain ?? invite.address)
           toast('주소를 복사했어요. 플레이어에게 보내 주세요!')
         }}
         title="주소 복사"
       >
         <Copy size={14} />
       </button>
+      {!invite.tunnel && (
+        <button onClick={() => setDomainOpen(true)} title={invite.domain ? '이름 주소 바꾸기' : '숫자 대신 외우기 쉬운 이름 주소 만들기'}>
+          <Globe size={14} />
+        </button>
+      )}
+      {domainOpen && <DomainDialog folderPath={folderPath} onClose={() => setDomainOpen(false)} />}
       {/* 방장이 바깥 주소로 들어가면 공유기에 따라 타임아웃이 나서, 이 컴퓨터용 주소를 따로 보여 준다 */}
       <button
         className="invite-self"
