@@ -44,7 +44,7 @@ export function DomainField({ onChange }: { onChange: (v: { domainName?: string;
     <div>
       <div className="label">서버 주소 이름</div>
       <div className="domain-row">
-        <input className="input" value={name} maxLength={20} placeholder="myserver" onChange={(e) => setName(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} />
+        <input className="input" value={name} maxLength={20} onChange={(e) => setName(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} />
         <span className="domain-suffix">{`.${BASE}`}</span>
       </div>
       {name.trim() !== '' && (
