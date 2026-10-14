@@ -6,7 +6,7 @@ const NAME_RE = /^[a-z0-9][a-z0-9-]{1,18}[a-z0-9]$/
 export interface AddressMemoryValue {
   domainName?: string // 이름 주소로 쓸 이름 (비어 있으면 숫자 주소)
   memoryMb?: number
-  blocked: boolean // 이미 쓰고 있는 이름이라 이대로는 만들 수 없다
+  blocked: boolean // 이름이 비었거나 이미 쓰는 이름이라 이대로는 만들 수 없다
 }
 
 type Check = 'idle' | 'checking' | 'free' | 'taken' | 'error'
@@ -48,7 +48,7 @@ export default function AddressMemory({ memoryHint, onChange }: { memoryHint: st
 
   const valid = NAME_RE.test(name.trim())
   useEffect(() => {
-    onChange({ domainName: valid ? name.trim() : undefined, memoryMb: range ? memory : undefined, blocked: valid && (check === 'taken' || check === 'checking') })
+    onChange({ domainName: valid ? name.trim() : undefined, memoryMb: range ? memory : undefined, blocked: !valid || check === 'taken' || check === 'checking' })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name, valid, check, memory, range])
 
@@ -59,7 +59,7 @@ export default function AddressMemory({ memoryHint, onChange }: { memoryHint: st
           <div className="setting-label">
             서버 주소 이름
           </div>
-          <div className="setting-desc">숫자 대신 외우기 쉬운 이름으로 접속하게 해요. 비워 두면 숫자 주소(IP)로 접속해요.</div>
+          <div className="setting-desc">숫자 대신 외우기 쉬운 이름으로 접속하게 해요. 서버를 만들려면 이름을 정해야 해요.</div>
         </div>
         <div className="domain-row">
           <input
@@ -73,7 +73,7 @@ export default function AddressMemory({ memoryHint, onChange }: { memoryHint: st
         </div>
         <p className={`hint ${check === 'taken' ? 'warn-text' : ''}`}>
           {name.trim() === ''
-            ? '영어 소문자, 숫자, 하이픈(-)으로 3~20자예요.'
+            ? '주소 이름을 정해 주세요. 영어 소문자, 숫자, 하이픈(-)으로 3~20자예요.'
             : !valid
               ? '영어 소문자, 숫자, 하이픈(-)으로 3~20자로 적어 주세요. (하이픈은 처음과 끝에 쓸 수 없어요)'
               : check === 'checking'

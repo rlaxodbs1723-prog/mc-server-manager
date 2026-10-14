@@ -1627,5 +1627,7 @@
  "주소·메모리": "Address & memory",
  "접속 주소와 메모리": "Connection address and memory",
  "Vanilla·Paper는 2GB면 충분해요.": "2GB is enough for Vanilla and Paper.",
- "모드가 많으면 4~6GB를 추천해요.": "4–6GB is recommended when you have many mods."
+ "모드가 많으면 4~6GB를 추천해요.": "4–6GB is recommended when you have many mods.",
+ "숫자 대신 외우기 쉬운 이름으로 접속하게 해요. 서버를 만들려면 이름을 정해야 해요.": "Let players join with an easy-to-remember name instead of numbers. You need to choose a name to create the server.",
+ "주소 이름을 정해 주세요. 영어 소문자, 숫자, 하이픈(-)으로 3~20자예요.": "Please choose an address name: lowercase English letters, numbers, and hyphens (-), 3–20 characters."
 }

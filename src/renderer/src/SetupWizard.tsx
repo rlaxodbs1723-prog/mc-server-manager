@@ -91,7 +91,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
   const [motd, setMotd] = useState('')
   const [onlineMode, setOnlineMode] = useState(true)
   const [whitelist, setWhitelist] = useState(false)
-  const [extra, setExtra] = useState<AddressMemoryValue>({ blocked: false }) // 5단계: 주소 이름, 메모리
+  const [extra, setExtra] = useState<AddressMemoryValue>({ blocked: true }) // 5단계: 주소 이름, 메모리
 
   const { tasks, startCreate } = useTasks()
   const [importWorld, setImportWorld] = useState<SaveWorld | null>(null)

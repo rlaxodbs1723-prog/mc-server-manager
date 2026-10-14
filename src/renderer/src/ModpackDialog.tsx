@@ -97,7 +97,7 @@ export default function ModpackDialog({ existingNames, onClose }: { existingName
     }
   }
 
-  const [extra, setExtra] = useState<AddressMemoryValue>({ blocked: false })
+  const [extra, setExtra] = useState<AddressMemoryValue>({ blocked: true })
 
   function create() {
     if (!info) return
