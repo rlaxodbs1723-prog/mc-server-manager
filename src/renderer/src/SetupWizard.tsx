@@ -278,7 +278,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
                 <input type="checkbox" checked={includeSnapshots} onChange={(e) => setIncludeSnapshots(e.target.checked)} />
                 <span />
               </span>
-              스냅샷(개발 중인 버전)도 보여 주기
+              스냅샷도 보여 주기
             </label>
             {unsupported && (
               <div className="notice-box">
@@ -314,7 +314,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
                 ))}
               </div>
             </div>
-            <Row title="하드코어" hint="죽으면 부활 불가 (난이도는 어려움으로 고정)">
+            <Row title="하드코어" hint="죽으면 부활 불가">
               <Switch checked={hardcore} onChange={setHardcore} />
             </Row>
           </div>
@@ -364,7 +364,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
             <Row title="정품 인증" hint="켜면 정품 계정만 입장 가능, 끄면 스킨 비활성화">
               <Switch checked={onlineMode} onChange={setOnlineMode} />
             </Row>
-            <Row title="화이트리스트" hint="허용한 사람만 입장 가능. 목록은 서버의 관리 탭에서 수정">
+            <Row title="화이트리스트" hint="허용한 사람만 입장 가능">
               <Switch checked={whitelist} onChange={setWhitelist} />
             </Row>
           </div>

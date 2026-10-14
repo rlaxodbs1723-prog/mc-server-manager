@@ -1654,5 +1654,8 @@
  "영어 소문자, 숫자, 하이픈(-) 3~20자. 하이픈은 처음과 끝에 사용 불가": "Lowercase English letters, numbers, and hyphens (-), 3–20 characters. A hyphen cannot be first or last",
  "⚠ 컴퓨터에 {0}만 남음. 같은 컴퓨터에서 게임도 하면 버벅일 수 있음": "⚠ Only {0} will be left on your computer. The game may lag if you also play on this computer",
  "이미지 추가": "Add image",
- "이미지 변경": "Change image"
+ "이미지 변경": "Change image",
+ "허용한 사람만 입장 가능": "Only allowed players can join",
+ "죽으면 부활 불가": "Can't respawn after dying",
+ "스냅샷도 보여 주기": "Show snapshots too"
 }
