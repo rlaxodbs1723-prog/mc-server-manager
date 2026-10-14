@@ -294,24 +294,26 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
             </div>
           </div>
           <div className="wizard-col">
-            <WorldSource serverVersion={version} picked={importWorld} onChange={setImportWorld}>
-              <div className="reset-fields">
-                <div>
-                  <div className="label">월드 종류</div>
-                  <Select value={levelType} onChange={setLevelType} options={LEVEL_TYPES} />
+            <div className="wizard-world">
+              <WorldSource serverVersion={version} picked={importWorld} onChange={setImportWorld}>
+                <div className="reset-fields">
+                  <div>
+                    <div className="label">월드 종류</div>
+                    <Select value={levelType} onChange={setLevelType} options={LEVEL_TYPES} />
+                  </div>
+                  <Row title="구조물 만들기">
+                    <Switch checked={structures} onChange={setStructures} />
+                  </Row>
+                  <Row title="하드코어" hint="죽으면 부활 불가">
+                    <Switch checked={hardcore} onChange={setHardcore} />
+                  </Row>
+                  <div>
+                    <div className="label">시드</div>
+                    <input className="input" value={seed} onChange={(e) => setSeed(e.target.value)} placeholder="비우면 무작위" maxLength={64} />
+                  </div>
                 </div>
-                <Row title="구조물 만들기">
-                  <Switch checked={structures} onChange={setStructures} />
-                </Row>
-                <Row title="하드코어" hint="죽으면 부활 불가">
-                  <Switch checked={hardcore} onChange={setHardcore} />
-                </Row>
-                <div>
-                  <div className="label">시드</div>
-                  <input className="input" value={seed} onChange={(e) => setSeed(e.target.value)} placeholder="비우면 무작위" maxLength={64} />
-                </div>
-              </div>
-            </WorldSource>
+              </WorldSource>
+            </div>
             <div className="wizard-section">
               <div className="reset-fields">
                 <Row title="정품 인증" hint="켜면 정품 계정만 입장 가능, 끄면 스킨 비활성화">
