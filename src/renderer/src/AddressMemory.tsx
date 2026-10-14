@@ -48,7 +48,11 @@ export default function AddressMemory({ onChange }: { onChange: (v: AddressMemor
 
   const valid = NAME_RE.test(name.trim())
   useEffect(() => {
-    onChange({ domainName: valid ? name.trim() : undefined, memoryMb: range ? memory : undefined, blocked: !valid || check === 'taken' || check === 'checking' })
+    onChange({
+      domainName: valid ? name.trim() : undefined,
+      memoryMb: range ? memory : undefined,
+      blocked: !valid || check === 'taken' || check === 'checking'
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name, valid, check, memory, range])
 
@@ -56,9 +60,7 @@ export default function AddressMemory({ onChange }: { onChange: (v: AddressMemor
     <div className="reset-fields">
       <div className="setting-row col" style={{ padding: 0, border: 0 }}>
         <div className="setting-text">
-          <div className="setting-label">
-            서버 주소 이름
-          </div>
+          <div className="setting-label">서버 주소 이름</div>
         </div>
         <div className="domain-row">
           <input
@@ -70,10 +72,9 @@ export default function AddressMemory({ onChange }: { onChange: (v: AddressMemor
           />
           <span className="domain-suffix">{`.${BASE}`}</span>
         </div>
-        <p className={`hint ${check === 'taken' ? 'warn-text' : ''}`}>
-          {name.trim() === ''
-            ? ''
-            : !valid
+        {name.trim() !== '' && (
+          <p className={`hint ${check === 'taken' ? 'warn-text' : ''}`}>
+            {!valid
               ? '영어 소문자, 숫자, 하이픈(-) 3~20자. 하이픈은 처음과 끝에 사용 불가'
               : check === 'checking'
                 ? '사용 가능 여부 확인 중…'
@@ -84,11 +85,12 @@ export default function AddressMemory({ onChange }: { onChange: (v: AddressMemor
                     : check === 'error'
                       ? '확인하지 못함. 서버를 만든 뒤 다시 확인'
                       : ''}
-        </p>
+          </p>
+        )}
       </div>
 
       {range && (
-        <div className="setting-row col" style={{ padding: 0, border: 0, marginTop: 16 }}>
+        <div className="setting-row col" style={{ padding: 0, border: 0, marginTop: 10 }}>
           <div className="setting-text">
             <div className="setting-label">
               서버가 쓸 메모리 <b className="mem-value">{gb(memory)}</b>
@@ -108,7 +110,9 @@ export default function AddressMemory({ onChange }: { onChange: (v: AddressMemor
             <span>{gb(range.minMb)}</span>
             <span>{gb(range.maxMb)}</span>
           </div>
-          {range.totalMb - memory < 4096 && <p className="warn-text mem-warn">{`⚠ 컴퓨터에 ${gb(Math.max(0, range.totalMb - memory))}만 남음. 같은 컴퓨터에서 게임도 하면 버벅일 수 있음`}</p>}
+          {range.totalMb - memory < 4096 && (
+            <p className="warn-text mem-warn">{`⚠ 컴퓨터에 ${gb(Math.max(0, range.totalMb - memory))}만 남음. 같은 컴퓨터에서 게임도 하면 버벅일 수 있음`}</p>
+          )}
         </div>
       )}
     </div>
