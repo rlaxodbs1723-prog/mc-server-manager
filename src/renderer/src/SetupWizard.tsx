@@ -159,41 +159,41 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
   return (
     <Modal onClose={onClose}>
       <div ref={rootRef} style={{ display: 'contents' }}>
-        <div className="wizard-title">
-          {/* 눌러서 서버 아이콘(멀티플레이 목록에 보이는 그림) 고르기 */}
-          <button
-            type="button"
-            className="wizard-icon"
-            title={icon ? '아이콘 바꾸기 (오른쪽 클릭: 지우기)' : '서버 아이콘 고르기'}
-            onClick={pickIcon}
-            onContextMenu={(e) => {
-              e.preventDefault()
-              setIcon(null)
-            }}
-          >
-            <SoftwareBadge software={software} size={44} name={name} icon={icon?.preview} />
-            <span className="wizard-icon-edit">
-              <ImagePlus size={12} />
-            </span>
-          </button>
-          <div>
-            {/* 입력하는 이름을 바로 보여 준다. 비어 있으면 종류 이름으로 */}
-            <h2 className="wizard-name">{name.trim() || `${info.label} 서버`}</h2>
-          </div>
-          <div className="wizard-image-actions">
-            <button type="button" className="btn sm" onClick={pickIcon}>
-              <ImagePlus size={14} />
-              {icon ? '이미지 변경' : '이미지 추가'}
-            </button>
-            {icon && (
-              <button type="button" className="btn sm ghost" onClick={() => setIcon(null)}>
-                삭제
-              </button>
-            )}
-          </div>
-        </div>
         <div className="wizard-cols">
           <div className="wizard-col">
+            <div className="wizard-title">
+              {/* 눌러서 서버 아이콘(멀티플레이 목록에 보이는 그림) 고르기 */}
+              <button
+                type="button"
+                className="wizard-icon"
+                title={icon ? '아이콘 바꾸기 (오른쪽 클릭: 지우기)' : '서버 아이콘 고르기'}
+                onClick={pickIcon}
+                onContextMenu={(e) => {
+                  e.preventDefault()
+                  setIcon(null)
+                }}
+              >
+                <SoftwareBadge software={software} size={44} name={name} icon={icon?.preview} />
+                <span className="wizard-icon-edit">
+                  <ImagePlus size={12} />
+                </span>
+              </button>
+              <div>
+                {/* 입력하는 이름을 바로 보여 준다. 비어 있으면 종류 이름으로 */}
+                <h2 className="wizard-name">{name.trim() || `${info.label} 서버`}</h2>
+              </div>
+              <div className="wizard-image-actions">
+                <button type="button" className="btn sm" onClick={pickIcon}>
+                  <ImagePlus size={14} />
+                  {icon ? '이미지 변경' : '이미지 추가'}
+                </button>
+                {icon && (
+                  <button type="button" className="btn sm ghost" onClick={() => setIcon(null)}>
+                    삭제
+                  </button>
+                )}
+              </div>
+            </div>
             <div className="reset-fields">
               <div>
                 <div className="label">서버 이름</div>
@@ -266,9 +266,18 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
                 </div>
               )}
               {loadError && <p className="error-text">{loadError}</p>}
-            </div>
-            <div className="wizard-section">
-              <MemoryField onChange={setMemoryMb} />
+              <DomainField onChange={setDomain} />
+              <div>
+                <div className="label">서버 설명</div>
+                <input
+                  className="input"
+                  style={{ height: 42 }}
+                  value={motd}
+                  placeholder={name.trim()}
+                  onChange={(e) => setMotd(e.target.value)}
+                  maxLength={60}
+                />
+              </div>
             </div>
           </div>
           <div className="wizard-col">
@@ -310,23 +319,8 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
                 <Row title="정품 인증" hint="켜면 정품 계정만 입장 가능, 끄면 스킨 비활성화">
                   <Switch checked={onlineMode} onChange={setOnlineMode} />
                 </Row>
+                <MemoryField onChange={setMemoryMb} />
               </div>
-            </div>
-          </div>
-          <div className="wizard-col">
-            <div className="reset-fields">
-              <div>
-                <div className="label">서버 설명</div>
-                <input
-                  className="input"
-                  style={{ height: 42 }}
-                  value={motd}
-                  placeholder={name.trim()}
-                  onChange={(e) => setMotd(e.target.value)}
-                  maxLength={60}
-                />
-              </div>
-              <DomainField onChange={setDomain} />
             </div>
           </div>
         </div>
