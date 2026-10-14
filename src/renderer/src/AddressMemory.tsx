@@ -74,15 +74,15 @@ export default function AddressMemory({ onChange }: { onChange: (v: AddressMemor
           {name.trim() === ''
             ? ''
             : !valid
-              ? '영어 소문자, 숫자, 하이픈(-)으로 3~20자로 적어 주세요. (하이픈은 처음과 끝에 쓸 수 없어요)'
+              ? '영어 소문자, 숫자, 하이픈(-) 3~20자. 하이픈은 처음과 끝에 사용 불가'
               : check === 'checking'
-                ? '쓸 수 있는지 확인하고 있어요…'
+                ? '사용 가능 여부 확인 중…'
                 : check === 'free'
-                  ? '쓸 수 있는 이름이에요.'
+                  ? '사용 가능한 이름'
                   : check === 'taken'
-                    ? '이미 다른 사람이 쓰는 이름이에요. 다른 이름으로 해 주세요.'
+                    ? '이미 사용 중인 이름'
                     : check === 'error'
-                      ? '지금은 확인하지 못했어요. 서버를 만든 뒤에 다시 확인해요.'
+                      ? '확인하지 못함. 서버를 만든 뒤 다시 확인'
                       : ''}
         </p>
       </div>
@@ -108,7 +108,7 @@ export default function AddressMemory({ onChange }: { onChange: (v: AddressMemor
             <span>{gb(range.minMb)}</span>
             <span>{gb(range.maxMb)}</span>
           </div>
-          {range.totalMb - memory < 4096 && <p className="warn-text mem-warn">{`⚠ 컴퓨터에 ${gb(Math.max(0, range.totalMb - memory))}만 남아요. 같은 컴퓨터에서 게임도 하면 버벅일 수 있어요.`}</p>}
+          {range.totalMb - memory < 4096 && <p className="warn-text mem-warn">{`⚠ 컴퓨터에 ${gb(Math.max(0, range.totalMb - memory))}만 남음. 같은 컴퓨터에서 게임도 하면 버벅일 수 있음`}</p>}
         </div>
       )}
     </div>

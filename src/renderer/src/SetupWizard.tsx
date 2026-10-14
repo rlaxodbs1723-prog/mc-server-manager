@@ -16,10 +16,10 @@ interface Props {
 }
 
 const GAMEMODES = [
-  { value: 'survival', label: '서바이벌', emoji: '⛏️', desc: '자원을 모으고 살아남아요' },
-  { value: 'creative', label: '크리에이티브', emoji: '🧱', desc: '블록 무한, 날 수 있어요' },
-  { value: 'adventure', label: '모험', emoji: '🗺️', desc: '블록을 부술 수 없어요' },
-  { value: 'spectator', label: '관전', emoji: '👻', desc: '구경만 해요' }
+  { value: 'survival', label: '서바이벌', emoji: '⛏️', desc: '자원을 모으며 생존' },
+  { value: 'creative', label: '크리에이티브', emoji: '🧱', desc: '블록 무한, 비행 가능' },
+  { value: 'adventure', label: '모험', emoji: '🗺️', desc: '블록 파괴 불가' },
+  { value: 'spectator', label: '관전', emoji: '👻', desc: '관전만 가능' }
 ]
 const DIFFICULTIES = [
   { value: 'peaceful', label: '평화로움' },
@@ -228,8 +228,8 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
                 autoFocus
               />
               {/* 다음 버튼이 왜 안 눌리는지 알 수 있게 이유를 보여 준다 */}
-              {nameTouched && !name.trim() && <p className="error-text" style={{ marginTop: 6 }}>서버 이름을 입력해 주세요.</p>}
-              {nameTaken && <p className="error-text" style={{ marginTop: 6 }}>같은 이름의 서버가 이미 있어요. 다른 이름을 써 주세요.</p>}
+              {nameTouched && !name.trim() && <p className="error-text" style={{ marginTop: 6 }}>서버 이름 입력 필요</p>}
+              {nameTaken && <p className="error-text" style={{ marginTop: 6 }}>같은 이름의 서버가 이미 있음. 다른 이름 입력 필요</p>}
             </div>
             <div>
               <div className="label">마인크래프트 버전</div>
@@ -253,7 +253,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
                   value={loaderVersion}
                   onChange={setLoaderVersion}
                   disabled={!loaderVersions?.length}
-                  placeholder={loaderVersions === null ? '불러오는 중…' : '지원하는 버전이 없어요'}
+                  placeholder={loaderVersions === null ? '불러오는 중…' : '지원하는 버전 없음'}
                   searchPlaceholder="버전 검색"
                   options={(loaderVersions ?? []).map((l, i) => ({
                     value: l.version,
@@ -273,7 +273,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
             {unsupported && (
               <div className="notice-box">
                 <AlertCircle size={18} />
-                {info.label}은(는) 마인크래프트 {version}을(를) 아직 지원하지 않아요. 다른 버전을 골라 주세요.
+                {info.label}은(는) 마인크래프트 {version}을(를) 지원하지 않음. 다른 버전 선택 필요
               </div>
             )}
             {loadError && <p className="error-text">{loadError}</p>}
@@ -283,7 +283,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
 
       {step === 1 && (
         <>
-          <h2>어떻게 플레이할까요?</h2>
+          <h2>플레이 방식</h2>
           <div className="mode-grid" style={{ marginTop: 14 }}>
             {GAMEMODES.map((g) => (
               <button key={g.value} className={`mode-card ${gamemode === g.value ? 'active' : ''}`} onClick={() => setGamemode(g.value)}>
@@ -304,7 +304,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
                 ))}
               </div>
             </div>
-            <Row title="하드코어" hint="죽으면 다시 살아날 수 없어요 (난이도는 어려움)">
+            <Row title="하드코어" hint="죽으면 부활 불가 (난이도는 어려움으로 고정)">
               <Switch checked={hardcore} onChange={setHardcore} />
             </Row>
           </div>
@@ -313,19 +313,19 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
 
       {step === 2 && (
         <>
-          <h2>어떤 월드로 시작할까요?</h2>
+          <h2>월드 설정</h2>
           <WorldSource serverVersion={version} picked={importWorld} onChange={setImportWorld}>
           <div className="reset-fields">
             <div>
               <div className="label">월드 종류</div>
               <Select value={levelType} onChange={setLevelType} options={LEVEL_TYPES} />
             </div>
-            <Row title="구조물 만들기" hint="마을, 신전 같은 구조물이 생겨요">
+            <Row title="구조물 만들기" hint="마을, 신전 같은 구조물 생성">
               <Switch checked={structures} onChange={setStructures} />
             </Row>
             <div>
               <div className="label">시드</div>
-              <input className="input" value={seed} onChange={(e) => setSeed(e.target.value)} placeholder="비워 두면 무작위" maxLength={64} />
+              <input className="input" value={seed} onChange={(e) => setSeed(e.target.value)} placeholder="비우면 무작위" maxLength={64} />
             </div>
           </div>
           </WorldSource>
@@ -334,7 +334,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
 
       {step === 3 && (
         <>
-          <h2>누가 들어올 수 있나요?</h2>
+          <h2>접속 설정</h2>
           <div className="reset-fields">
             <div className="form-row">
               <div>
@@ -351,10 +351,10 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
                 <input className="input" style={{ height: 42 }} value={motd} placeholder={name.trim()} onChange={(e) => setMotd(e.target.value)} maxLength={60} />
               </div>
             </div>
-            <Row title="정품 인증" hint="끄면 정품이 아닌 계정도 들어올 수 있지만 위험해요">
+            <Row title="정품 인증" hint="켜면 정품 계정만 입장 가능, 끄면 스킨 비활성화">
               <Switch checked={onlineMode} onChange={setOnlineMode} />
             </Row>
-            <Row title="화이트리스트" hint="허락한 사람만 들어오게 해요. 목록은 서버의 관리 탭에서 바꿔요">
+            <Row title="화이트리스트" hint="허용한 사람만 입장 가능. 목록은 서버의 관리 탭에서 수정">
               <Switch checked={whitelist} onChange={setWhitelist} />
             </Row>
           </div>

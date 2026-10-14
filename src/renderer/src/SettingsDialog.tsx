@@ -70,7 +70,7 @@ const SECTIONS: Section[] = [
     icon: <Users size={18} />,
     fields: [
       { key: 'max-players', label: '최대 인원', type: 'number', def: 20, min: 1, max: 500, unit: '명' },
-      { key: 'online-mode', label: '정품 인증', desc: '끄면 정품이 아닌 계정도 들어올 수 있지만, 다른 사람 닉네임으로 들어올 수 있어서 위험해요.', type: 'bool', def: true },
+      { key: 'online-mode', label: '정품 인증', desc: '켜면 정품 계정만 입장 가능, 끄면 스킨 비활성화.', type: 'bool', def: true },
       { key: 'prevent-proxy-connections', label: 'VPN·프록시 접속 막기', desc: '정품 인증 서버와 접속 주소가 다르면 들어오지 못하게 해요.', type: 'bool', def: false },
       { key: 'pause-when-empty-seconds', label: '아무도 없을 때 멈추기', desc: '모두 나가고 1분이 지나면 월드 시간이 멈춰서 컴퓨터가 덜 힘들어요.', type: 'toggle', def: '60', onValue: '60' },
       { key: 'enable-status', label: '서버 목록에 정보 보이기', desc: '끄면 서버 목록에서 인원·설명이 안 보이고 "연결할 수 없음"처럼 보여요. 들어오는 건 돼요.', type: 'bool', def: true },
