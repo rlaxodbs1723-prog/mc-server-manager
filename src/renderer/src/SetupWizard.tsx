@@ -1,4 +1,4 @@
-import { AlertCircle, ArrowLeft, Check, ImagePlus } from 'lucide-react'
+import { AlertCircle, ImagePlus } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useMouseBack } from './mouseback'
 import { SOFTWARE_INFO, type LoaderVersion, type McVersion, type SaveWorld, type Software } from '../../shared-types'
@@ -28,7 +28,6 @@ const LEVEL_TYPES = [
   { value: 'minecraft:amplified', label: '증폭 (높은 산)' }
 ]
 
-const STEPS = ['기본 정보', '게임 방식', '월드', '접속', '주소·메모리']
 
 // 폴더 이름으로 쓸 때 겹치는지 보기 위해 대소문자·앞뒤 공백을 무시한다
 const norm = (s: string) => s.trim().toLowerCase()
@@ -58,10 +57,9 @@ function Switch({ checked, onChange, disabled }: { checked: boolean; onChange: (
 export default function SetupWizard({ software, existingNames, onClose }: Props) {
   const info = SOFTWARE_INFO[software]
   const isBuild = software === 'paper' || software === 'purpur'
-  const [step, setStep] = useState(0)
   const rootRef = useRef<HTMLDivElement>(null)
   // 마우스 뒤로 버튼: 이전 단계로, 첫 단계면 닫기
-  useMouseBack(rootRef, () => (step > 0 ? setStep(step - 1) : onClose()))
+  useMouseBack(rootRef, onClose)
 
   // 1단계: 기본 정보
   const [versions, setVersions] = useState<McVersion[]>([])
@@ -134,7 +132,6 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
   const unsupported = software !== 'vanilla' && loaderVersions !== null && loaderVersions.length === 0
   const nameTaken = taken.has(norm(name))
   const step1Ok = !!name.trim() && !nameTaken && !!version && !unsupported && (software === 'vanilla' || !!loaderVersion)
-  const last = step === STEPS.length - 1
 
   async function pickIcon() {
     const picked = await window.api.pickIconImage().catch(() => null)
@@ -172,50 +169,41 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
   return (
     <Modal onClose={onClose}>
       <div ref={rootRef} style={{ display: 'contents' }}>
-      <div className="wizard-steps">
-        {STEPS.map((s, i) => (
-          <div key={s} className={`wizard-step ${i === step ? 'active' : i < step ? 'done' : ''}`}>
-            <span className="num">{i < step ? <Check size={13} strokeWidth={3} /> : i + 1}</span>
-            {s}
+        <div className="wizard-title">
+          {/* 눌러서 서버 아이콘(멀티플레이 목록에 보이는 그림) 고르기 */}
+          <button
+            type="button"
+            className="wizard-icon"
+            title={icon ? '아이콘 바꾸기 (오른쪽 클릭: 지우기)' : '서버 아이콘 고르기'}
+            onClick={pickIcon}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              setIcon(null)
+            }}
+          >
+            <SoftwareBadge software={software} size={44} name={name} icon={icon?.preview} />
+            <span className="wizard-icon-edit">
+              <ImagePlus size={12} />
+            </span>
+          </button>
+          <div>
+            {/* 입력하는 이름을 바로 보여 준다. 비어 있으면 종류 이름으로 */}
+            <h2 className="wizard-name">{name.trim() || `${info.label} 서버`}</h2>
           </div>
-        ))}
-      </div>
-
-      {step === 0 && (
-        <>
-          <div className="wizard-title">
-            {/* 눌러서 서버 아이콘(멀티플레이 목록에 보이는 그림) 고르기 */}
-            <button
-              type="button"
-              className="wizard-icon"
-              title={icon ? '아이콘 바꾸기 (오른쪽 클릭: 지우기)' : '서버 아이콘 고르기'}
-              onClick={pickIcon}
-              onContextMenu={(e) => {
-                e.preventDefault()
-                setIcon(null)
-              }}
-            >
-              <SoftwareBadge software={software} size={44} name={name} icon={icon?.preview} />
-              <span className="wizard-icon-edit">
-                <ImagePlus size={12} />
-              </span>
+          <div className="wizard-image-actions">
+            <button type="button" className="btn sm" onClick={pickIcon}>
+              <ImagePlus size={14} />
+              {icon ? '이미지 변경' : '이미지 추가'}
             </button>
-            <div>
-              {/* 입력하는 이름을 바로 보여 준다. 비어 있으면 종류 이름으로 */}
-              <h2 className="wizard-name">{name.trim() || `${info.label} 서버`}</h2>
-            </div>
-            <div className="wizard-image-actions">
-              <button type="button" className="btn sm" onClick={pickIcon}>
-                <ImagePlus size={14} />
-                {icon ? '이미지 변경' : '이미지 추가'}
+            {icon && (
+              <button type="button" className="btn sm ghost" onClick={() => setIcon(null)}>
+                삭제
               </button>
-              {icon && (
-                <button type="button" className="btn sm ghost" onClick={() => setIcon(null)}>
-                  삭제
-                </button>
-              )}
-            </div>
+            )}
           </div>
+        </div>
+        <div className="wizard-cols">
+          <div className="wizard-col">
           <div className="reset-fields">
             <div>
               <div className="label">서버 이름</div>
@@ -281,12 +269,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
             )}
             {loadError && <p className="error-text">{loadError}</p>}
           </div>
-        </>
-      )}
-
-      {step === 1 && (
-        <>
-          <h2>플레이 방식</h2>
+            <div className="wizard-section">
           <div className="reset-fields">
             <div>
               <div className="label">난이도</div>
@@ -302,12 +285,9 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
               <Switch checked={hardcore} onChange={setHardcore} />
             </Row>
           </div>
-        </>
-      )}
-
-      {step === 2 && (
-        <>
-          <h2>월드 설정</h2>
+            </div>
+          </div>
+          <div className="wizard-col">
           <WorldSource serverVersion={version} picked={importWorld} onChange={setImportWorld}>
           <div className="reset-fields">
             <div>
@@ -323,12 +303,8 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
             </div>
           </div>
           </WorldSource>
-        </>
-      )}
-
-      {step === 3 && (
-        <>
-          <h2>접속 설정</h2>
+          </div>
+          <div className="wizard-col">
           <div className="reset-fields">
             <div className="form-row">
               <div>
@@ -352,31 +328,20 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
               <Switch checked={whitelist} onChange={setWhitelist} />
             </Row>
           </div>
-        </>
-      )}
+            <div className="wizard-section">
+              <AddressMemory onChange={setExtra} />
+            </div>
+          </div>
+        </div>
 
-      {step === 4 && (
-        <>
-          <h2>접속 주소와 메모리</h2>
-          <AddressMemory onChange={setExtra} />
-        </>
-      )}
-
-      <div className="actions">
-        {step === 0 ? (
+        <div className="actions">
           <button className="btn" onClick={onClose}>
             취소
           </button>
-        ) : (
-          <button className="btn" onClick={() => setStep(step - 1)}>
-            <ArrowLeft size={16} />
-            이전
+          <button className="btn primary" onClick={create} disabled={!step1Ok || extra.blocked}>
+            서버 만들기
           </button>
-        )}
-        <button className="btn primary" onClick={() => (last ? create() : setStep(step + 1))} disabled={(step === 0 && !step1Ok) || (last && extra.blocked)}>
-          {last ? '서버 만들기' : '다음'}
-        </button>
-      </div>
+        </div>
       </div>
     </Modal>
   )
