@@ -85,8 +85,23 @@ function defaultMemoryMb(): number {
   return os.totalmem() >= 8 * 1024 ** 3 ? 4096 : 2048
 }
 
+// 서버 만들기 창의 메모리 슬라이더 범위. 윈도우가 쓸 2GB는 남겨 둔다 (설정 화면과 같은 기준)
+export function memoryRange(): { minMb: number; maxMb: number; totalMb: number; defaultMb: number } {
+  const totalMb = Math.floor(os.totalmem() / 1024 / 1024)
+  const maxMb = Math.max(MIN_MEMORY_MB, totalMb - 2048)
+  return { minMb: MIN_MEMORY_MB, maxMb, totalMb, defaultMb: Math.min(maxMb, defaultMemoryMb()) }
+}
+
+// 다른 서버가 쓰는 포트와 겹치지 않는 첫 포트 (25565부터). 서버를 만들 때 자동으로 정한다
+function freePort(): number {
+  const used = new Set(listServers().map((s) => serverPort(s.folderPath)))
+  let port = 25565
+  while (used.has(port) && port < 65535) port++
+  return port
+}
+
 export async function createServer(
-  { name, software, mcVersion, loaderVersion, properties, importWorldFrom, modpackId, iconFrom }: CreateServerOptions,
+  { name, software, mcVersion, loaderVersion, properties, importWorldFrom, modpackId, iconFrom, memoryMb }: CreateServerOptions,
   report: (p: Progress) => void
 ): Promise<ServerInfo> {
   if (!SOFTWARE_INFO[software]) throw new Error('지원하지 않는 서버 종류예요.')
@@ -139,7 +154,7 @@ export async function createServer(
     mcVersion,
     ...(software !== 'vanilla' && { loaderVersion }),
     javaComponent: javaComponentOf(meta),
-    memoryMb: defaultMemoryMb(),
+    memoryMb: memoryMb ? Math.round(Math.min(memoryRange().maxMb, Math.max(MIN_MEMORY_MB, Number(memoryMb) || 0))) || defaultMemoryMb() : defaultMemoryMb(),
     ...(modpackOrigin && { modpack: modpackOrigin }),
     folderPath,
     createdAt: new Date().toISOString()
@@ -151,6 +166,9 @@ export async function createServer(
   for (const [key, value] of Object.entries(properties ?? {})) {
     if (/^[a-z0-9.-]{1,64}$/.test(key)) chosen[key] = String(value).replace(/[\r\n]+/g, ' ').slice(0, 500)
   }
+  // 포트 칸이 없으니 다른 서버와 겹치지 않게 자동으로 정한다 (첫 서버는 기본 25565)
+  const port = freePort()
+  if (port !== 25565) chosen['server-port'] = String(port)
   if (Object.keys(chosen).length) writeProperties(folderPath, chosen)
   if (importWorldFrom) {
     report({ message: '싱글플레이 월드를 복사하고 있어요' })

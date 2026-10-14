@@ -4,7 +4,6 @@ import { SOFTWARE_INFO, type ModKindInfo, type PreflightResult, type Progress, t
 import { suggest, usageOf } from './consoleHelp'
 import EulaDialog from './EulaDialog'
 import InviteBox from './InviteBox'
-import PortField from './PortField'
 import FirstRunGuide from './FirstRunGuide'
 import ManageTab from './ManageTab'
 import ChatLogTab from './ChatLogTab'
@@ -387,7 +386,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
               {SOFTWARE_INFO[software].label} {server.mcVersion}
               {server.loaderVersion ? ` · ${server.loaderVersion}` : ''}
             </span>
-            {on ? <InviteBox folderPath={folderPath} /> : <PortField folderPath={folderPath} />}
+            <InviteBox folderPath={folderPath} />
           </div>
         </div>
         <div className="head-actions">

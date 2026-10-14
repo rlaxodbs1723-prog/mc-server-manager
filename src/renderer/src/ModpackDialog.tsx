@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { SOFTWARE_INFO, type ModpackBrowseHit, type ModpackInfo, type ModpackSort, type ModpackVersion, type SearchSite } from '../../shared-types'
 import SourceBadge from './SourceBadge'
 import Select from './Select'
+import AddressMemory, { type AddressMemoryValue } from './AddressMemory'
 import { useTasks } from './tasks'
 import { Empty, Loading, Modal, Skeleton, useToast } from './ui'
 import SiteSwitch from './SiteSwitch'
@@ -96,10 +97,21 @@ export default function ModpackDialog({ existingNames, onClose }: { existingName
     }
   }
 
+  const [extra, setExtra] = useState<AddressMemoryValue>({ blocked: false })
+
   function create() {
     if (!info) return
     const serverName = name.trim()
-    startCreate({ name: serverName, software: info.software, mcVersion: info.mcVersion, loaderVersion: info.loaderVersion, modpackId: info.packId, properties: { motd: serverName } })
+    startCreate({
+      name: serverName,
+      software: info.software,
+      mcVersion: info.mcVersion,
+      loaderVersion: info.loaderVersion,
+      modpackId: info.packId,
+      properties: { motd: serverName },
+      memoryMb: extra.memoryMb,
+      domainName: extra.domainName
+    })
     onClose()
   }
 
@@ -213,12 +225,13 @@ export default function ModpackDialog({ existingNames, onClose }: { existingName
               {!name.trim() && <p className="error-text">서버 이름을 입력해 주세요.</p>}
               {taken.has(norm(name)) && <p className="error-text">같은 이름의 서버가 있어요</p>}
             </div>
+            <AddressMemory memoryHint="모드팩은 보통 4~6GB를 추천해요." onChange={setExtra} />
             <p className="hint">플레이어들도 같은 모드팩을 설치해야 들어올 수 있어요.</p>
             <div className="actions">
               <button className="btn" onClick={onClose}>
                 취소
               </button>
-              <button className="btn primary" onClick={create} disabled={!name.trim() || taken.has(norm(name))}>
+              <button className="btn primary" onClick={create} disabled={!name.trim() || taken.has(norm(name)) || extra.blocked}>
                 서버 만들기
               </button>
             </div>

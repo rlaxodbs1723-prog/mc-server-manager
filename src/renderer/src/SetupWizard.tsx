@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useMouseBack } from './mouseback'
 import { SOFTWARE_INFO, type LoaderVersion, type McVersion, type SaveWorld, type Software } from '../../shared-types'
 import Select from './Select'
+import AddressMemory, { type AddressMemoryValue } from './AddressMemory'
 import { WorldSource } from './ImportWorldDialog'
 import { useTasks } from './tasks'
 import { Modal, SoftwareBadge } from './ui'
@@ -33,7 +34,7 @@ const LEVEL_TYPES = [
   { value: 'minecraft:amplified', label: '증폭 (높은 산)' }
 ]
 
-const STEPS = ['기본 정보', '게임 방식', '월드', '접속']
+const STEPS = ['기본 정보', '게임 방식', '월드', '접속', '주소·메모리']
 
 // 폴더 이름으로 쓸 때 겹치는지 보기 위해 대소문자·앞뒤 공백을 무시한다
 const norm = (s: string) => s.trim().toLowerCase()
@@ -90,6 +91,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
   const [motd, setMotd] = useState('')
   const [onlineMode, setOnlineMode] = useState(true)
   const [whitelist, setWhitelist] = useState(false)
+  const [extra, setExtra] = useState<AddressMemoryValue>({ blocked: false }) // 5단계: 주소 이름, 메모리
 
   const { tasks, startCreate } = useTasks()
   const [importWorld, setImportWorld] = useState<SaveWorld | null>(null)
@@ -162,7 +164,9 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
         'online-mode': String(onlineMode),
         'white-list': String(whitelist)
       },
-      importWorldFrom: importWorld?.path
+      importWorldFrom: importWorld?.path,
+      memoryMb: extra.memoryMb,
+      domainName: extra.domainName
     })
     onClose()
   }
@@ -357,6 +361,13 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
         </>
       )}
 
+      {step === 4 && (
+        <>
+          <h2>접속 주소와 메모리</h2>
+          <AddressMemory memoryHint={software === 'vanilla' || isBuild ? 'Vanilla·Paper는 2GB면 충분해요.' : '모드가 많으면 4~6GB를 추천해요.'} onChange={setExtra} />
+        </>
+      )}
+
       <div className="actions">
         {step === 0 ? (
           <button className="btn" onClick={onClose}>
@@ -368,7 +379,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
             이전
           </button>
         )}
-        <button className="btn primary" onClick={() => (last ? create() : setStep(step + 1))} disabled={step === 0 && !step1Ok}>
+        <button className="btn primary" onClick={() => (last ? create() : setStep(step + 1))} disabled={(step === 0 && !step1Ok) || (last && extra.blocked)}>
           {last ? '서버 만들기' : '다음'}
         </button>
       </div>

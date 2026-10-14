@@ -246,6 +246,17 @@ async function domainChecks(): Promise<void> {
     expect(get.status === 405, 'GET을 받아들였어요')
     expect((await handleDomain(new Request('https://x/api/domain', { method: 'POST', body: '{}' }), {}, cf.fetch)).status === 503, '설정이 없는데 동작했어요')
   })
+  await check('이름 주소: 만들기 전에 쓸 수 있는 이름인지 미리 확인 (아무것도 쓰지 않는다)', async () => {
+    const cf = fakeCloudflare()
+    const free = await call(cf, { action: 'check', name: 'fresh-name' })
+    expect(free.status === 200 && (free.body as { free?: boolean }).free === true, `비어 있는 이름을 쓸 수 없다고 했어요: ${JSON.stringify(free)}`)
+    expect(cf.writes.length === 0 && cf.records.length === 0, '확인하는데 기록을 만들었어요')
+    await call(cf, { action: 'claim', name: 'fresh-name', key: K1 })
+    const used = await call(cf, { action: 'check', name: 'fresh-name' })
+    expect((used.body as { free?: boolean }).free === false, '이미 쓰는 이름을 비었다고 했어요')
+    expect((await call(cf, { action: 'check', name: 'www' })).status === 400, '막은 이름을 확인해 줬어요')
+    expect((await call(cf, { action: 'check', name: 'ab' })).status === 400, '짧은 이름을 확인해 줬어요')
+  })
   await check('이름 주소: 같은 인터넷 주소는 3개까지, 기록이 너무 많으면 새 이름을 막기', async () => {
     const cf = fakeCloudflare()
     for (const n of ['name-one', 'name-two', 'name-three']) expect((await call(cf, { action: 'claim', name: n, key: K1 })).status === 200, `${n}을(를) 만들지 못했어요`)

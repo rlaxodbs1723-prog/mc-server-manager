@@ -1073,9 +1073,6 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .chatlog-keep { width: 170px; }
 .inv-count-px { position: absolute; right: -3px; bottom: -3px; image-rendering: pixelated; pointer-events: none; }
 .invite-inline button.invite-self { width: auto; padding: 0 8px; margin-left: 4px; font-size: 12px; color: var(--text-3); background: var(--surface-2); white-space: nowrap; }
-.port-field { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-3); }
-.port-field input { width: 64px; padding: 2px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-2); color: var(--text); font: inherit; font-size: 13px; }
-.port-field input:disabled { opacity: 0.55; cursor: not-allowed; }
 .bug-discord { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; padding: 8px 10px 8px 12px; border-radius: 10px; background: var(--primary-soft); color: var(--text-2); font-size: 12.5px; }
 .bug-discord .btn { flex-shrink: 0; display: inline-flex; align-items: center; }
 .beta-note { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border-radius: 12px; background: var(--warning-soft); color: var(--text-2); font-size: 13px; }
@@ -1086,8 +1083,6 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .beta-actions .btn { display: inline-flex; align-items: center; }
 .claim-link { color: var(--primary); text-decoration: underline; cursor: pointer; }
 .claim-link:hover { filter: brightness(1.2); }
-.port-domain { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; margin-left: 6px; border: 1px solid var(--line-strong); border-radius: 999px; background: transparent; color: var(--text-2); font: inherit; font-size: 12px; cursor: pointer; }
-.port-domain:hover { background: var(--surface-2); color: var(--text); }
-.domain-row { display: flex; align-items: center; gap: 8px; margin: 14px 0 6px; }
+.domain-row { display: flex; align-items: center; gap: 8px; margin: 10px 0 6px; }
 .domain-row .input { flex: 1; min-width: 0; }
 .domain-suffix { color: var(--text-2); font-weight: 600; white-space: nowrap; }

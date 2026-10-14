@@ -37,6 +37,8 @@ export interface CreateServerOptions {
   importWorldFrom?: string // 싱글플레이 월드 폴더 (고르면 새 월드 대신 이 월드로 시작)
   modpackId?: string // 모드팩으로 만들 때 (prepareModpack으로 미리 풀어 둔 것)
   iconFrom?: string // 서버 아이콘으로 쓸 그림 파일 (만들기 창에서 고른 것)
+  memoryMb?: number // 최대 메모리 (없으면 컴퓨터에 맞는 기본값)
+  domainName?: string // 만들고 나서 달아 줄 이름 주소의 이름 (이름.cubepanel.kr). 없으면 숫자 주소를 쓴다
 }
 
 // 이름 주소: key는 이 서버만 아는 비밀 열쇠 (중계 서버에는 해시만 남는다)
@@ -481,10 +483,10 @@ export interface Api {
   getInvite: (folderPath: string) => Promise<InviteStatus>
   // 바깥 인터넷에서 이 서버에 접속되는지 확인한다
   checkReachable: (folderPath: string) => Promise<{ ok: boolean; message: string }>
-  // 이름 주소: 이 서버의 이름 주소(없으면 null), 만들기, 없애기
-  getDomain: (folderPath: string) => Promise<{ name: string; host: string } | null>
-  claimDomain: (folderPath: string, name: string) => Promise<string>
-  releaseDomain: (folderPath: string) => Promise<void>
+  // 이름 주소: 서버를 만들기 전에 이 이름을 쓸 수 있는지 (true면 비어 있음)
+  checkDomainName: (name: string) => Promise<boolean>
+  // 서버 만들기 창의 메모리 슬라이더 범위
+  getMemoryRange: () => Promise<{ minMb: number; maxMb: number; totalMb: number; defaultMb: number }>
   // 공유기로 못 열 때 playit 터널로 연다 (처음이면 브라우저에서 승인)
   useTunnel: (folderPath: string) => Promise<void>
   // 켜진 서버의 CPU·메모리·TPS (꺼져 있으면 null)

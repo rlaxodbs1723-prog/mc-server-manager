@@ -40,16 +40,16 @@ export async function handleDomain(req, env, doFetch = fetch) {
   const name = String(body?.name ?? '').toLowerCase()
   const key = String(body?.key ?? '')
   const port = body?.port == null ? DEFAULT_PORT : Number(body.port)
-  if (action !== 'claim' && action !== 'release') return json({ error: 'bad-request' }, 400)
+  if (action !== 'claim' && action !== 'release' && action !== 'check') return json({ error: 'bad-request' }, 400)
   if (!NAME_RE.test(name)) return json({ error: 'name' }, 400)
   if (RESERVED.has(name)) return json({ error: 'reserved' }, 400)
-  if (!/^[0-9a-f]{32}$/.test(key)) return json({ error: 'bad-request' }, 400)
+  if (action !== 'check' && !/^[0-9a-f]{32}$/.test(key)) return json({ error: 'bad-request' }, 400)
   if (!Number.isInteger(port) || port < 1024 || port > 65535) return json({ error: 'port' }, 400)
 
   const ip = req.headers.get('cf-connecting-ip') || ''
   if (action === 'claim' && !/^(\d{1,3}\.){3}\d{1,3}$/.test(ip)) return json({ error: 'ipv4' }, 400) // 지금은 IPv4 주소만 연결한다
 
-  const tag = await ownerTag(key)
+  const tag = action === 'check' ? '' : await ownerTag(key)
   const host = `${name}.${base}`
   const srvName = `_minecraft._tcp.${host}`
 
@@ -69,6 +69,8 @@ export async function handleDomain(req, env, doFetch = fetch) {
   try {
     // 서버를 켤 때마다 불리므로 Cloudflare API 한도(5분에 1,200회)를 아끼려고 조회는 한꺼번에, 바뀐 것만 쓴다
     const have = (await Promise.all([find(host), find(srvName)])).flat()
+    // 쓸 수 있는 이름인지만 알려 준다 (서버를 만들기 전에 미리 보여 주려고). 아무것도 쓰지 않는다
+    if (action === 'check') return json({ ok: true, free: have.length === 0 })
     // 같은 이름에 우리가 만들지 않았거나 다른 주인의 기록이 하나라도 있으면 남의 이름이다
     if (have.some((r) => r.comment !== tag)) return json({ error: action === 'release' ? 'forbidden' : 'taken' }, action === 'release' ? 403 : 409)
 

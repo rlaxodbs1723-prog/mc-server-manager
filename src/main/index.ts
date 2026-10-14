@@ -8,8 +8,8 @@ import { CreateEta } from './eta'
 import { listGameRules, setGameRule } from './gamerules'
 import { getHardcore, setHardcore } from './hardcore'
 import { getGameRuleLang } from './lang'
-import { checkReachable, closeAllPorts, getInvite, initInvite, setInviteDomain, useTunnel } from './invite'
-import { claimDomain, getDomain, releaseDomain } from './domain'
+import { checkReachable, closeAllPorts, getInvite, initInvite, useTunnel } from './invite'
+import { checkDomainName, claimDomain, releaseDomain } from './domain'
 import { track as trackUsage } from './usage'
 import { getClaimUrl, openClaimPage, prepareClaim, tunnelLinked, unlinkTunnel } from './tunnel'
 import { getInbox } from './inbox'
@@ -35,7 +35,7 @@ import * as whitelist from './whitelist'
 import { getManageInfo, runAction } from './manage'
 import { getVersions } from './mojang'
 import { acceptEula, anyRunning, getLog, getState, onServerEvent, sendCommand, stopAll, stopServer } from './runner'
-import { changeVersion, deleteServer, cancelAutoRestarts, setServerOrder, duplicateServer, renameServer, createServer, getSettings, readServerInfo, listServers, cleanupUnfinished, getCleanupReport, resetWorld, saveSettings, serversRoot, startServerAt } from './servers'
+import { changeVersion, deleteServer, memoryRange, cancelAutoRestarts, setServerOrder, duplicateServer, renameServer, createServer, getSettings, readServerInfo, listServers, cleanupUnfinished, getCleanupReport, resetWorld, saveSettings, serversRoot, startServerAt } from './servers'
 import { assertFree, busyJobs, setOnJobDone, withLock } from './lock'
 import { getSiteStatus } from './sitestatus'
 import { runPreflight } from './preflight'
@@ -250,6 +250,13 @@ ipcMain.handle('createServer', async (event, options: CreateServerOptions, taskI
       track({ message: '기본 모드를 설치하고 있어요', phase: 'base' })
       await mods.installBaseMods(info.folderPath).catch(() => null)
     }
+    // 만들기 창에서 이름 주소를 정했으면 달아 준다. 실패해도 서버는 만들어졌으니 알려만 준다 (이름이 겹치거나 인터넷이 막힌 경우)
+    if (options.domainName) {
+      track({ message: '이름 주소를 만들고 있어요', phase: 'base' })
+      await claimDomain(info.folderPath, options.domainName).catch((e) =>
+        notify('이름 주소를 만들지 못했어요', `${options.name}: ${e instanceof Error ? e.message : String(e)} 숫자 주소는 그대로 쓸 수 있어요.`)
+      )
+    }
     eta.finish()
     notify('서버를 만들었어요', `${options.name} 서버가 준비됐어요. 눌러서 열어 보세요.`)
     trackUsage(`create-${options.modpackId ? 'modpack' : options.software}`)
@@ -312,6 +319,7 @@ ipcMain.handle('duplicateServer', (_event, folderPath: string, name: string) => 
 ipcMain.handle('deleteServer', async (_event, folderPath: string) => {
   const target = checkServerFolder(folderPath)
   if (getState(target) !== 'stopped') throw new Error('서버를 끈 다음에 삭제할 수 있어요.')
+  await releaseDomain(target).catch(() => undefined) // 이름 주소가 있으면 같이 지운다 (다른 사람이 쓸 수 있게)
   await withLock(target, '서버 삭제', () => deleteServer(target))
 })
 
@@ -352,18 +360,8 @@ ipcMain.handle('getLog', (_event, folderPath: string) => getLog(checkServerFolde
 
 ipcMain.handle('getInvite', (_event, folderPath: string) => getInvite(checkServerFolder(folderPath)))
 ipcMain.handle('checkReachable', (_event, folderPath: string) => checkReachable(checkServerFolder(folderPath)))
-ipcMain.handle('getDomain', (_event, folderPath: string) => getDomain(checkServerFolder(folderPath)))
-ipcMain.handle('claimDomain', async (_event, folderPath: string, name: string) => {
-  const target = checkServerFolder(folderPath)
-  const host = await claimDomain(target, String(name))
-  setInviteDomain(target, host) // 서버가 이미 열려 있으면 바로 이름 주소로 보여 준다
-  return host
-})
-ipcMain.handle('releaseDomain', async (_event, folderPath: string) => {
-  const target = checkServerFolder(folderPath)
-  await releaseDomain(target)
-  setInviteDomain(target, undefined)
-})
+ipcMain.handle('checkDomainName', (_event, name: string) => checkDomainName(String(name)))
+ipcMain.handle('getMemoryRange', () => memoryRange())
 ipcMain.handle('useTunnel', (_event, folderPath: string) => useTunnel(checkServerFolder(folderPath)))
 ipcMain.handle('getStats', (_event, folderPath: string) => getStats(checkServerFolder(folderPath)))
 ipcMain.handle('getManageInfo', (_event, folderPath: string) => getManageInfo(checkServerFolder(folderPath)))

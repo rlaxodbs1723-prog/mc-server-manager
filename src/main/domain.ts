@@ -42,6 +42,13 @@ async function call(body: Record<string, unknown>): Promise<{ host?: string }> {
   return out
 }
 
+// 서버를 만들기 전에 이 이름을 쓸 수 있는지 확인한다 (쓸 수 있으면 true). 아무것도 만들지 않는다
+export async function checkDomainName(rawName: string): Promise<boolean> {
+  const name = cleanDomainName(rawName)
+  const out = (await call({ action: 'check', name })) as { free?: boolean }
+  return out.free === true
+}
+
 export function getDomain(folderPath: string): { name: string; host: string } | null {
   const d = readServerInfo(folderPath).domain
   return d ? { name: d.name, host: `${d.name}.${DOMAIN_BASE}` } : null
