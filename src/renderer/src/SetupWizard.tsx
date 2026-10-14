@@ -141,8 +141,8 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
       iconFrom: icon?.path,
       properties: {
         gamemode: 'survival', // 게임 모드 선택은 없애고 서바이벌로 고정
-        difficulty: hardcore ? 'hard' : 'easy', // 난이도는 서버를 만든 뒤 관리 탭에서 바꾼다. 하드코어는 어려움으로 고정된다
-        hardcore: String(hardcore),
+        difficulty: hardcore && !importWorld ? 'hard' : 'easy', // 난이도는 서버를 만든 뒤 관리 탭에서 바꾼다. 하드코어는 어려움으로 고정된다
+        hardcore: String(hardcore && !importWorld), // 하드코어는 새 월드를 만들 때만 (가져온 월드는 그 월드의 설정을 따른다)
         'level-type': levelType,
         'generate-structures': String(structures),
         'level-seed': seed.trim(),
@@ -303,6 +303,9 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
                 <Row title="구조물 만들기">
                   <Switch checked={structures} onChange={setStructures} />
                 </Row>
+                <Row title="하드코어" hint="죽으면 부활 불가">
+                  <Switch checked={hardcore} onChange={setHardcore} />
+                </Row>
                 <div>
                   <div className="label">시드</div>
                   <input className="input" value={seed} onChange={(e) => setSeed(e.target.value)} placeholder="비우면 무작위" maxLength={64} />
@@ -313,9 +316,6 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
               <div className="reset-fields">
                 <Row title="정품 인증" hint="켜면 정품 계정만 입장 가능, 끄면 스킨 비활성화">
                   <Switch checked={onlineMode} onChange={setOnlineMode} />
-                </Row>
-                <Row title="하드코어" hint="죽으면 부활 불가">
-                  <Switch checked={hardcore} onChange={setHardcore} />
                 </Row>
                 <MemoryField onChange={setMemoryMb} />
               </div>
