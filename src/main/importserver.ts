@@ -104,10 +104,13 @@ function mcFromNeoForge(v: string): string | null {
   return minor === 0 ? `1.${major}` : `1.${major}.${minor}`
 }
 
-async function folderSize(dir: string): Promise<number> {
+// 아주 큰 폴더는 세다가 창이 늦게 뜨므로 4초까지만 센다 (넘으면 partial)
+async function folderSize(dir: string): Promise<{ bytes: number; partial: boolean }> {
   let total = 0
+  const deadline = Date.now() + 4000
   const stack = [dir]
   while (stack.length) {
+    if (Date.now() > deadline) return { bytes: total, partial: true }
     const cur = stack.pop() as string
     let entries: fs.Dirent[] = []
     try {
@@ -121,7 +124,7 @@ async function folderSize(dir: string): Promise<number> {
       else if (e.isFile()) total += (await fs.promises.stat(p).catch(() => null))?.size ?? 0
     }
   }
-  return total
+  return { bytes: total, partial: false }
 }
 
 export async function detectServer(dir: string, serversRoot: string): Promise<DetectedServer> {
@@ -164,10 +167,10 @@ export async function detectServer(dir: string, serversRoot: string): Promise<De
     software = 'fabric'
     loaderVersion = fabricLoader
     mcVersion = latest(lib('net', 'fabricmc', 'intermediary'))
-  } else if (purpur) {
+  } else if (purpur || has('purpur.yml')) {
     software = 'purpur'
-    mcVersion = purpur[1]
-    loaderVersion = purpur[2]
+    mcVersion = purpur?.[1] ?? null
+    loaderVersion = purpur?.[2] ?? null
   } else if (paperJar || has('paper.yml') || fs.existsSync(path.join(abs, 'config', 'paper-global.yml'))) {
     software = 'paper'
     if (paperJar) {
@@ -199,7 +202,16 @@ export async function detectServer(dir: string, serversRoot: string): Promise<De
     }
   })()
 
-  return { software, mcVersion, loaderVersion, name: path.basename(abs), sizeMb: Math.round((await folderSize(abs)) / 1024 / 1024), hasWorld: world }
+  const size = await folderSize(abs)
+  return {
+    software,
+    mcVersion,
+    loaderVersion,
+    name: path.basename(abs),
+    sizeMb: Math.round(size.bytes / 1024 / 1024),
+    sizePartial: size.partial,
+    hasWorld: world
+  }
 }
 
 // 폴더를 통째로 복사한다. 로그·충돌 보고서·잠금 파일은 빼고, 복사한 양을 알려 준다 (큰 월드도 진행이 보이게)

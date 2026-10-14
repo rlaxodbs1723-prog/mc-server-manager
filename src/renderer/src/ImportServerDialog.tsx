@@ -136,7 +136,7 @@ export default function ImportServerDialog({
                 {folder}
               </div>
               <div className="meta">
-                {detected.sizeMb.toLocaleString()}MB · {detected.hasWorld ? '월드 있음' : '월드 없음'}
+                {detected.sizeMb.toLocaleString()}MB{detected.sizePartial ? ' 이상' : ''} · {detected.hasWorld ? '월드 있음' : '월드 없음'}
               </div>
               <div className="meta">원본 폴더는 그대로 두고 복사함</div>
             </div>

@@ -360,6 +360,8 @@ async function importChecks(): Promise<void> {
     expect(paper.software === 'paper' && paper.mcVersion === '1.21' && paper.loaderVersion === '100', `Paper: ${JSON.stringify(paper)}`)
     const paper2 = await d(mk('paper2', { 'server.jar': 'x', 'paper.yml': '', 'version_history.json': JSON.stringify({ currentVersion: 'git-Paper-123 (MC: 1.20.4)' }) }))
     expect(paper2.software === 'paper' && paper2.mcVersion === '1.20.4' && paper2.loaderVersion === '123', `Paper 기록: ${JSON.stringify(paper2)}`)
+    const purpur2 = await d(mk('purpur2', { 'server.jar': 'x', 'purpur.yml': '', 'config/paper-global.yml': '' }))
+    expect(purpur2.software === 'purpur', `이름이 바뀐 Purpur를 Paper로 봤어요: ${JSON.stringify(purpur2)}`)
     const vanilla = await d(mk('vanilla', { 'server.jar': await jarWithVersion('1.19.4'), 'server.properties': 'level-name=map\n', 'map/level.dat': 'x' }))
     expect(vanilla.software === 'vanilla' && vanilla.mcVersion === '1.19.4' && vanilla.hasWorld, `바닐라: ${JSON.stringify(vanilla)}`)
     const logOnly = await d(mk('logonly', { 'custom.jar': 'x', 'logs/latest.log': '[12:00:00] [main/INFO]: Starting minecraft server version 1.18.2\n' }))

@@ -1680,5 +1680,6 @@
  "선택 안 함": "None",
  "월드 있음": "Has a world",
  "월드 없음": "No world",
- "원본 폴더는 그대로 두고 복사함": "The original folder is left as is and copied"
+ "원본 폴더는 그대로 두고 복사함": "The original folder is left as is and copied",
+ "이상": "or more"
 }

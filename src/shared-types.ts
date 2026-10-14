@@ -49,6 +49,7 @@ export interface DetectedServer {
   loaderVersion: string | null
   name: string // 폴더 이름
   sizeMb: number
+  sizePartial?: boolean // 너무 커서 크기를 다 세지 못했다 (적어도 이만큼)
   hasWorld: boolean
 }
 
