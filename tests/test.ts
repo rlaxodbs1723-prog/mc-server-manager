@@ -257,11 +257,11 @@ async function domainChecks(): Promise<void> {
     expect((await call(cf, { action: 'check', name: 'www' })).status === 400, '막은 이름을 확인해 줬어요')
     expect((await call(cf, { action: 'check', name: 'ab' })).status === 400, '짧은 이름을 확인해 줬어요')
   })
-  await check('이름 주소: 같은 인터넷 주소는 3개까지, 기록이 너무 많으면 새 이름을 막기', async () => {
+  await check('이름 주소: 같은 인터넷 주소는 10개까지, 기록이 너무 많으면 새 이름을 막기', async () => {
     const cf = fakeCloudflare()
-    for (const n of ['name-one', 'name-two', 'name-three']) expect((await call(cf, { action: 'claim', name: n, key: K1 })).status === 200, `${n}을(를) 만들지 못했어요`)
+    for (let i = 0; i < 10; i++) expect((await call(cf, { action: 'claim', name: `name-${i}-abc`, key: K1 })).status === 200, `${i}번째 이름을 만들지 못했어요`)
     const fourth = await call(cf, { action: 'claim', name: 'name-four', key: K1 })
-    expect(fourth.status === 429, `4번째 이름을 막지 않았어요: ${fourth.status}`)
+    expect(fourth.status === 429, `11번째 이름을 막지 않았어요: ${fourth.status}`)
     expect((await call(cf, { action: 'claim', name: 'name-four', key: K1 }, '9.9.9.9')).status === 200, '다른 인터넷 주소도 막았어요')
     const full = fakeCloudflare(Array.from({ length: 900 }, (_, i) => ({ id: `f${i}`, type: 'TXT', name: `t${i}.cubepanel.kr`, content: 'x' })))
     expect((await call(full, { action: 'claim', name: 'late-one', key: K1 })).status === 503, '기록이 가득 찼는데 새 이름을 만들었어요')

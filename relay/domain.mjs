@@ -11,7 +11,7 @@ const RESERVED = new Set([
   'cubepanel', 'cube', 'panel', 'mc', 'minecraft', 'mojang', 'microsoft', 'discord', 'official', 'staff', 'mod', 'moderator', 'dev', 'test', 'localhost', 'server', 'play', 'join'
 ])
 const MAX_RECORDS = 900 // 무료 DNS의 기록 개수 한도에 닿기 전에 새 이름을 막는다
-const MAX_PER_IP = 3 // 같은 인터넷 주소로 만들 수 있는 이름 수 (이름을 마구 선점하는 것을 막는다)
+const MAX_PER_IP = 10 // 같은 인터넷 주소로 만들 수 있는 이름 수 (이름을 마구 선점하는 것을 막는다. 서버가 많은 사람과 한 주소를 같이 쓰는 통신사 환경을 위해 넉넉히)
 const DEFAULT_PORT = 25565
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } })
