@@ -48,7 +48,7 @@ export function DomainField({ onChange }: { onChange: (v: { domainName?: string;
         <span className="domain-suffix">{`.${BASE}`}</span>
       </div>
       {name.trim() !== '' && (
-        <p className={`hint ${check === 'taken' ? 'warn-text' : ''}`}>
+        <p className={`hint ${!valid || check === 'taken' || check === 'error' ? 'name-bad' : check === 'free' ? 'name-ok' : ''}`}>
           {!valid
             ? '영어 소문자, 숫자, 하이픈(-) 3~20자. 하이픈은 처음과 끝에 사용 불가'
             : check === 'checking'

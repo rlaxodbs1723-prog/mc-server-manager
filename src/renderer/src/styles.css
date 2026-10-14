@@ -1103,3 +1103,5 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .wizard-world .map-list::-webkit-scrollbar { display: none; }
 .wizard-world .world-source { height: 100%; margin-bottom: 0; }
 .wizard-world .world-source > .drop-box { flex: 1; min-height: 0; }
+.hint.name-ok { color: var(--success); }
+.hint.name-bad { color: var(--danger); }
