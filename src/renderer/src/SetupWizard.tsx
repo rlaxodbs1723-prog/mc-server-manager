@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useMouseBack } from './mouseback'
 import { SOFTWARE_INFO, type LoaderVersion, type McVersion, type SaveWorld, type Software } from '../../shared-types'
 import Select from './Select'
-import AddressMemory, { type AddressMemoryValue } from './AddressMemory'
+import { DomainField, MemoryField } from './AddressMemory'
 import { WorldSource } from './ImportWorldDialog'
 import { useTasks } from './tasks'
 import { Modal, SoftwareBadge } from './ui'
@@ -15,19 +15,12 @@ interface Props {
   onClose: () => void
 }
 
-const DIFFICULTIES = [
-  { value: 'peaceful', label: '평화로움' },
-  { value: 'easy', label: '쉬움' },
-  { value: 'normal', label: '보통' },
-  { value: 'hard', label: '어려움' }
-]
 const LEVEL_TYPES = [
   { value: 'minecraft:normal', label: '기본' },
   { value: 'minecraft:flat', label: '평지' },
   { value: 'minecraft:large_biomes', label: '큰 바이옴' },
   { value: 'minecraft:amplified', label: '증폭 (높은 산)' }
 ]
-
 
 // 폴더 이름으로 쓸 때 겹치는지 보기 위해 대소문자·앞뒤 공백을 무시한다
 const norm = (s: string) => s.trim().toLowerCase()
@@ -73,16 +66,14 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
   const [icon, setIcon] = useState<{ path: string; preview: string } | null>(null) // 고른 서버 아이콘
 
   // 2~4단계
-  const [difficulty, setDifficulty] = useState('easy')
-  const [hardcore, setHardcore] = useState(false)
   const [levelType, setLevelType] = useState('minecraft:normal')
   const [structures, setStructures] = useState(true)
   const [seed, setSeed] = useState('')
   const [maxPlayers, setMaxPlayers] = useState('10')
   const [motd, setMotd] = useState('')
   const [onlineMode, setOnlineMode] = useState(true)
-  const [whitelist, setWhitelist] = useState(false)
-  const [extra, setExtra] = useState<AddressMemoryValue>({ blocked: true }) // 5단계: 주소 이름, 메모리
+  const [domain, setDomain] = useState<{ domainName?: string; blocked: boolean }>({ blocked: true }) // 서버 주소 이름
+  const [memoryMb, setMemoryMb] = useState<number | undefined>(undefined)
 
   const { tasks, startCreate } = useTasks()
   const [importWorld, setImportWorld] = useState<SaveWorld | null>(null)
@@ -149,19 +140,18 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
       iconFrom: icon?.path,
       properties: {
         gamemode: 'survival', // 게임 모드 선택은 없애고 서바이벌로 고정
-        difficulty: hardcore ? 'hard' : difficulty, // 하드코어는 어려움으로 고정된다
-        hardcore: String(hardcore),
+        difficulty: 'easy', // 난이도·하드코어는 서버를 만든 뒤 관리 탭에서 바꾼다
+        hardcore: 'false',
         'level-type': levelType,
         'generate-structures': String(structures),
         'level-seed': seed.trim(),
         'max-players': String(Math.min(500, Math.max(1, Math.round(Number(maxPlayers) || 10)))),
         motd: motd.trim() || serverName,
-        'online-mode': String(onlineMode),
-        'white-list': String(whitelist)
+        'online-mode': String(onlineMode)
       },
       importWorldFrom: importWorld?.path,
-      memoryMb: extra.memoryMb,
-      domainName: extra.domainName
+      memoryMb,
+      domainName: domain.domainName
     })
     onClose()
   }
@@ -204,132 +194,139 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
         </div>
         <div className="wizard-cols">
           <div className="wizard-col">
-          <div className="reset-fields">
-            <div>
-              <div className="label">서버 이름</div>
-              <input
-                className="input"
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value)
-                  setNameTouched(true)
-                }}
-                maxLength={60}
-                placeholder="예: 야생 서버"
-                autoFocus
-              />
-              {/* 다음 버튼이 왜 안 눌리는지 알 수 있게 이유를 보여 준다 */}
-              {nameTouched && !name.trim() && <p className="error-text" style={{ marginTop: 6 }}>서버 이름 입력 필요</p>}
-              {nameTaken && <p className="error-text" style={{ marginTop: 6 }}>같은 이름의 서버가 이미 있음. 다른 이름 입력 필요</p>}
-            </div>
-            <div>
-              <div className="label">마인크래프트 버전</div>
-              <Select
-                value={version}
-                onChange={setVersion}
-                disabled={!versions.length}
-                placeholder="불러오는 중…"
-                searchPlaceholder="버전 검색 (예: 1.20)"
-                options={versions.map((v, i) => ({
-                  value: v.id,
-                  label: v.id,
-                  tag: v.type === 'snapshot' ? '스냅샷' : i === 0 ? '최신' : undefined
-                }))}
-              />
-            </div>
-            {software !== 'vanilla' && (
+            <div className="reset-fields">
               <div>
-                <div className="label">{isBuild ? `${info.label} 빌드` : `${info.label} 버전`}</div>
+                <div className="label">서버 이름</div>
+                <input
+                  className="input"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value)
+                    setNameTouched(true)
+                  }}
+                  maxLength={60}
+                  placeholder="예: 야생 서버"
+                  autoFocus
+                />
+                {/* 다음 버튼이 왜 안 눌리는지 알 수 있게 이유를 보여 준다 */}
+                {nameTouched && !name.trim() && (
+                  <p className="error-text" style={{ marginTop: 6 }}>
+                    서버 이름 입력 필요
+                  </p>
+                )}
+                {nameTaken && (
+                  <p className="error-text" style={{ marginTop: 6 }}>
+                    같은 이름의 서버가 이미 있음. 다른 이름 입력 필요
+                  </p>
+                )}
+              </div>
+              <div>
+                <div className="label">마인크래프트 버전</div>
                 <Select
-                  value={loaderVersion}
-                  onChange={setLoaderVersion}
-                  disabled={!loaderVersions?.length}
-                  placeholder={loaderVersions === null ? '불러오는 중…' : '지원하는 버전 없음'}
-                  searchPlaceholder="버전 검색"
-                  options={(loaderVersions ?? []).map((l, i) => ({
-                    value: l.version,
-                    label: isBuild ? `#${l.version}` : l.version,
-                    tag: !l.stable ? '베타' : i === 0 ? '추천' : undefined
+                  value={version}
+                  onChange={setVersion}
+                  disabled={!versions.length}
+                  placeholder="불러오는 중…"
+                  searchPlaceholder="버전 검색 (예: 1.20)"
+                  options={versions.map((v, i) => ({
+                    value: v.id,
+                    label: v.id,
+                    tag: v.type === 'snapshot' ? '스냅샷' : i === 0 ? '최신' : undefined
                   }))}
                 />
               </div>
-            )}
-            <label className="check-row">
-              <span className="switch">
-                <input type="checkbox" checked={includeSnapshots} onChange={(e) => setIncludeSnapshots(e.target.checked)} />
-                <span />
-              </span>
-              스냅샷도 보여 주기
-            </label>
-            {unsupported && (
-              <div className="notice-box">
-                <AlertCircle size={18} />
-                {info.label}은(는) 마인크래프트 {version}을(를) 지원하지 않음. 다른 버전 선택 필요
-              </div>
-            )}
-            {loadError && <p className="error-text">{loadError}</p>}
-          </div>
+              {software !== 'vanilla' && (
+                <div>
+                  <div className="label">{isBuild ? `${info.label} 빌드` : `${info.label} 버전`}</div>
+                  <Select
+                    value={loaderVersion}
+                    onChange={setLoaderVersion}
+                    disabled={!loaderVersions?.length}
+                    placeholder={loaderVersions === null ? '불러오는 중…' : '지원하는 버전 없음'}
+                    searchPlaceholder="버전 검색"
+                    options={(loaderVersions ?? []).map((l, i) => ({
+                      value: l.version,
+                      label: isBuild ? `#${l.version}` : l.version,
+                      tag: !l.stable ? '베타' : i === 0 ? '추천' : undefined
+                    }))}
+                  />
+                </div>
+              )}
+              <label className="check-row">
+                <span className="switch">
+                  <input type="checkbox" checked={includeSnapshots} onChange={(e) => setIncludeSnapshots(e.target.checked)} />
+                  <span />
+                </span>
+                스냅샷도 보여 주기
+              </label>
+              {unsupported && (
+                <div className="notice-box">
+                  <AlertCircle size={18} />
+                  {info.label}은(는) 마인크래프트 {version}을(를) 지원하지 않음. 다른 버전 선택 필요
+                </div>
+              )}
+              {loadError && <p className="error-text">{loadError}</p>}
+            </div>
             <div className="wizard-section">
-          <div className="reset-fields">
-            <div>
-              <div className="label">난이도</div>
-              <div className="seg">
-                {DIFFICULTIES.map((d) => (
-                  <button key={d.value} className={difficulty === d.value && !hardcore ? 'active' : ''} onClick={() => setDifficulty(d.value)} disabled={hardcore}>
-                    {d.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <Row title="하드코어" hint="죽으면 부활 불가">
-              <Switch checked={hardcore} onChange={setHardcore} />
-            </Row>
-          </div>
+              <MemoryField onChange={setMemoryMb} />
             </div>
           </div>
           <div className="wizard-col">
-          <WorldSource serverVersion={version} picked={importWorld} onChange={setImportWorld}>
-          <div className="reset-fields">
-            <div>
-              <div className="label">월드 종류</div>
-              <Select value={levelType} onChange={setLevelType} options={LEVEL_TYPES} />
-            </div>
-            <Row title="구조물 만들기">
-              <Switch checked={structures} onChange={setStructures} />
-            </Row>
-            <div>
-              <div className="label">시드</div>
-              <input className="input" value={seed} onChange={(e) => setSeed(e.target.value)} placeholder="비우면 무작위" maxLength={64} />
-            </div>
-          </div>
-          </WorldSource>
-          </div>
-          <div className="wizard-col">
-          <div className="reset-fields">
-            <div className="form-row">
-              <div>
-                <div className="label">
-                  최대 인원 <span className="muted">{'1 ~ 500'}</span>
+            <WorldSource serverVersion={version} picked={importWorld} onChange={setImportWorld}>
+              <div className="reset-fields">
+                <div>
+                  <div className="label">월드 종류</div>
+                  <Select value={levelType} onChange={setLevelType} options={LEVEL_TYPES} />
                 </div>
-                <div className="num-input">
-                  <input type="number" className="input" style={{ width: '100%' }} value={maxPlayers} min={1} max={500} onChange={(e) => setMaxPlayers(e.target.value)} onBlur={() => setMaxPlayers(String(Math.min(500, Math.max(1, Math.round(Number(maxPlayers) || 10)))))} />
-                  <span>명</span>
+                <Row title="구조물 만들기">
+                  <Switch checked={structures} onChange={setStructures} />
+                </Row>
+                <div>
+                  <div className="label">시드</div>
+                  <input className="input" value={seed} onChange={(e) => setSeed(e.target.value)} placeholder="비우면 무작위" maxLength={64} />
                 </div>
               </div>
+            </WorldSource>
+            <div className="wizard-section">
+              <div className="reset-fields">
+                <div>
+                  <div className="label">
+                    최대 인원 <span className="muted">{'1 ~ 500'}</span>
+                  </div>
+                  <div className="num-input">
+                    <input
+                      type="number"
+                      className="input"
+                      style={{ width: '100%' }}
+                      value={maxPlayers}
+                      min={1}
+                      max={500}
+                      onChange={(e) => setMaxPlayers(e.target.value)}
+                      onBlur={() => setMaxPlayers(String(Math.min(500, Math.max(1, Math.round(Number(maxPlayers) || 10)))))}
+                    />
+                    <span>명</span>
+                  </div>
+                </div>
+                <Row title="정품 인증" hint="켜면 정품 계정만 입장 가능, 끄면 스킨 비활성화">
+                  <Switch checked={onlineMode} onChange={setOnlineMode} />
+                </Row>
+              </div>
+            </div>
+          </div>
+          <div className="wizard-col">
+            <div className="reset-fields">
               <div>
                 <div className="label">서버 설명</div>
-                <input className="input" style={{ height: 42 }} value={motd} placeholder={name.trim()} onChange={(e) => setMotd(e.target.value)} maxLength={60} />
+                <input
+                  className="input"
+                  style={{ height: 42 }}
+                  value={motd}
+                  placeholder={name.trim()}
+                  onChange={(e) => setMotd(e.target.value)}
+                  maxLength={60}
+                />
               </div>
-            </div>
-            <Row title="정품 인증" hint="켜면 정품 계정만 입장 가능, 끄면 스킨 비활성화">
-              <Switch checked={onlineMode} onChange={setOnlineMode} />
-            </Row>
-            <Row title="화이트리스트" hint="허용한 사람만 입장 가능">
-              <Switch checked={whitelist} onChange={setWhitelist} />
-            </Row>
-          </div>
-            <div className="wizard-section">
-              <AddressMemory onChange={setExtra} />
+              <DomainField onChange={setDomain} />
             </div>
           </div>
         </div>
@@ -338,7 +335,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
           <button className="btn" onClick={onClose}>
             취소
           </button>
-          <button className="btn primary" onClick={create} disabled={!step1Ok || extra.blocked}>
+          <button className="btn primary" onClick={create} disabled={!step1Ok || domain.blocked}>
             서버 만들기
           </button>
         </div>
