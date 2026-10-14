@@ -1657,5 +1657,8 @@
  "이미지 변경": "Change image",
  "허용한 사람만 입장 가능": "Only allowed players can join",
  "죽으면 부활 불가": "Can't respawn after dying",
- "스냅샷도 보여 주기": "Show snapshots too"
+ "스냅샷도 보여 주기": "Show snapshots too",
+ "서버 주소 이름 정하기": "Choose a server address name",
+ "건너뛰고 켜기": "Skip and start",
+ "이름 정하고 켜기": "Set name and start"
 }

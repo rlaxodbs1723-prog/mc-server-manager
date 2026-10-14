@@ -3,6 +3,7 @@ import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'rea
 import { SOFTWARE_INFO, type ModKindInfo, type PreflightResult, type Progress, type ServerListItem } from '../../shared-types'
 import { suggest, usageOf } from './consoleHelp'
 import EulaDialog from './EulaDialog'
+import DomainStartDialog from './DomainStartDialog'
 import InviteBox from './InviteBox'
 import FirstRunGuide from './FirstRunGuide'
 import ManageTab from './ManageTab'
@@ -238,11 +239,18 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
   // 켜기 전 점검: 서버에 맞지 않는 모드가 새로 있으면 끌지 묻는 창을 띄우고 멈춘다.
   // 빠진 필수 모드·메모리 부족이 있으면 확인 창을 띄운다. 아무것도 없으면 바로 켠다
   const startBusy = useRef(false) // 점검·켜는 중 (버튼 말고 우클릭 메뉴로도 두 번 켜지지 않게)
+  const [askDomain, setAskDomain] = useState(false)
+  const domainSkipped = useRef(false)
   // skipAskOff: 끌지 묻는 창에서 "나중에"를 골랐으면 이번에는 묻지 않고 켠다
   async function start(skipAskOff = false) {
     if (startBusy.current) return
     setError('')
     if (!server.eulaAccepted) return setShowEula(true)
+    // 이름 주소가 없는 서버(기능이 생기기 전에 만든 서버)는 켜기 전에 정하는 창을 띄운다. 건너뛰면 이번 켜기에서는 다시 묻지 않는다
+    if (!domainSkipped.current) {
+      const d = await window.api.getDomain(folderPath).catch(() => ({ name: '', host: '' }))
+      if (!d) return setAskDomain(true)
+    }
     startBusy.current = true
     setChecking(true)
     let result: PreflightResult | null = null
@@ -277,6 +285,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
       setError(cleanError(e))
     } finally {
       off()
+      domainSkipped.current = false
       setProgress(null)
       setStarting(false)
       startBusy.current = false
@@ -595,6 +604,21 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
         />
       )}
       {showEula && <EulaDialog onAccept={acceptAndStart} onCancel={() => setShowEula(false)} />}
+      {askDomain && (
+        <DomainStartDialog
+          folderPath={folderPath}
+          onDone={() => {
+            setAskDomain(false)
+            void start()
+          }}
+          onSkip={() => {
+            domainSkipped.current = true
+            setAskDomain(false)
+            void start()
+          }}
+          onCancel={() => setAskDomain(false)}
+        />
+      )}
       {naming && (
         <NameDialog
           title={naming === 'rename' ? '서버 이름 바꾸기' : '서버 복제'}

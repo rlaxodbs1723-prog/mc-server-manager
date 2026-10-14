@@ -485,6 +485,8 @@ export interface Api {
   checkReachable: (folderPath: string) => Promise<{ ok: boolean; message: string }>
   // 이름 주소: 서버를 만들기 전에 이 이름을 쓸 수 있는지 (true면 비어 있음)
   checkDomainName: (name: string) => Promise<boolean>
+  getDomain: (folderPath: string) => Promise<{ name: string; host: string } | null>
+  claimDomain: (folderPath: string, name: string) => Promise<string>
   // 서버 만들기 창의 메모리 슬라이더 범위
   getMemoryRange: () => Promise<{ minMb: number; maxMb: number; totalMb: number; defaultMb: number }>
   // 공유기로 못 열 때 playit 터널로 연다 (처음이면 브라우저에서 승인)

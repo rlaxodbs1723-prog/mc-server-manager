@@ -9,7 +9,7 @@ import { listGameRules, setGameRule } from './gamerules'
 import { getHardcore, setHardcore } from './hardcore'
 import { getGameRuleLang } from './lang'
 import { checkReachable, closeAllPorts, getInvite, initInvite, useTunnel } from './invite'
-import { checkDomainName, claimDomain, releaseDomain } from './domain'
+import { checkDomainName, claimDomain, getDomain, releaseDomain } from './domain'
 import { track as trackUsage } from './usage'
 import { getClaimUrl, openClaimPage, prepareClaim, tunnelLinked, unlinkTunnel } from './tunnel'
 import { getInbox } from './inbox'
@@ -361,6 +361,8 @@ ipcMain.handle('getLog', (_event, folderPath: string) => getLog(checkServerFolde
 ipcMain.handle('getInvite', (_event, folderPath: string) => getInvite(checkServerFolder(folderPath)))
 ipcMain.handle('checkReachable', (_event, folderPath: string) => checkReachable(checkServerFolder(folderPath)))
 ipcMain.handle('checkDomainName', (_event, name: string) => checkDomainName(String(name)))
+ipcMain.handle('getDomain', (_event, folderPath: string) => getDomain(checkServerFolder(folderPath)))
+ipcMain.handle('claimDomain', (_event, folderPath: string, name: string) => claimDomain(checkServerFolder(folderPath), String(name)))
 ipcMain.handle('getMemoryRange', () => memoryRange())
 ipcMain.handle('useTunnel', (_event, folderPath: string) => useTunnel(checkServerFolder(folderPath)))
 ipcMain.handle('getStats', (_event, folderPath: string) => getStats(checkServerFolder(folderPath)))
