@@ -272,6 +272,24 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
               )}
               {loadError && <p className="error-text">{loadError}</p>}
               <DomainField onChange={setDomain} />
+              <div>
+                <div className="label">
+                  최대 인원 <span className="muted">{'1 ~ 500'}</span>
+                </div>
+                <div className="num-input">
+                  <input
+                    type="number"
+                    className="input"
+                    style={{ width: '100%' }}
+                    value={maxPlayers}
+                    min={1}
+                    max={500}
+                    onChange={(e) => setMaxPlayers(e.target.value)}
+                    onBlur={() => setMaxPlayers(String(Math.min(500, Math.max(1, Math.round(Number(maxPlayers) || 10)))))}
+                  />
+                  <span>명</span>
+                </div>
+              </div>
             </div>
           </div>
           <div className="wizard-col">
@@ -292,24 +310,6 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
             </WorldSource>
             <div className="wizard-section">
               <div className="reset-fields">
-                <div>
-                  <div className="label">
-                    최대 인원 <span className="muted">{'1 ~ 500'}</span>
-                  </div>
-                  <div className="num-input">
-                    <input
-                      type="number"
-                      className="input"
-                      style={{ width: '100%' }}
-                      value={maxPlayers}
-                      min={1}
-                      max={500}
-                      onChange={(e) => setMaxPlayers(e.target.value)}
-                      onBlur={() => setMaxPlayers(String(Math.min(500, Math.max(1, Math.round(Number(maxPlayers) || 10)))))}
-                    />
-                    <span>명</span>
-                  </div>
-                </div>
                 <Row title="정품 인증" hint="켜면 정품 계정만 입장 가능, 끄면 스킨 비활성화">
                   <Switch checked={onlineMode} onChange={setOnlineMode} />
                 </Row>
