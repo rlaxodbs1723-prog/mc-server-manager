@@ -16,10 +16,10 @@ interface Props {
 }
 
 const GAMEMODES = [
-  { value: 'survival', label: '서바이벌', emoji: '⛏️', desc: '자원을 모으며 생존' },
-  { value: 'creative', label: '크리에이티브', emoji: '🧱', desc: '블록 무한, 비행 가능' },
-  { value: 'adventure', label: '모험', emoji: '🗺️', desc: '블록 파괴 불가' },
-  { value: 'spectator', label: '관전', emoji: '👻', desc: '관전만 가능' }
+  { value: 'survival', label: '서바이벌', emoji: '⛏️' },
+  { value: 'creative', label: '크리에이티브', emoji: '🧱' },
+  { value: 'adventure', label: '모험', emoji: '🗺️' },
+  { value: 'spectator', label: '관전', emoji: '👻' }
 ]
 const DIFFICULTIES = [
   { value: 'peaceful', label: '평화로움' },
@@ -299,7 +299,6 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
               <button key={g.value} className={`mode-card ${gamemode === g.value ? 'active' : ''}`} onClick={() => setGamemode(g.value)}>
                 <span className="mode-emoji">{g.emoji}</span>
                 <b>{g.label}</b>
-                <span className="hint">{g.desc}</span>
               </button>
             ))}
           </div>
@@ -330,7 +329,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
               <div className="label">월드 종류</div>
               <Select value={levelType} onChange={setLevelType} options={LEVEL_TYPES} />
             </div>
-            <Row title="구조물 만들기" hint="마을, 신전 같은 구조물 생성">
+            <Row title="구조물 만들기">
               <Switch checked={structures} onChange={setStructures} />
             </Row>
             <div>
