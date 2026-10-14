@@ -143,6 +143,11 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
   const step1Ok = !!name.trim() && !nameTaken && !!version && !unsupported && (software === 'vanilla' || !!loaderVersion)
   const last = step === STEPS.length - 1
 
+  async function pickIcon() {
+    const picked = await window.api.pickIconImage().catch(() => null)
+    if (picked) setIcon(picked)
+  }
+
   // 서버 만들기는 뒤에서 진행하고(오른쪽 위 팝업), 이 창은 바로 닫는다
   function create() {
     const serverName = name.trim()
@@ -191,10 +196,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
               type="button"
               className="wizard-icon"
               title={icon ? '아이콘 바꾸기 (오른쪽 클릭: 지우기)' : '서버 아이콘 고르기'}
-              onClick={async () => {
-                const picked = await window.api.pickIconImage().catch(() => null)
-                if (picked) setIcon(picked)
-              }}
+              onClick={pickIcon}
               onContextMenu={(e) => {
                 e.preventDefault()
                 setIcon(null)
@@ -208,9 +210,17 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
             <div>
               {/* 입력하는 이름을 바로 보여 준다. 비어 있으면 종류 이름으로 */}
               <h2 className="wizard-name">{name.trim() || `${info.label} 서버`}</h2>
-              <p className="hint">
-                {info.label} · {info.description}
-              </p>
+              <div className="wizard-image-actions">
+                <button type="button" className="btn sm" onClick={pickIcon}>
+                  <ImagePlus size={14} />
+                  {icon ? '이미지 변경' : '이미지 추가'}
+                </button>
+                {icon && (
+                  <button type="button" className="btn sm ghost" onClick={() => setIcon(null)}>
+                    삭제
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           <div className="reset-fields">
