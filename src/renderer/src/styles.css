@@ -1099,3 +1099,4 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .wizard-col .reset-fields { margin: 0; }
 .wizard-col .form-row { grid-template-columns: 1fr; }
 .wizard-world { height: 372px; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; }
+.wizard-world .map-list { max-height: 240px; }
