@@ -122,6 +122,7 @@ export async function handleDomain(req, env, doFetch = fetch) {
     return json({ ok: true, host, ip, port })
   } catch (e) {
     // 어떤 요청이 왜 거절됐는지(Cloudflare가 준 오류 번호·문구)를 함께 돌려준다. 토큰·열쇠는 들어 있지 않다
-    return json({ error: 'dns', detail: String(e?.message ?? e).slice(0, 300) }, 502)
+    // 5xx로 보내면 Cloudflare가 본문을 "error code: 502"로 바꿔 버려서 원인이 안 보인다. 앱은 상태 번호가 아니라 error 값으로 판단하므로 200으로 보낸다
+    return json({ error: 'dns', detail: String(e?.message ?? e).slice(0, 300) }, 200)
   }
 }
