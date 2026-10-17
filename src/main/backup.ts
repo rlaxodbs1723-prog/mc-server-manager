@@ -4,6 +4,7 @@ import { app, shell } from 'electron'
 import fs from 'fs'
 import path from 'path'
 import { friendlyError, type BackupItem, type BackupSettings } from '../shared-types'
+import { isBedrockFolder } from './bedrock'
 import { readProperties } from './properties'
 import { notify } from './notify'
 import { appLog, emitEvent, getState, onServerEvent, quietQuery, sendCommand } from './runner'
@@ -74,6 +75,10 @@ const ID = /^[0-9]{8}-[0-9]{6}(-[0-9]{1,3})?(-auto)?$/
 export const backupRoot = (folderPath: string): string => path.join(app.getPath('userData'), 'backups', path.basename(folderPath))
 
 function worldNames(folderPath: string): string[] {
+  if (isBedrockFolder(folderPath)) {
+    const rel = `worlds/${readProperties(folderPath)['level-name'] || 'Bedrock level'}`
+    return fs.existsSync(path.join(folderPath, rel)) ? [rel] : []
+  }
   const name = readProperties(folderPath)['level-name'] || 'world'
   return [name, `${name}_nether`, `${name}_the_end`].filter((n) => {
     const p = path.join(folderPath, n)
@@ -132,10 +137,20 @@ export async function createBackup(folderPath: string, auto = false, note?: stri
   try {
     if (on) {
       // 저장을 멈추고 지금까지를 디스크에 모두 쓴다
-      await quietQuery(folderPath, ['save-off', 'save-all flush'], (l) => /Saved the (game|world)|Automatic saving is now disabled|Turned off world auto-saving/i.test(l), {
-        idleMs: 1500,
-        maxMs: 30000
-      })
+      // 배드락은 save hold → save query로 "복사해도 된다"는 답을 기다린다
+      if (isBedrockFolder(folderPath)) {
+        await quietQuery(folderPath, ['save hold'], (l) => /Saving\.\.\.|Data saved|ready to be copied/i.test(l), { idleMs: 1000, maxMs: 10000 })
+        for (let i = 0; i < 10; i++) {
+          const answer = await quietQuery(folderPath, ['save query'], (l) => /Data saved|Files are now ready|not ready/i.test(l), { idleMs: 800, maxMs: 4000 })
+          if (answer.some((l) => /Data saved|Files are now ready/i.test(l))) break
+          await new Promise((r) => setTimeout(r, 1000))
+        }
+      } else {
+        await quietQuery(folderPath, ['save-off', 'save-all flush'], (l) => /Saved the (game|world)|Automatic saving is now disabled|Turned off world auto-saving/i.test(l), {
+          idleMs: 1500,
+          maxMs: 30000
+        })
+      }
     }
     fs.mkdirSync(dir, { recursive: true })
     // session.lock은 켜진 서버가 잠가 둬서 복사할 수 없고, 백업에 필요도 없다 (서버가 켜질 때 새로 만든다)
@@ -149,7 +164,7 @@ export async function createBackup(folderPath: string, auto = false, note?: stri
     fs.rmSync(dir, { recursive: true, force: true })
     throw e
   } finally {
-    if (on && getState(folderPath) === 'running') sendCommand(folderPath, 'save-on')
+    if (on && getState(folderPath) === 'running') sendCommand(folderPath, isBedrockFolder(folderPath) ? 'save resume' : 'save-on')
     busy.delete(folderPath)
   }
 }

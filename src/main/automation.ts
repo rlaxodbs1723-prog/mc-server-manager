@@ -4,6 +4,7 @@
 // - 앱을 켜면 서버도 켜기
 // - 들어온 사람에게 환영 메시지
 import { DEFAULT_AUTOMATION, type ServerAutomation } from '../shared-types'
+import { isBedrockFolder } from './bedrock'
 import { notify } from './notify'
 import os from 'os'
 import { appLog, getPlayers, getState, onServerEvent, sendQuiet, serverPort, stopServer } from './runner'
@@ -48,10 +49,13 @@ onServerEvent((e) => {
   const { welcome } = automationOf(e.folderPath)
   if (!welcome.trim()) return
   for (const name of now) {
-    if (before.has(name) || !PLAYER_NAME.test(name)) continue
+    const bedrock = isBedrockFolder(e.folderPath)
+    // 배드락 게이머태그에는 공백이 있을 수 있다 (따옴표·역슬래시가 없는 이름만 받는다)
+    if (before.has(name) || !(bedrock ? /^[A-Za-z0-9 _#.-]{1,32}$/ : PLAYER_NAME).test(name)) continue
     const text = welcome.replace(/\{name\}/g, name)
     // tellraw: 그 사람에게만, 앱이 보낸 티 없이 보인다. 콘솔에는 안 찍는다
-    setTimeout(() => sendQuiet(e.folderPath, `tellraw ${name} ${JSON.stringify({ text, color: 'yellow' })}`), 1500)
+    const cmd = bedrock ? `tellraw "${name}" ${JSON.stringify({ rawtext: [{ text: `§e${text}` }] })}` : `tellraw ${name} ${JSON.stringify({ text, color: 'yellow' })}`
+    setTimeout(() => sendQuiet(e.folderPath, cmd), 1500)
   }
 })
 

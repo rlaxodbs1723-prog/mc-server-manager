@@ -1,4 +1,4 @@
-import { AlertCircle, ImagePlus } from 'lucide-react'
+import { AlertCircle, FolderInput, ImagePlus } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useMouseBack } from './mouseback'
 import { SOFTWARE_INFO, type LoaderVersion, type McVersion, type SaveWorld, type Software } from '../../shared-types'
@@ -50,6 +50,7 @@ function Switch({ checked, onChange, disabled }: { checked: boolean; onChange: (
 export default function SetupWizard({ software, existingNames, onClose }: Props) {
   const info = SOFTWARE_INFO[software]
   const isBuild = software === 'paper' || software === 'purpur'
+  const bedrock = software === 'bedrock' // 배드락: 최신 버전 하나만, 로더·메모리·월드 가져오기 없음
   const rootRef = useRef<HTMLDivElement>(null)
   // 마우스 뒤로 버튼: 이전 단계로, 첫 단계면 닫기
   useMouseBack(rootRef, onClose)
@@ -73,6 +74,8 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
   const [motd, setMotd] = useState('')
   const [onlineMode, setOnlineMode] = useState(true)
   const [hardcore, setHardcore] = useState(false)
+  const [difficulty, setDifficulty] = useState('easy') // 배드락
+  const [bedrockWorld, setBedrockWorld] = useState<string | null>(null) // 배드락: 가져올 .mcworld 파일
   const [domain, setDomain] = useState<{ domainName?: string; blocked: boolean }>({ blocked: true }) // 서버 주소 이름
   const [memoryMb, setMemoryMb] = useState<number | undefined>(undefined)
 
@@ -87,6 +90,13 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
 
   useEffect(() => {
     setLoadError('')
+    if (bedrock) {
+      window.api
+        .getBedrockVersion()
+        .then(setVersion)
+        .catch((e) => setLoadError(cleanError(e)))
+      return
+    }
     window.api
       .getVersions(includeSnapshots)
       .then((list) => {
@@ -100,7 +110,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
   useEffect(() => {
     if (!version) return
     if (!nameTouched) setName(uniqueName(`${info.label} ${version}`))
-    if (software === 'vanilla') return
+    if (software === 'vanilla' || bedrock) return
     let alive = true
     setLoaderVersions(null)
     setLoaderVersion('')
@@ -123,7 +133,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
 
   const unsupported = software !== 'vanilla' && loaderVersions !== null && loaderVersions.length === 0
   const nameTaken = taken.has(norm(name))
-  const step1Ok = !!name.trim() && !nameTaken && !!version && !unsupported && (software === 'vanilla' || !!loaderVersion)
+  const step1Ok = !!name.trim() && !nameTaken && !!version && !unsupported && (software === 'vanilla' || bedrock || !!loaderVersion)
 
   async function pickIcon() {
     const picked = await window.api.pickIconImage().catch(() => null)
@@ -133,6 +143,24 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
   // 서버 만들기는 뒤에서 진행하고(오른쪽 위 팝업), 이 창은 바로 닫는다
   function create() {
     const serverName = name.trim()
+    if (bedrock) {
+      startCreate({
+        name: serverName,
+        software,
+        mcVersion: version,
+        iconFrom: icon?.path,
+        properties: {
+          gamemode: 'survival',
+          difficulty,
+          'level-seed': seed.trim(),
+          'max-players': String(Math.min(200, Math.max(1, Math.round(Number(maxPlayers) || 10)))),
+          'online-mode': String(onlineMode)
+        },
+        importWorldFrom: bedrockWorld ?? undefined,
+        domainName: domain.domainName
+      })
+      return onClose()
+    }
     startCreate({
       name: serverName,
       software,
@@ -226,22 +254,30 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
                   maxLength={60}
                 />
               </div>
-              <div>
-                <div className="label">마인크래프트 버전</div>
-                <Select
-                  value={version}
-                  onChange={setVersion}
-                  disabled={!versions.length}
-                  placeholder="불러오는 중…"
-                  searchPlaceholder="버전 검색"
-                  options={versions.map((v, i) => ({
-                    value: v.id,
-                    label: v.id,
-                    tag: v.type === 'snapshot' ? '스냅샷' : i === 0 ? '최신' : undefined
-                  }))}
-                />
-              </div>
-              {software !== 'vanilla' && (
+              {bedrock && (
+                <div>
+                  <div className="label">버전</div>
+                  <input className="input" readOnly value={version ? `${version} (최신)` : '불러오는 중…'} />
+                </div>
+              )}
+              {!bedrock && (
+                <div>
+                  <div className="label">마인크래프트 버전</div>
+                  <Select
+                    value={version}
+                    onChange={setVersion}
+                    disabled={!versions.length}
+                    placeholder="불러오는 중…"
+                    searchPlaceholder="버전 검색"
+                    options={versions.map((v, i) => ({
+                      value: v.id,
+                      label: v.id,
+                      tag: v.type === 'snapshot' ? '스냅샷' : i === 0 ? '최신' : undefined
+                    }))}
+                  />
+                </div>
+              )}
+              {software !== 'vanilla' && !bedrock && (
                 <div>
                   <div className="label">{isBuild ? `${info.label} 빌드` : `${info.label} 버전`}</div>
                   <Select
@@ -258,13 +294,15 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
                   />
                 </div>
               )}
-              <label className="check-row">
-                <span className="switch">
-                  <input type="checkbox" checked={includeSnapshots} onChange={(e) => setIncludeSnapshots(e.target.checked)} />
-                  <span />
-                </span>
-                스냅샷도 보여 주기
-              </label>
+              {!bedrock && (
+                <label className="check-row">
+                  <span className="switch">
+                    <input type="checkbox" checked={includeSnapshots} onChange={(e) => setIncludeSnapshots(e.target.checked)} />
+                    <span />
+                  </span>
+                  스냅샷도 보여 주기
+                </label>
+              )}
               {unsupported && (
                 <div className="notice-box">
                   <AlertCircle size={18} />
@@ -275,7 +313,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
               <DomainField onChange={setDomain} />
               <div>
                 <div className="label">
-                  최대 인원 <span className="muted">{'1 ~ 500'}</span>
+                  최대 인원 <span className="muted">{bedrock ? '1 ~ 200' : '1 ~ 500'}</span>
                 </div>
                 <div className="num-input">
                   <input
@@ -294,32 +332,85 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
             </div>
           </div>
           <div className="wizard-col">
-            <div className="wizard-world">
-              <WorldSource serverVersion={version} picked={importWorld} onChange={setImportWorld}>
+            {bedrock ? (
+              <div className="wizard-section">
                 <div className="reset-fields">
                   <div>
-                    <div className="label">월드 종류</div>
-                    <Select value={levelType} onChange={setLevelType} options={LEVEL_TYPES} />
+                    <div className="label">난이도</div>
+                    <Select
+                      value={difficulty}
+                      onChange={setDifficulty}
+                      options={[
+                        { value: 'peaceful', label: '평화로움' },
+                        { value: 'easy', label: '쉬움' },
+                        { value: 'normal', label: '보통' },
+                        { value: 'hard', label: '어려움' }
+                      ]}
+                    />
                   </div>
-                  <Row title="구조물 만들기">
-                    <Switch checked={structures} onChange={setStructures} />
-                  </Row>
-                  <Row title="하드코어" hint="죽으면 부활 불가">
-                    <Switch checked={hardcore} onChange={setHardcore} />
-                  </Row>
                   <div>
                     <div className="label">시드</div>
-                    <input className="input" value={seed} onChange={(e) => setSeed(e.target.value)} placeholder="비우면 무작위" maxLength={64} />
+                    <input className="input" value={seed} onChange={(e) => setSeed(e.target.value)} placeholder="비우면 무작위" maxLength={64} disabled={!!bedrockWorld} />
+                  </div>
+                  <div>
+                    <div className="label">내 월드 가져오기</div>
+                    <div className="wizard-image-actions">
+                      <button
+                        type="button"
+                        className="btn sm"
+                        onClick={async () => {
+                          const file = await window.api.pickBedrockWorld().catch(() => null)
+                          if (file) setBedrockWorld(file)
+                        }}
+                      >
+                        <FolderInput size={16} />
+                        {bedrockWorld ? '다른 파일 고르기' : '.mcworld 고르기'}
+                      </button>
+                      {bedrockWorld && (
+                        <button type="button" className="btn sm ghost" onClick={() => setBedrockWorld(null)}>
+                          삭제
+                        </button>
+                      )}
+                    </div>
+                    {bedrockWorld && (
+                      <p className="hint" title={bedrockWorld} style={{ marginTop: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {bedrockWorld.split(/[\\/]/).pop()}
+                      </p>
+                    )}
                   </div>
                 </div>
-              </WorldSource>
-            </div>
+              </div>
+            ) : (
+              <div className="wizard-world">
+                <WorldSource serverVersion={version} picked={importWorld} onChange={setImportWorld}>
+                  <div className="reset-fields">
+                    <div>
+                      <div className="label">월드 종류</div>
+                      <Select value={levelType} onChange={setLevelType} options={LEVEL_TYPES} />
+                    </div>
+                    <Row title="구조물 만들기">
+                      <Switch checked={structures} onChange={setStructures} />
+                    </Row>
+                    <Row title="하드코어" hint="죽으면 부활 불가">
+                      <Switch checked={hardcore} onChange={setHardcore} />
+                    </Row>
+                    <div>
+                      <div className="label">시드</div>
+                      <input className="input" value={seed} onChange={(e) => setSeed(e.target.value)} placeholder="비우면 무작위" maxLength={64} />
+                    </div>
+                  </div>
+                </WorldSource>
+              </div>
+            )}
             <div className="wizard-section">
               <div className="reset-fields">
-                <Row title="정품 인증" hint="켜면 정품 계정만 입장 가능, 끄면 스킨 비활성화">
+                <Row
+                  title={bedrock ? 'Xbox 로그인 필요' : '정품 인증'}
+                  hint={bedrock ? '켜면 Xbox 계정으로 로그인한 사람만 입장 가능' : '켜면 정품 계정만 입장 가능, 끄면 스킨 비활성화'}
+                >
                   <Switch checked={onlineMode} onChange={setOnlineMode} />
                 </Row>
-                <MemoryField onChange={setMemoryMb} />
+                {!bedrock && <MemoryField onChange={setMemoryMb} />}
               </div>
             </div>
           </div>

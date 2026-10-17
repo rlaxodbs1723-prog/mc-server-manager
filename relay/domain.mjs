@@ -144,7 +144,8 @@ export async function handleDomain(req, env, doFetch = fetch, now = Date.now(), 
   if (!Number.isInteger(port) || port < 1024 || port > 65535) return json({ error: 'port' }, 400)
 
   const ip = req.headers.get('cf-connecting-ip') || ''
-  if (action === 'claim' && !target && !/^(\d{1,3}\.){3}\d{1,3}$/.test(ip)) return json({ error: 'ipv4' }, 400) // 지금은 IPv4 주소만 연결한다
+  const isV6 = ip.includes(':')
+  if (action === 'claim' && !target && !/^(\d{1,3}\.){3}\d{1,3}$/.test(ip) && !(isV6 && /^[0-9a-f:.]{2,45}$/i.test(ip))) return json({ error: 'ipv4' }, 400) // IPv4 또는 IPv6 주소만 연결한다 주소만 연결한다
 
   const tag = action === 'check' ? '' : await ownerTag(key)
   const host = `${name}.${base}`
@@ -201,7 +202,7 @@ export async function handleDomain(req, env, doFetch = fetch, now = Date.now(), 
     let freed = 0
     for (const v of victims) {
       if (freed >= needed || freed >= MAX_SWEEP_DELETES) break
-      const a = v.records.find((r) => r.type === 'A')
+      const a = v.records.find((r) => r.type === 'A' || r.type === 'AAAA')
       const srv = v.records.find((r) => r.type === 'SRV')
       for (const r of v.records) {
         await cf('DELETE', `/${r.id}`)
@@ -260,14 +261,15 @@ export async function handleDomain(req, env, doFetch = fetch, now = Date.now(), 
       return json({ ok: true })
     }
 
-    const a = have.find((r) => r.type === 'A')
+    const a = have.find((r) => r.type === 'A' || r.type === 'AAAA')
+    const addrType = isV6 ? 'AAAA' : 'A'
     const srv = have.find((r) => r.type === 'SRV')
     const wantSrv = !bedrock && !target && port !== DEFAULT_PORT
 
     // 새 이름 예약: 같은 인터넷 주소로 예약한 이름 수를 본다
     if (!owner) {
       const reserved = await store.countByIp(ip)
-      const used = reserved ?? ((await cf('GET', `?type=A&content=${encodeURIComponent(ip)}&per_page=100`)).result ?? []).filter((r) => String(r.comment || '').startsWith('cp:')).length
+      const used = reserved ?? ((await cf('GET', `?type=${addrType}&content=${encodeURIComponent(ip)}&per_page=100`)).result ?? []).filter((r) => String(r.comment || '').startsWith('cp:')).length
       if (used >= MAX_PER_IP) return json({ error: 'limit' }, 429)
       await store.purgeIdle(now - IDLE_DAYS * 86400_000, 20) // 안 쓰는 예약도 이때 치운다
     }
@@ -280,9 +282,13 @@ export async function handleDomain(req, env, doFetch = fetch, now = Date.now(), 
         if (!(srv.data?.port === port && srv.data?.target === target)) await cf('PATCH', `/${srv.id}`, { data })
       } else await cf('POST', '', { type: 'SRV', name: srvName, data, ttl: 60, comment: tag })
     } else {
-      if (!a) {
+      if (a && a.type !== addrType) {
+        // 인터넷 연결이 IPv4에서 IPv6로(또는 반대로) 바뀌었다: 주소 기록의 종류가 달라서 지우고 다시 만든다
+        await cf('DELETE', `/${a.id}`)
+        await cf('POST', '', { type: addrType, name: host, content: ip, ttl: 60, proxied: false, comment: tag })
+      } else if (!a) {
         if (!(await hasRoom(wantSrv && !srv ? 2 : 1))) return json({ error: 'full' }, 200)
-        await cf('POST', '', { type: 'A', name: host, content: ip, ttl: 60, proxied: false, comment: tag })
+        await cf('POST', '', { type: addrType, name: host, content: ip, ttl: 60, proxied: false, comment: tag })
       } else if (a.content !== ip) await cf('PATCH', `/${a.id}`, { content: ip })
 
       if (wantSrv) {

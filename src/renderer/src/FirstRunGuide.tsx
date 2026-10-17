@@ -21,7 +21,10 @@ export default function FirstRunGuide({ software, onStart, startDisabled, busyTe
     {
       icon: <Copy size={18} />,
       title: '플레이어에게 주소 보내기',
-      body: '서버 이름 아래 주소를 복사해서 보내요. 플레이어는 멀티플레이 → 서버 추가에 붙여 넣으면 들어올 수 있어요.'
+      body:
+        software === 'bedrock'
+          ? '서버 이름 아래 주소를 복사해서 보내요. 플레이어는 배드락 에디션의 플레이 → 서버 → 서버 추가에서 주소와 포트(19132)를 입력하면 들어올 수 있어요.'
+          : '서버 이름 아래 주소를 복사해서 보내요. 플레이어는 멀티플레이 → 서버 추가에 붙여 넣으면 들어올 수 있어요.'
     }
   ]
   if (MODDED.includes(software))

@@ -58,6 +58,7 @@ export interface DownloadTask {
   sha1?: string
   sha256?: string
   onBytes?: (done: number, total?: number) => void
+  headers?: Record<string, string> // 기본 헤더 대신 쓸 것 (minecraft.net은 앱의 User-Agent를 막는다)
 }
 
 // 같은 파일을 동시에 받는 두 작업이 .part 파일을 서로 망가뜨리지 않도록 합친다.
@@ -71,7 +72,7 @@ export function downloadFile(task: DownloadTask): Promise<void> {
   return p
 }
 
-async function downloadOnce({ url, dest, sha1, sha256, onBytes }: DownloadTask): Promise<void> {
+async function downloadOnce({ url, dest, sha1, sha256, onBytes, headers = HEADERS }: DownloadTask): Promise<void> {
   if (await isValid(dest, sha1, sha256)) return
   fs.mkdirSync(path.dirname(dest), { recursive: true })
 
@@ -88,7 +89,7 @@ async function downloadOnce({ url, dest, sha1, sha256, onBytes }: DownloadTask):
       stall = setTimeout(() => ctrl.abort(), STALL_TIMEOUT_MS)
     }
     try {
-      const res = await fetch(url, { signal: ctrl.signal, headers: HEADERS })
+      const res = await fetch(url, { signal: ctrl.signal, headers })
       if (!res.ok || !res.body) throw new Error(`다운로드 실패 (${res.status}): ${url}`)
       kick()
       const total = Number(res.headers.get('content-length')) || undefined

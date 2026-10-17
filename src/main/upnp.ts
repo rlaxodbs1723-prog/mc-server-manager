@@ -145,7 +145,7 @@ export type OpenResult =
   | { ok: true; externalIp: string | null }
   | { ok: false; reason: 'no-upnp' | 'double-nat' | 'error'; message: string }
 
-export async function openPort(port: number, description: string): Promise<OpenResult> {
+export async function openPort(port: number, description: string, protocol: 'TCP' | 'UDP' = 'TCP'): Promise<OpenResult> {
   const gw = await findGateway().catch(() => null)
   if (!gw) return { ok: false, reason: 'no-upnp', message: '공유기를 찾지 못해서 포트를 자동으로 열 수 없었어요. 공유기의 자동 포트 열기(UPnP)가 꺼져 있거나, 윈도우 방화벽이 막고 있거나, 공유기가 여러 개일 수 있어요.' }
 
@@ -166,7 +166,7 @@ export async function openPort(port: number, description: string): Promise<OpenR
   const base = {
     NewRemoteHost: '',
     NewExternalPort: port,
-    NewProtocol: 'TCP',
+    NewProtocol: protocol,
     NewInternalPort: port,
     NewInternalClient: gw.localIp,
     NewEnabled: 1,
@@ -190,11 +190,11 @@ export async function openPort(port: number, description: string): Promise<OpenR
   return { ok: true, externalIp: externalIp ?? (await publicIpFromWeb()) }
 }
 
-export async function closePort(port: number): Promise<boolean> {
+export async function closePort(port: number, protocol: 'TCP' | 'UDP' = 'TCP'): Promise<boolean> {
   const gw = await findGateway().catch(() => null)
   if (!gw) return false
   try {
-    await soap(gw, 'DeletePortMapping', { NewRemoteHost: '', NewExternalPort: port, NewProtocol: 'TCP' })
+    await soap(gw, 'DeletePortMapping', { NewRemoteHost: '', NewExternalPort: port, NewProtocol: protocol })
     return true
   } catch {
     return false

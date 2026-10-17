@@ -7,6 +7,7 @@ export default function PreflightDialog({ result, onStart, onCancel, onFind }: {
   // 필요한 모드별로 묶는다: fabric-api ← Architectury, Balm 외 3개
   const byNeed = new Map<string, string[]>()
   for (const m of result.missing) for (const n of m.needs) byNeed.set(n, [...(byNeed.get(n) ?? []), m.mod])
+  const addon = !!result.kind // 배드락은 애드온, 자바는 모드
   const names = (list: string[]): string => (list.length > 3 ? `${list.slice(0, 3).join(', ')} 외 ${list.length - 3}개` : list.join(', '))
 
   return (
@@ -21,10 +22,10 @@ export default function PreflightDialog({ result, onStart, onCancel, onFind }: {
             <div className="preflight-item" key={need}>
               <AlertTriangle size={16} />
               <div className="pf-text">
-                <b>{off ? `꺼 둔 모드 "${id}"이(가) 필요해요` : `"${id}" 모드가 없어요`}</b>
+                <b>{addon ? (off ? `꺼 둔 애드온 "${id}"이(가) 필요해요` : `"${id}" 애드온이 없어요`) : off ? `꺼 둔 모드 "${id}"이(가) 필요해요` : `"${id}" 모드가 없어요`}</b>
                 <span className="hint">{names(by)}에 필요해요.</span>
               </div>
-              {!off && (
+              {!off && !result.kind && (
                 <button className="btn sm" onClick={() => onFind(id)} title="모드 탭에서 찾아요">
                   <Search size={14} />
                   찾기
@@ -37,8 +38,8 @@ export default function PreflightDialog({ result, onStart, onCancel, onFind }: {
           <div className="preflight-item" key={d.files.join('|')}>
             <AlertTriangle size={16} />
             <div className="pf-text">
-              <b>"{d.mod}" 모드가 {d.files.length}개 들어 있어요</b>
-              <span className="hint">같은 모드가 두 개 이상 있으면 서버가 켜지지 않아요: {d.files.join(', ')}</span>
+              <b>{addon ? `"${d.mod}" 애드온이 ${d.files.length}개 들어 있어요` : `"${d.mod}" 모드가 ${d.files.length}개 들어 있어요`}</b>
+              <span className="hint">{addon ? `같은 애드온이 두 개 이상 있으면 서버가 켜지지 않을 수 있어요: ${d.files.join(', ')}` : `같은 모드가 두 개 이상 있으면 서버가 켜지지 않아요: ${d.files.join(', ')}`}</span>
             </div>
           </div>
         ))}

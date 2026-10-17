@@ -1108,3 +1108,16 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .import-summary { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 12px; background: var(--surface-2); min-width: 0; }
 .import-summary .path { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
 .import-summary .meta { font-size: 13px; color: var(--text-secondary); }
+.update-pill { background: var(--primary-soft); color: var(--primary); cursor: pointer; }
+.join-box { display: grid; gap: 6px; margin: 4px 0 12px; padding: 12px 14px; border-radius: var(--r-md); background: var(--surface-2); }
+.join-row { display: flex; align-items: center; gap: 10px; }
+.join-row .hint { width: 36px; }
+.join-row b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.join-steps p { margin: 0 0 12px; line-height: 1.55; font-size: 14px; color: var(--text-2); }
+.join-steps b { color: var(--text); }
+.loopback-banner { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 0 0 10px; }
+.loopback-banner span { line-height: 1.5; }
+.loopback-banner .btn { flex-shrink: 0; }
+.create { max-width: 900px; gap: 20px; padding-bottom: 20px; }
+.create .sw-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.create .sw-group + .sw-group { margin-top: 8px; }

@@ -1,6 +1,8 @@
 // 게임 규칙: 켜진 서버에 조용히 물어봐서 목록과 현재 값을 읽고, 바꾼다.
 // 26.x부터 규칙 이름이 keep_inventory 같은 모양으로 바뀌었고, 그 전에는 keepInventory 모양이다. 둘 다 서버가 알려 주는 이름을 그대로 쓴다.
 import type { GameRule } from '../shared-types'
+import { isBedrockFolder } from './bedrock'
+import { listBedrockRules } from './bedrockmanage'
 import { quietQuery, sendCommand } from './runner'
 
 const NAME = /^[A-Za-z0-9_]{1,64}$/
@@ -23,6 +25,7 @@ const OLD_VALUE = new RegExp(`${FROM_SERVER}([A-Za-z0-9_]+) = (\\S+)\\s*$`)
 const OLD_USAGE = new RegExp(`${FROM_SERVER}Usage: /gamerule`)
 
 export async function listGameRules(folderPath: string): Promise<GameRule[]> {
+  if (isBedrockFolder(folderPath)) return listBedrockRules(folderPath) // 배드락은 "gamerule" 한 줄로 목록이 나온다
   // 막 켜졌거나 모드가 많으면 서버가 바빠서 답이 몇 초 늦게 온다. 첫 답을 넉넉히 기다린다
   // Paper·Spigot은 "help"를 자기 도움말로 바꿔 놓아서 규칙 목록이 안 나온다. "minecraft:help"는 바닐라 도움말 그대로다.
   // 둘 다 보내고 알아듣는 답만 모은다 (바닐라·Fabric·Forge는 둘이 같은 답이라 겹쳐도 괜찮다. 옛 버전은 아래에서 따로 한다)

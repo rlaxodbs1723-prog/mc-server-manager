@@ -9,7 +9,7 @@ export interface McVersion {
   releaseTime: string
 }
 
-export type Software = 'vanilla' | 'paper' | 'purpur' | 'fabric' | 'quilt' | 'forge' | 'neoforge'
+export type Software = 'vanilla' | 'paper' | 'purpur' | 'fabric' | 'quilt' | 'forge' | 'neoforge' | 'bedrock'
 
 // 화면에 보여 줄 이름과 설명 (만들기 화면의 순서이기도 하다)
 export const SOFTWARE_INFO: Record<Software, { label: string; kind: string; description: string }> = {
@@ -19,7 +19,59 @@ export const SOFTWARE_INFO: Record<Software, { label: string; kind: string; desc
   fabric: { label: 'Fabric', kind: '모드', description: '가볍고 최신 버전 지원이 빠른 모드 로더' },
   quilt: { label: 'Quilt', kind: '모드', description: 'Fabric 호환 모드 로더' },
   forge: { label: 'Forge', kind: '모드', description: '오래되고 모드가 많은 모드 로더' },
-  neoforge: { label: 'NeoForge', kind: '모드', description: 'Forge에서 갈라져 나온 최신 모드 로더' }
+  neoforge: { label: 'NeoForge', kind: '모드', description: 'Forge에서 갈라져 나온 최신 모드 로더' },
+  bedrock: { label: 'Bedrock', kind: '배드락', description: '폰·콘솔·윈도우 배드락 에디션용 공식 서버. 애드온 사용' }
+}
+
+// CurseForge(배드락)에서 찾는 종류: 애드온·리소스 팩·스크립트·맵
+export type BedrockKind = 'addon' | 'resource' | 'script' | 'map'
+export interface BedrockHit {
+  id: number
+  title: string
+  summary: string
+  author: string
+  downloads: number
+  iconUrl: string | null
+  url: string
+  fileName: string // 받을 최신 파일 (.mcaddon / .mcpack / .mcworld / .zip)
+}
+// 윈도우 스토어 마인크래프트가 같은 PC의 서버에 접속할 수 있는지 (루프백 예외). needed가 false면 해당 없음(스토어 버전이 없다)
+export interface BedrockLoopbackState {
+  needed: boolean
+  allowed: boolean
+}
+// 배드락 서버 버전: 새 버전이 나오면 클라이언트가 먼저 올라가서 서버도 올려야 접속된다
+export interface BedrockUpdateInfo {
+  current: string
+  latest: string | null // 확인하지 못했으면 null
+  available: boolean
+}
+export type BedrockAction =
+  | { type: 'say'; text: string }
+  | { type: 'kick' | 'op' | 'deop' | 'allow' | 'disallow'; name: string }
+  | { type: 'allowOn'; value: boolean }
+  | { type: 'time'; value: 'day' | 'noon' | 'night' | 'midnight' }
+  | { type: 'weather'; value: 'clear' | 'rain' | 'thunder' }
+  | { type: 'difficulty'; value: 'peaceful' | 'easy' | 'normal' | 'hard' }
+  | { type: 'gamemodeAll'; value: 'survival' | 'creative' | 'adventure' }
+export interface BedrockManageInfo {
+  players: { name: string; op: boolean }[]
+  allowlist: string[]
+  allowlistOn: boolean
+  difficulty: 'peaceful' | 'easy' | 'normal' | 'hard'
+  gamemode: 'survival' | 'creative' | 'adventure'
+}
+
+// 배드락 서버의 애드온(비헤이비어·리소스 팩)
+export interface InstalledAddon {
+  id: string // 서버 폴더 안 경로 (behavior_packs/이름)
+  kind: 'behavior' | 'resource'
+  title: string
+  description: string
+  version: string
+  script: boolean // 스크립트(JavaScript)를 쓰는 팩 (스크립트 탭에 보인다)
+  enabled: boolean
+  iconUrl: string | null
 }
 
 // 로더/빌드 버전 (Paper·Purpur는 빌드 번호)
@@ -76,6 +128,7 @@ export interface ServerInfo {
   automation?: Partial<ServerAutomation>
   logKeepDays?: number // 며칠 지난 로그를 지울지 (없으면 30일, 0이면 지우지 않음)
   domain?: DomainInfo // 이름 주소(이름.cubepanel.kr)를 만들었으면 그 이름과 주인 열쇠
+  domainWish?: string // 서버를 만들 때 정한 이름인데 주소를 못 만들었으면 (서버를 켤 때 다시 시도한다)
   folderPath: string
   createdAt: string
 }
@@ -95,6 +148,7 @@ export interface PreflightResult {
   duplicates: { mod: string; files: string[] }[] // 같은 모드가 두 개 이상 켜져 있음 (서버가 켜지지 않는다)
   memory: string | null // 메모리가 모자랄 때 설명
   askOff: boolean // 서버에 맞지 않아 보이는 모드가 새로 있어서 끌지 물어봐야 함
+  kind?: string // 점검 대상의 이름 (없으면 "모드". 배드락은 "애드온")
 }
 
 export interface ServerListItem extends ServerInfo {
@@ -497,6 +551,23 @@ export interface Api {
   checkReachable: (folderPath: string) => Promise<{ ok: boolean; message: string }>
   // 이름 주소: 서버를 만들기 전에 이 이름을 쓸 수 있는지 (true면 비어 있음)
   checkDomainName: (name: string) => Promise<boolean>
+  // 배드락 서버: 받을 수 있는 최신 버전, 애드온 관리
+  getBedrockVersion: () => Promise<string>
+  listAddons: (folderPath: string) => Promise<InstalledAddon[]>
+  addAddonFile: (folderPath: string, file: File) => Promise<string[]>
+  setAddonEnabled: (folderPath: string, id: string, enabled: boolean) => Promise<void>
+  removeAddon: (folderPath: string, id: string) => Promise<void>
+  searchBedrock: (kind: BedrockKind, query: string, offset: number) => Promise<{ total: number; more: boolean; hits: BedrockHit[] }>
+  installBedrockHit: (folderPath: string, modId: number, kind: BedrockKind) => Promise<string> // 받은 이름
+  pickBedrockWorld: () => Promise<string | null> // .mcworld/.zip 파일 고르기 (취소하면 null)
+  importBedrockWorld: (folderPath: string, source: string) => Promise<void>
+  importBedrockWorldFile: (folderPath: string, file: File) => Promise<void> // 끌어다 놓은 .mcworld/.zip 파일
+  checkBedrockUpdate: (folderPath: string) => Promise<BedrockUpdateInfo>
+  updateBedrock: (folderPath: string) => Promise<ServerInfo>
+  getBedrockManage: (folderPath: string) => Promise<BedrockManageInfo>
+  getBedrockLoopback: () => Promise<BedrockLoopbackState>
+  allowBedrockLoopback: () => Promise<BedrockLoopbackState> // 관리자 확인 창이 뜬다
+  bedrockAction: (folderPath: string, action: BedrockAction) => Promise<void>
   // 기존 서버 가져오기: 폴더 고르기(취소하면 null), 폴더에서 종류·버전 알아내기
   pickServerFolder: () => Promise<string | null>
   detectServer: (folderPath: string) => Promise<DetectedServer>

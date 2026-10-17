@@ -1,15 +1,17 @@
 import { AlertTriangle, Copy, Info, Radar } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { InviteStatus } from '../../shared-types'
+import BedrockJoinHelp from './BedrockJoinHelp'
 import { Modal, useToast } from './ui'
 import { cleanError } from './util'
 
 // 서버 이름 아래 줄에 접속 주소를 작게 보여 준다 (복사·접속 확인 버튼 포함)
-export default function InviteBox({ folderPath }: { folderPath: string }) {
+export default function InviteBox({ folderPath, bedrock = false }: { folderPath: string; bedrock?: boolean }) {
   const toast = useToast()
   const [invite, setInvite] = useState<InviteStatus>({ state: 'off' })
   const [checking, setChecking] = useState(false)
   const [help, setHelp] = useState(false)
+  const [showJoin, setShowJoin] = useState(false) // 배드락 접속 방법 안내
 
   useEffect(() => {
     window.api.getInvite(folderPath).then(setInvite)
@@ -33,9 +35,10 @@ export default function InviteBox({ folderPath }: { folderPath: string }) {
 
   if (invite.state === 'off') return null
   // 서버 포트가 기본(25565)이 아니면 주소 뒤에 :포트를 붙여야 접속된다
-  const port = 'port' in invite ? invite.port : 25565
-  const suffix = port === 25565 ? '' : `:${port}`
-  const localAddr = `localhost${suffix}`
+  const defaultPort = bedrock ? 19132 : 25565
+  const port = 'port' in invite ? invite.port : defaultPort
+  const suffix = port === defaultPort ? '' : `:${port}`
+  const localAddr = `${bedrock ? '127.0.0.1' : 'localhost'}${suffix}` // 배드락은 localhost 이름이 안 받아들여지는 경우가 있어 127.0.0.1을 쓴다
   const lanHint = invite.lan.length ? `같은 와이파이에서는 ${invite.lan.map((ip) => ip + suffix).join(', ')} · 이 컴퓨터에서는 ${localAddr}` : `이 컴퓨터에서는 ${localAddr}`
 
   if (invite.state === 'failed')
@@ -80,7 +83,10 @@ export default function InviteBox({ folderPath }: { folderPath: string }) {
         내 접속: {localAddr}
       </button>
       <button
-        onClick={() => toast(`이 컴퓨터에서 마인크래프트로 접속할 때는 바깥 주소 대신 "${localAddr}"를 입력하세요. 같은 와이파이의 다른 컴퓨터는 ${invite.lan.length ? invite.lan.map((ip) => ip + suffix).join(' 또는 ') : '이 컴퓨터의 내부 주소'}를 쓰고, 다른 곳의 플레이어는 위의 접속 주소를 쓰면 돼요.${suffix ? ' 서버 포트가 기본(25565)이 아니라서 :' + port + '까지 꼭 써야 해요.' : ''}`)}
+        onClick={() =>
+          bedrock
+            ? setShowJoin(true)
+            : toast(`이 컴퓨터에서 마인크래프트로 접속할 때는 바깥 주소 대신 "${localAddr}"를 입력하세요. 같은 와이파이의 다른 컴퓨터는 ${invite.lan.length ? invite.lan.map((ip) => ip + suffix).join(' 또는 ') : '이 컴퓨터의 내부 주소'}를 쓰고, 다른 곳의 플레이어는 위의 접속 주소를 쓰면 돼요.${suffix ? ' 서버 포트가 기본(25565)이 아니라서 :' + port + '까지 꼭 써야 해요.' : ''}`)}
         title="이 주소를 언제 쓰는지 알려 줘요"
       >
         <Info size={14} />
@@ -88,6 +94,7 @@ export default function InviteBox({ folderPath }: { folderPath: string }) {
       <button onClick={check} disabled={checking} title="밖에서 접속되는지 확인">
         {checking ? <span className="spinner" /> : <Radar size={14} />}
       </button>
+      {showJoin && <BedrockJoinHelp address={invite.domain ?? invite.address} port={port} lan={invite.lan.map((ip) => ip.replace(/:\d+$/, ''))} tunnel={!!invite.tunnel} onClose={() => setShowJoin(false)} />}
     </span>
   )
 }

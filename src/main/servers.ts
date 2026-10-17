@@ -25,6 +25,8 @@ import { startInvite } from './invite'
 import { autoBackupBeforeStart, backupRoot, createBackup, listBackups } from './backup'
 import { assertFree } from './lock'
 import { assertWorldFits, importWorld } from './worldimport'
+import { BEDROCK_EXE, BEDROCK_PORT, bedrockProps, bedrockWorldDir, installBedrock, isBedrockFolder, latestBedrock } from './bedrock'
+import { importBedrockWorld } from './bedrockops'
 import { installModpack } from './modpack'
 import { checkImportFolder, copyServerFolder } from './importserver'
 import { getServerIcon, setServerIconFrom } from './icon'
@@ -93,12 +95,62 @@ export function memoryRange(): { minMb: number; maxMb: number; totalMb: number; 
   return { minMb: MIN_MEMORY_MB, maxMb, totalMb, defaultMb: Math.min(maxMb, defaultMemoryMb()) }
 }
 
-// 다른 서버가 쓰는 포트와 겹치지 않는 첫 포트 (25565부터). 서버를 만들 때 자동으로 정한다
-function freePort(): number {
-  const used = new Set(listServers().map((s) => serverPort(s.folderPath)))
-  let port = 25565
-  while (used.has(port) && port < 65535) port++
+// 다른 서버가 쓰는 포트와 겹치지 않는 첫 포트 (자바는 25565부터, 배드락은 19132부터). 서버를 만들 때 자동으로 정한다
+// 배드락은 IPv6용으로 바로 다음 포트도 쓰므로 둘 다 비어 있어야 한다
+function freePort(bedrock = false): number {
+  const used = new Set(listServers().flatMap((s) => (s.software === 'bedrock' ? [serverPort(s.folderPath), serverPort(s.folderPath) + 1] : [serverPort(s.folderPath)])))
+  let port = bedrock ? BEDROCK_PORT : 25565
+  while ((used.has(port) || (bedrock && used.has(port + 1))) && port < 65534) port += bedrock ? 2 : 1
   return port
+}
+
+// 배드락 전용 서버 만들기: 공식 서버를 받아 풀고, 설정(이름·인원·난이도 등)을 server.properties에 적는다
+async function createBedrock(options: CreateServerOptions, report: (p: Progress) => void): Promise<ServerInfo> {
+  const { name, properties, iconFrom } = options
+  report({ message: '버전 정보를 확인하고 있어요', phase: 'meta' })
+  const { version, url } = await latestBedrock()
+  const port = freePort(true) // 폴더를 만들기 전에 정한다 (만든 뒤에는 이 서버 자신의 기본 포트가 쓰인 것으로 보인다)
+  const folderPath = freeFolder(name)
+  const oldBackups = backupRoot(folderPath)
+  if (fs.existsSync(oldBackups)) await shell.trashItem(oldBackups).catch(() => undefined)
+  fs.mkdirSync(folderPath, { recursive: true })
+  fs.writeFileSync(path.join(folderPath, CREATING_FILE), new Date().toISOString())
+  try {
+    await installBedrock(folderPath, url, report)
+  } catch (e) {
+    try {
+      fs.rmSync(folderPath, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 })
+    } catch {
+      // .creating 표시가 남아 있어서 다음 실행 때 지워진다
+    }
+    throw e
+  }
+  const info: ServerInfo = { name: name.trim(), software: 'bedrock', mcVersion: version, defaultsVersion: DEFAULTS_BY_VERSION.length, folderPath, createdAt: new Date().toISOString() }
+  fs.writeFileSync(path.join(folderPath, INFO_FILE), JSON.stringify(info, null, 2))
+  writeProperties(folderPath, bedrockProps(properties ?? {}, name.trim(), port))
+  if (options.importWorldFrom) {
+    report({ message: '월드를 가져오고 있어요' })
+    try {
+      await importBedrockWorld(folderPath, options.importWorldFrom)
+    } catch (e) {
+      try {
+        fs.rmSync(folderPath, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 })
+      } catch {
+        // .creating 표시가 남아 있어서 다음 실행 때 지워진다
+      }
+      throw e
+    }
+  }
+  if (iconFrom) {
+    try {
+      setServerIconFrom(folderPath, iconFrom)
+    } catch {
+      // 그림을 못 읽어도 서버는 만든다
+    }
+  }
+  fs.rmSync(path.join(folderPath, CREATING_FILE), { force: true })
+  report({ message: '완료' })
+  return info
 }
 
 // 가져온 서버가 앱에서 켜지는 파일 모양인지 확인하고, 모자란 것만 채운다
@@ -189,6 +241,7 @@ export async function createServer(
   report: (p: Progress) => void
 ): Promise<ServerInfo> {
   if (options.importFrom) return importExisting(options, report)
+  if (options.software === 'bedrock') return createBedrock(options, report)
   const { name, software, mcVersion, loaderVersion, properties, importWorldFrom, modpackId, iconFrom, memoryMb } = options
   if (!SOFTWARE_INFO[software]) throw new Error('지원하지 않는 서버 종류예요.')
   if (software !== 'vanilla' && !loaderVersion) throw new Error(`${SOFTWARE_INFO[software].label} 버전을 골라 주세요.`)
@@ -304,6 +357,7 @@ export async function changeVersion(folderPath: string, mcVersion: string, loade
   if (getState(folderPath) !== 'stopped') throw new Error('서버를 끈 다음에 버전을 바꿀 수 있어요.')
   const info = readServerInfo(folderPath)
   const software = info.software
+  if (software === 'bedrock') throw new Error('배드락 서버는 버전을 바꿀 수 없어요. 새 서버를 만들어 주세요.')
   if (software !== 'vanilla' && !loaderVersion) throw new Error(`${SOFTWARE_INFO[software].label} 버전을 골라 주세요.`)
   if (mcVersion === info.mcVersion && (software === 'vanilla' || loaderVersion === info.loaderVersion)) throw new Error('지금과 같은 버전이에요.')
 
@@ -433,6 +487,16 @@ export const picksGc = (args: string[]): boolean => args.some((a) => /^-XX:\+Use
 export async function startServerAt(folderPath: string, report: (p: Progress) => void): Promise<void> {
   if (!isEulaAccepted(folderPath)) throw new Error('EULA에 동의해야 서버를 켤 수 있어요.')
   assertFree(folderPath) // 버전 바꾸기 등을 하는 중에는 켜지 않는다
+  if (readServerInfo(folderPath).software === 'bedrock') {
+    // 이미 만든 서버도 켤 때 접속 방식을 맞춘다 (위 createBedrock의 transport 설명 참고)
+    const props = readProperties(folderPath)
+    if (props['transport'] !== 'raknet') writeProperties(folderPath, { transport: 'raknet' })
+    if (props['server-portv6'] !== (props['server-port'] ?? '19132')) writeProperties(folderPath, { 'server-portv6': props['server-port'] ?? '19132' }) // IPv6 포트도 같은 번호로 (localhost는 IPv6로 먼저 접속한다)
+    await autoBackupBeforeStart(folderPath)
+    await startServer(folderPath, { java: path.join(folderPath, BEDROCK_EXE), args: [], bedrock: true })
+    startInvite(folderPath, readServerInfo(folderPath).name)
+    return
+  }
   const { info, java } = await javaFor(folderPath, report) // 보통은 이미 받아 둬서 바로 끝난다
   await autoBackupBeforeStart(folderPath) // 켜기 전에 월드를 자동으로 백업해 둔다
   applyDefaultsOnce(info) // 기본값이 생기기 전에 만든 서버도 한 번 맞춰 준다
@@ -612,6 +676,7 @@ function cleanAutomation(a: ServerAutomation): ServerAutomation {
 // ---------- 월드 새로 만들기 ----------
 // 월드 폴더들(Paper/Purpur는 네더·엔드가 따로 있다)을 휴지통으로 보낸다. 다음에 켤 때 지금 설정으로 새 월드가 만들어진다.
 function worldFolders(folderPath: string): string[] {
+  if (isBedrockFolder(folderPath)) return fs.existsSync(bedrockWorldDir(folderPath)) ? [bedrockWorldDir(folderPath)] : []
   const name = readProperties(folderPath)['level-name'] || 'world'
   return [name, `${name}_nether`, `${name}_the_end`]
     .map((n) => path.join(folderPath, n))

@@ -1,7 +1,6 @@
-import { Ban, Users, CloudLightning, Gamepad2, ListChecks, ShieldCheck, CloudRain, Crown, LogOut, Megaphone, Moon, Send, Sun, Sunrise } from 'lucide-react'
+import { Ban, Users, CloudLightning, Gamepad2, ShieldCheck, CloudRain, Crown, LogOut, Megaphone, Moon, Send, Sun, Sunrise } from 'lucide-react'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import type { Difficulty, GameMode, ManageAction, ManageInfo, PlayerRecord } from '../../shared-types'
-import GameRulesDialog from './GameRulesDialog'
 import PlayerDialog, { ago } from './PlayerDialog'
 import Select from './Select'
 import { Confirm, Empty, Loading, Modal, useToast } from './ui'
@@ -54,7 +53,6 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
   const [message, setMessage] = useState('')
   const [askBan, setAskBan] = useState<string | null>(null)
   const [pickMode, setPickMode] = useState(false)
-  const [showRules, setShowRules] = useState(false)
   const [history, setHistory] = useState<PlayerRecord[]>([])
   const [openPlayer, setOpenPlayer] = useState<string | null>(null)
   const [findPlayer, setFindPlayer] = useState('')
@@ -239,14 +237,6 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
               </button>
             </div>
           </Card>
-
-          <button className="btn block mode-button" disabled={!running} onClick={() => setShowRules(true)}>
-            <span className="mode-button-label">
-              <ListChecks size={18} />
-              게임 규칙
-            </span>
-            <span className="mode-button-now">죽어도 아이템 유지, PvP 등</span>
-          </button>
         </div>
       </div>
 
@@ -276,7 +266,6 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
           </div>
         </Modal>
       )}
-      {showRules && <GameRulesDialog folderPath={folderPath} onClose={() => setShowRules(false)} />}
       {pickMode && (
         <Modal onClose={() => setPickMode(false)}>
           <h2>게임 모드 바꾸기</h2>

@@ -110,6 +110,9 @@ const OLD_NAMES: Record<string, string> = {
 }
 
 const snake = (s: string) => s.replace(/[A-Z]/g, (c) => '_' + c.toLowerCase())
+// 배드락은 mobgriefing·keepinventory처럼 밑줄 없이 소문자로 쓰는 규칙이 있다. 밑줄을 뺀 이름으로도 찾는다
+const FLAT: Record<string, string> = Object.fromEntries(Object.keys(LABELS).map((k) => [k.replace(/_/g, ''), k]))
+const OLD_LOWER: Record<string, string> = Object.fromEntries(Object.entries(OLD_NAMES).map(([k, v]) => [k.toLowerCase(), v]))
 const camel = (s: string) => s.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())
 
 // 26.x 이름 → 번역 파일에 남아 있는 예전 키 (이름이 아예 바뀐 것들)
@@ -141,7 +144,8 @@ const TRANSLATION_KEY: Record<string, string> = {
 // 게임 안 화면과 같은 이름: 공식 번역(lang)에서 찾고, 없으면 앱이 붙인 이름을 쓴다.
 // 찾는 순서: gamerule.minecraft.<새 이름> → gamerule.<서버가 준 이름> → 예전 키 → 낙타 표기로 바꾼 이름
 export function labelOf(name: string, lang: Record<string, string> = {}): { label: string; desc: string; category: Category } {
-  const key = LABELS[name] ? name : (OLD_NAMES[name] ?? snake(name))
+  // 배드락은 같은 규칙을 doDayLightCycle처럼 대소문자가 조금 다르게 쓴다. 대소문자를 무시하고 찾는다
+  const key = LABELS[name] ? name : (OLD_NAMES[name] ?? OLD_LOWER[name.toLowerCase()] ?? FLAT[name.toLowerCase()] ?? snake(name))
   const mine = LABELS[key]
   const candidates = [`minecraft.${name}`, name, TRANSLATION_KEY[name], camel(name)].filter(Boolean) as string[]
   const found = candidates.find((c) => lang[`gamerule.${c}`])

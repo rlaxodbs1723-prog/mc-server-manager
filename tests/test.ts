@@ -34,12 +34,20 @@ import { curseForgeKeySource, getFile, hasCurseForgeKey, mapFiles, removeCurseFo
 import { createBackup, deleteBackup, getBackupSettings, listBackups, restoreBackup, setBackupSettings } from '../src/main/backup'
 import { analyzeCrash } from '../src/main/crash'
 import http from 'http'
+import dgram from 'dgram'
 import { execFileSync } from 'child_process'
 import { langFromLocale, translator } from '../src/i18n'
 import { tr as mainTr } from '../src/main/i18n'
 import { BUG_MAX_BYTES, bugFileInfo, bugMessage, sendBugReport } from '../src/main/bugreport'
-import { handleDomain } from '../relay/domain.mjs'
+import { d1Store, handleDomain } from '../relay/domain.mjs'
+import { DatabaseSync } from 'node:sqlite'
 import { checkImportFolder, detectServer } from '../src/main/importserver'
+import { addAddonFile, bedrockProps, checkAddons, listAddons, removeAddon, setAddonEnabled } from '../src/main/bedrock'
+import { getBedrockManage, listBedrockRules, runBedrockAction } from '../src/main/bedrockmanage'
+import { isExempt } from '../src/main/bedrockloopback'
+import { labelOf } from '../src/renderer/src/gameruleLabels'
+import { checkBedrockUpdate, importBedrockWorld, installBedrockHit, updateBedrock } from '../src/main/bedrockops'
+import { searchBedrockStore } from '../src/main/curseforge'
 import { claimDomain, cleanDomainName, getDomain, refreshDomain, releaseDomain } from '../src/main/domain'
 import enTable from '../src/i18n/en.json'
 import zhTable from '../src/i18n/zh.json'
@@ -136,6 +144,7 @@ async function quick(): Promise<void> {
   await i18nChecks()
   await domainChecks()
   await importChecks()
+  await bedrockChecks()
   await check('버그 제보: 디스코드 메시지 (앱 정보 자동, 길이 자르기, 아무도 안 부르기, 파일 검사)', async () => {
     type Embed = { title: string; description: string; fields: { name: string; value: string }[] }
     const m = bugMessage('모드 & 설치 @everyone', '설명\n둘째 줄', ['a.png'])
@@ -167,7 +176,7 @@ async function quick(): Promise<void> {
 // 번역하지 않는 것: 정규식, EULA 파일 내용, 조사 고르기용 조각, 언어 고르는 칸 (어느 언어에서든 그대로 보여야 한다)
 const NO_TR = new Set(["(?:Mod|모드) '([^\\n]+?)' \\({0}\\)", '# MC CubePanel에서 사용자가 EULA(https://aka.ms/MinecraftEULA)에 동의함 # {0} eula=true', '을/를', '이/가', '은/는', '으로/로', '한국어', '언어 · Language'])
 // ---------- 이름 주소 (중계 서버: 가짜 Cloudflare로 확인) ----------
-interface FakeRecord { id: string; type: string; name: string; content?: string; data?: { port: number }; comment?: string }
+interface FakeRecord { id: string; type: string; name: string; content?: string; data?: { port: number }; comment?: string; created_on?: string; modified_on?: string }
 function fakeCloudflare(seed: FakeRecord[] = []): { records: FakeRecord[]; writes: string[]; fetch: typeof fetch } {
   const records: FakeRecord[] = [...seed]
   const writes: string[] = []
@@ -180,7 +189,10 @@ function fakeCloudflare(seed: FakeRecord[] = []): { records: FakeRecord[]; write
     if (method === 'GET') {
       const name = u.searchParams.get('name')
       const content = u.searchParams.get('content')
+      const starts = u.searchParams.get('comment.startswith')
+      const page = Number(u.searchParams.get('page') ?? 1)
       if (name) return ok(records.filter((r) => r.name === name))
+      if (starts) return ok(records.filter((r) => String(r.comment ?? '').startsWith(starts)).slice((page - 1) * 100, page * 100))
       if (content) return ok(records.filter((r) => r.content === content))
       return ok(records.slice(0, 1), records.length)
     }
@@ -199,6 +211,40 @@ function fakeCloudflare(seed: FakeRecord[] = []): { records: FakeRecord[]; write
     return ok(out)
   }
   return { records, writes, fetch: f as typeof fetch }
+}
+
+interface MemRow { name: string; owner: string; ip: string; port: number; bedrock: boolean; target: string; online: boolean; lastSeen: number; created: number }
+function memoryStore() {
+  const rows = new Map<string, MemRow>()
+  const writes: string[] = []
+  return {
+    none: false,
+    rows,
+    writes,
+    get: async (name: string): Promise<MemRow | null> => rows.get(name) ?? null,
+    put: async (r: MemRow): Promise<void> => {
+      writes.push('put')
+      rows.set(r.name, { ...r })
+    },
+    del: async (name: string): Promise<void> => {
+      writes.push('del')
+      rows.delete(name)
+    },
+    countByIp: async (ip: string): Promise<number> => [...rows.values()].filter((r) => r.ip === ip).length,
+    staleOnline: async (before: number, limit: number): Promise<MemRow[]> =>
+      [...rows.values()].filter((r) => r.online && r.lastSeen < before).sort((x, y) => x.lastSeen - y.lastSeen).slice(0, limit),
+    existing: async (names: string[]): Promise<Set<string>> => new Set(names.filter((n) => rows.has(n))),
+    markOffline: async (name: string): Promise<void> => {
+      writes.push('offline')
+      const r = rows.get(name)
+      if (r) r.online = false
+    },
+    purgeIdle: async (before: number, limit: number): Promise<number> => {
+      let n = 0
+      for (const r of [...rows.values()]) if (!r.online && r.lastSeen < before && n < limit) (rows.delete(r.name), n++)
+      return n
+    }
+  }
 }
 
 async function domainChecks(): Promise<void> {
@@ -230,6 +276,71 @@ async function domainChecks(): Promise<void> {
     const rel = await call(cf, { action: 'release', name: 'myserver', key: K1 })
     expect(rel.status === 200 && cf.records.length === 0, '주인이 지우지 못했어요')
   })
+  await check('이름 주소: 터널로 열린 서버는 터널 주소로 보내는 SRV를 만들고, 허용 안 된 주소는 거절', async () => {
+    const cf = fakeCloudflare()
+    const t = await call(cf, { action: 'claim', name: 'tunnelsv', key: K1, port: 40123, target: 'abc.ply.gg' }, '2001:db8::1')
+    expect(t.status === 200, `터널 연결 실패: ${JSON.stringify(t)}`)
+    const srv = cf.records.find((r) => r.type === 'SRV')
+    expect(cf.records.length === 1 && srv?.name === '_minecraft._tcp.tunnelsv.cubepanel.kr' && srv.data?.port === 40123 && srv.data?.target === 'abc.ply.gg', `SRV: ${JSON.stringify(cf.records)}`)
+    cf.writes.length = 0
+    await call(cf, { action: 'claim', name: 'tunnelsv', key: K1, port: 40123, target: 'abc.ply.gg' })
+    expect(cf.writes.length === 0, '바뀐 게 없는데 썼어요')
+    await call(cf, { action: 'claim', name: 'tunnelsv', key: K1, port: 40999, target: 'abc.ply.gg' })
+    expect(cf.records.find((r) => r.type === 'SRV')?.data?.port === 40999, '포트가 바뀌었는데 갱신하지 않았어요')
+    for (const bad of ['evil.com', 'abc.ply.gg.evil.com', '1.2.3.4', 'ply.gg']) {
+      expect((await call(cf, { action: 'claim', name: 'tunnelsv', key: K1, port: 40999, target: bad })).status === 400, `${bad}을(를) 받아들였어요`)
+    }
+    expect((await call(cf, { action: 'claim', name: 'tunnelsv', key: K2, port: 40999, target: 'abc.ply.gg' })).status === 409, '남의 이름에 터널을 달았어요')
+  })
+  await check('이름 주소(D1): 저장소 SQL이 실제로 동작한다 (저장·읽기·덮어쓰기·주소별 개수·소식 끊긴 서버·예약 청소·지우기)', async () => {
+    const sqlite = new DatabaseSync(':memory:')
+    const d1 = {
+      prepare(sql: string) {
+        let params: (string | number | null)[] = []
+        const st = {
+          bind(...p: (string | number | null)[]) {
+            params = p
+            return st
+          },
+          first: async () => sqlite.prepare(sql).get(...params) ?? null,
+          all: async () => ({ results: sqlite.prepare(sql).all(...params) }),
+          run: async () => ({ meta: { changes: Number(sqlite.prepare(sql).run(...params).changes) } })
+        }
+        return st
+      }
+    }
+    const s = d1Store(d1)
+    const row = { name: 'abc', owner: 'cp:' + 'a'.repeat(32), ip: '1.1.1.1', port: 19132, bedrock: true, target: '', online: true, lastSeen: 1000, created: 500 }
+    await s.put(row)
+    expect(JSON.stringify(await s.get('abc')) === JSON.stringify(row), `읽은 값이 달라요: ${JSON.stringify(await s.get('abc'))}`)
+    await s.put({ ...row, ip: '2.2.2.2', lastSeen: 2000, created: 999 })
+    const again = await s.get('abc')
+    expect(again?.ip === '2.2.2.2' && again.lastSeen === 2000 && again.created === 500, `덮어쓰기: ${JSON.stringify(again)} (만든 때는 그대로여야 해요)`)
+    await s.put({ ...row, name: 'def', lastSeen: 100 })
+    await s.put({ ...row, name: 'ghi', online: false, lastSeen: 50 })
+    expect((await s.countByIp('1.1.1.1')) === 2 && (await s.countByIp('2.2.2.2')) === 1, '주소별 개수가 이상해요')
+    expect((await s.staleOnline(1500, 10)).map((r: { name: string }) => r.name).join() === 'def', '소식이 끊긴 서버를 잘못 찾았어요')
+    expect([...(await s.existing(['abc', 'zzz', 'ghi']))].sort().join() === 'abc,ghi', '있는 이름 찾기가 이상해요')
+    await s.markOffline('def')
+    expect((await s.get('def'))?.online === false, '끄기 표시가 안 됐어요')
+    expect((await s.purgeIdle(200, 10)) === 2 && !(await s.get('def')) && !(await s.get('ghi')) && !!(await s.get('abc')), '안 쓰는 예약 청소가 이상해요')
+    await s.del('abc')
+    expect(!(await s.get('abc')), '지우지 못했어요')
+  })
+  await check('이름 주소: D1이 없으면 "오프라인"은 기록을 지우지 않는다 (예약할 곳이 없어서 이름을 지킬 수 없다)', async () => {
+    const cf = fakeCloudflare()
+    await call(cf, { action: 'claim', name: 'nodb', key: K1 })
+    const out = await call(cf, { action: 'offline', name: 'nodb', key: K1 })
+    expect(out.status === 200 && cf.records.length === 1, 'D1 없이 기록을 지웠어요')
+    expect((await call(cf, { action: 'claim', name: 'nodb', key: K2 })).status === 409, 'D1 없이 꺼 둔 이름을 남이 가져갔어요')
+  })
+  await check('이름 주소: 배드락은 SRV 없이 주소(A) 기록만 만든다', async () => {
+    const cf = fakeCloudflare()
+    const r = await call(cf, { action: 'claim', name: 'bedrocksv', key: K1, port: 19140, bedrock: true })
+    expect(r.status === 200 && cf.records.length === 1 && cf.records[0].type === 'A', `배드락인데 A 기록 하나가 아니에요: ${JSON.stringify(cf.records)}`)
+    await call(cf, { action: 'claim', name: 'bedrocksv', key: K1, port: 19132, bedrock: true })
+    expect(!cf.records.some((x) => x.type === 'SRV'), '배드락 이름에 SRV가 생겼어요')
+  })
   await check('이름 주소: 남의 이름·우리가 안 만든 기록·막은 이름·이상한 요청', async () => {
     const cf = fakeCloudflare([{ id: 'w', type: 'CNAME', name: 'mine.cubepanel.kr', content: 'pages.dev' }])
     await call(cf, { action: 'claim', name: 'taken-one', key: K1 })
@@ -243,7 +354,12 @@ async function domainChecks(): Promise<void> {
     }
     expect((await call(cf, { action: 'claim', name: 'okname', key: 'short' })).status === 400, '짧은 열쇠를 받아들였어요')
     expect((await call(cf, { action: 'claim', name: 'okname', key: K1, port: 80 })).status === 400, '낮은 포트를 받아들였어요')
-    expect((await call(cf, { action: 'claim', name: 'okname', key: K1 }, '2001:db8::1')).status === 400, 'IPv6를 받아들였어요')
+    // IPv6 연결도 받는다 (AAAA 기록). 주소처럼 안 생긴 값은 거절한다
+    expect((await call(cf, { action: 'claim', name: 'okname', key: K1 }, '2001:db8::1')).status === 200 && cf.records.some((r) => r.type === 'AAAA' && r.content === '2001:db8::1'), 'IPv6 연결에 AAAA 기록을 만들지 못했어요')
+    expect((await call(cf, { action: 'claim', name: 'okname2', key: K1 }, 'not-an-ip')).status === 400, '주소가 아닌 값을 받았어요')
+    // 연결이 IPv4로 바뀌면 AAAA를 지우고 A로 다시 만든다 (같은 이름에 둘이 남지 않게)
+    await call(cf, { action: 'claim', name: 'okname', key: K1 }, '5.6.7.8')
+    expect(cf.records.filter((r) => r.name === 'okname.cubepanel.kr').length === 1 && cf.records.some((r) => r.type === 'A' && r.name === 'okname.cubepanel.kr' && r.content === '5.6.7.8'), 'IPv6에서 IPv4로 바뀌었는데 기록이 이상해요')
     const get = await handleDomain(new Request('https://x/api/domain'), env, cf.fetch)
     expect(get.status === 405, 'GET을 받아들였어요')
     expect((await handleDomain(new Request('https://x/api/domain', { method: 'POST', body: '{}' }), {}, cf.fetch)).status === 503, '설정이 없는데 동작했어요')
@@ -265,8 +381,124 @@ async function domainChecks(): Promise<void> {
     const fourth = await call(cf, { action: 'claim', name: 'name-four', key: K1 })
     expect(fourth.status === 429, `11번째 이름을 막지 않았어요: ${fourth.status}`)
     expect((await call(cf, { action: 'claim', name: 'name-four', key: K1 }, '9.9.9.9')).status === 200, '다른 인터넷 주소도 막았어요')
-    const full = fakeCloudflare(Array.from({ length: 900 }, (_, i) => ({ id: `f${i}`, type: 'TXT', name: `t${i}.cubepanel.kr`, content: 'x' })))
-    expect((await call(full, { action: 'claim', name: 'late-one', key: K1 })).status === 503, '기록이 가득 찼는데 새 이름을 만들었어요')
+    const full = fakeCloudflare(Array.from({ length: 200 }, (_, i) => ({ id: `f${i}`, type: 'TXT', name: `t${i}.cubepanel.kr`, content: 'x' })))
+    expect((await call(full, { action: 'claim', name: 'late-one', key: K1 })).body.error === 'full', '기록이 가득 찼는데 새 이름을 만들었어요')
+    expect(full.records.length === 200, '남의(우리 것이 아닌) 기록을 지웠어요')
+  })
+  await check('이름 주소(D1 예약): 켜진 동안만 DNS 기록·끄면 예약만 남김·예약은 남이 못 가져감·다시 켜면 되살림·지우면 예약도 해제', async () => {
+    const cf = fakeCloudflare()
+    const st = memoryStore()
+    const t0 = Date.UTC(2026, 9, 17)
+    const at = async (body: object, ip: string, now: number) => {
+      const res = await handleDomain(new Request('https://x/api/domain', { method: 'POST', headers: { 'cf-connecting-ip': ip }, body: JSON.stringify(body) }), env, cf.fetch, now, st)
+      return (await res.json()) as { ok?: boolean; error?: string; free?: boolean }
+    }
+    expect((await at({ action: 'claim', name: 'mygame', key: K1 }, '1.1.1.1', t0)).ok === true && cf.records.length === 1 && st.rows.get('mygame')?.online === true, '켜면서 기록과 예약이 안 만들어졌어요')
+    expect(!cf.records[0].comment?.includes(':2026'), 'DNS 메모에 날짜가 붙었어요 (예약은 D1에 있다)')
+    // 15분 안에 다시 불러도(앱이 주기적으로 부른다) DNS와 D1에 쓰지 않는다
+    cf.writes.length = 0
+    st.writes.length = 0
+    await at({ action: 'claim', name: 'mygame', key: K1 }, '1.1.1.1', t0 + 5 * 60_000)
+    expect(cf.writes.length === 0 && st.writes.length === 0, `갱신인데 썼어요: ${cf.writes} ${st.writes}`)
+    await at({ action: 'claim', name: 'mygame', key: K1 }, '1.1.1.1', t0 + 20 * 60_000) // 15분이 지나면 소식만 적는다
+    expect(cf.writes.length === 0 && st.writes.length === 1, `15분 뒤 소식을 안 적었어요: ${cf.writes} ${st.writes}`)
+    // 끄면 DNS 기록은 지우고 예약은 둔다
+    expect((await at({ action: 'offline', name: 'mygame', key: K1 }, '1.1.1.1', t0 + 3600_000)).ok === true && cf.records.length === 0 && st.rows.get('mygame')?.online === false, '끄는데 기록이 안 지워졌거나 예약이 사라졌어요')
+    expect((await at({ action: 'check', name: 'mygame' }, '9.9.9.9', t0 + 3600_000)).free === false, '꺼 둔 이름을 비었다고 했어요')
+    const thief = await at({ action: 'claim', name: 'mygame', key: K2 }, '2.2.2.2', t0 + 3600_000)
+    expect(thief.error === 'taken' && cf.records.length === 0, '꺼 둔 남의 이름을 가져갔어요')
+    expect((await at({ action: 'offline', name: 'mygame', key: K2 }, '2.2.2.2', t0)).error === 'forbidden', '남이 내 이름을 끌 수 있었어요')
+    // 다시 켜면 같은 이름이 되살아난다
+    expect((await at({ action: 'claim', name: 'mygame', key: K1, port: 30001 }, '3.3.3.3', t0 + 7200_000)).ok === true && cf.records.some((r) => r.type === 'A' && r.content === '3.3.3.3') && cf.records.some((r) => r.type === 'SRV'), '다시 켰는데 기록이 안 만들어졌어요')
+    // 서버를 지우면 예약까지 풀린다
+    expect((await at({ action: 'release', name: 'mygame', key: K1 }, '3.3.3.3', t0 + 7300_000)).ok === true && cf.records.length === 0 && !st.rows.has('mygame'), '지웠는데 예약이 남았어요')
+    expect((await at({ action: 'claim', name: 'mygame', key: K2 }, '2.2.2.2', t0 + 7400_000)).ok === true, '풀린 이름을 다른 사람이 못 만들었어요')
+  })
+
+  await check('이름 주소(D1 예약): 30일 넘게 안 쓴 예약은 풀리고, 이름 개수는 예약(꺼 둔 것 포함) 기준', async () => {
+    const cf = fakeCloudflare()
+    const st = memoryStore()
+    const DAY = 86400_000
+    const t0 = Date.UTC(2026, 9, 17)
+    const at = async (body: object, ip: string, now: number) => {
+      const res = await handleDomain(new Request('https://x/api/domain', { method: 'POST', headers: { 'cf-connecting-ip': ip }, body: JSON.stringify(body) }), env, cf.fetch, now, st)
+      return (await res.json()) as { ok?: boolean; error?: string; free?: boolean }
+    }
+    await at({ action: 'claim', name: 'idle-one', key: K1 }, '1.1.1.1', t0)
+    await at({ action: 'offline', name: 'idle-one', key: K1 }, '1.1.1.1', t0)
+    expect((await at({ action: 'check', name: 'idle-one' }, '5.5.5.5', t0 + 29 * DAY)).free === false, '29일 된 예약이 풀렸어요')
+    expect((await at({ action: 'check', name: 'idle-one' }, '5.5.5.5', t0 + 31 * DAY)).free === true, '31일 된 예약이 안 풀렸어요')
+    expect((await at({ action: 'claim', name: 'idle-one', key: K2 }, '2.2.2.2', t0 + 31 * DAY)).ok === true, '풀린 이름을 못 만들었어요')
+    // 꺼 둔 이름도 같은 인터넷 주소의 개수에 센다
+    for (let i = 0; i < 10; i++) {
+      await at({ action: 'claim', name: `shared-${i}-xy`, key: K1 }, '7.7.7.7', t0 + 40 * DAY)
+      await at({ action: 'offline', name: `shared-${i}-xy`, key: K1 }, '7.7.7.7', t0 + 40 * DAY)
+    }
+    expect((await at({ action: 'claim', name: 'shared-extra', key: K1 }, '7.7.7.7', t0 + 40 * DAY)).error === 'limit', '꺼 둔 이름을 개수에 안 셌어요')
+  })
+
+  await check('이름 주소(D1 예약): 기록이 가득 차면 소식이 끊긴 서버의 기록만 치우고(예약은 유지), 켜 둔 서버·사이트 기록은 지킨다', async () => {
+    const t0 = Date.UTC(2026, 9, 17)
+    const HOUR = 3600_000
+    const st = memoryStore()
+    // 사이트 기록 150개 + 켜진 서버 기록 50개 (A만) = 200개
+    const seed: FakeRecord[] = Array.from({ length: 150 }, (_, i) => ({ id: `s${i}`, type: 'TXT', name: `site${i}.cubepanel.kr`, content: 'x' }))
+    const tagFor = async (key: string): Promise<string> => {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`cubepanel-domain:${key}`))
+      return 'cp:' + [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32)
+    }
+    const owner = await tagFor(K1)
+    for (let i = 0; i < 50; i++) {
+      const stale = i < 30 // 앞의 30개는 3일 동안 소식이 없다 (앱이 꺼졌다)
+      seed.push({ id: `n${i}`, type: 'A', name: `srv${i}.cubepanel.kr`, content: '8.8.8.8', comment: owner })
+      st.rows.set(`srv${i}`, { name: `srv${i}`, owner, ip: '8.8.8.8', port: 25565, bedrock: false, target: '', online: true, lastSeen: t0 - (stale ? 72 : 1) * HOUR, created: t0 - 100 * HOUR })
+    }
+    const cf = fakeCloudflare(seed)
+    const at = async (body: object, ip: string) => {
+      const res = await handleDomain(new Request('https://x/api/domain', { method: 'POST', headers: { 'cf-connecting-ip': ip }, body: JSON.stringify(body) }), env, cf.fetch, t0, st)
+      return (await res.json()) as { ok?: boolean; error?: string }
+    }
+    const out = await at({ action: 'claim', name: 'newcomer', key: K2 }, '9.9.9.9')
+    expect(out.ok === true, `자리를 못 만들었어요: ${JSON.stringify(out)}`)
+    const names = cf.records.map((r) => r.name)
+    expect(names.filter((n) => n.startsWith('site')).length === 150, '사이트 기록(우리 것이 아닌)을 지웠어요')
+    expect(names.filter((n) => /^srv(\d|[3-4]\d)\./.test(n) && Number(n.slice(3, n.indexOf('.'))) >= 30).length === 20, '켜 둔(소식이 최근인) 서버의 기록을 지웠어요')
+    const removed = [...Array(30).keys()].filter((i) => !names.includes(`srv${i}.cubepanel.kr`)).length
+    expect(removed >= 1 && removed <= 12, `치운 기록 수가 이상해요: ${removed}`)
+    const gone = [...Array(30).keys()].find((i) => !names.includes(`srv${i}.cubepanel.kr`)) as number
+    expect(st.rows.get(`srv${gone}`)?.online === false, '치운 서버의 예약까지 지웠어요 (예약은 남아야 해요)')
+    expect((await at({ action: 'claim', name: `srv${gone}`, key: K2 }, '9.9.9.9')).error === 'taken', '예약이 남은 이름을 남이 가져갔어요')
+
+    // 전부 켜진 채로 가득 찬 영역: 아무것도 치우지 않고 가득 찼다고 알린다
+    const busy = fakeCloudflare(seed.slice(0, 150).concat(Array.from({ length: 50 }, (_, i) => ({ id: `b${i}`, type: 'A', name: `b${i}.cubepanel.kr`, content: '8.8.8.8', comment: owner }))))
+    const st2 = memoryStore()
+    for (let i = 0; i < 50; i++) st2.rows.set(`b${i}`, { name: `b${i}`, owner, ip: '8.8.8.8', port: 25565, bedrock: false, target: '', online: true, lastSeen: t0 - HOUR, created: t0 - HOUR })
+    const res = await handleDomain(new Request('https://x/api/domain', { method: 'POST', headers: { 'cf-connecting-ip': '9.9.9.9' }, body: JSON.stringify({ action: 'claim', name: 'nospace', key: K2 }) }), env, busy.fetch, t0, st2)
+    expect(((await res.json()) as { error?: string }).error === 'full' && busy.records.length === 200, '켜 둔 서버의 기록을 지웠거나 가득 참 안내가 없어요')
+  })
+
+  await check('이름 주소(D1 예약): D1이 없던 때 만든 옛 기록은 소식이 끊기면 예약으로 옮겨 두고 치운다', async () => {
+    const t0 = Date.UTC(2026, 9, 17)
+    const DAY = 86400_000
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`cubepanel-domain:${K1}`))
+    const owner = 'cp:' + [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32)
+    const iso = (days: number): string => new Date(t0 - days * DAY).toISOString()
+    const seed: FakeRecord[] = Array.from({ length: 198 }, (_, i) => ({ id: `s${i}`, type: 'TXT', name: `site${i}.cubepanel.kr`, content: 'x' }))
+    seed.push({ id: 'old', type: 'A', name: 'legacy.cubepanel.kr', content: '4.4.4.4', comment: owner, created_on: iso(5), modified_on: iso(5) })
+    seed.push({ id: 'new', type: 'A', name: 'recent.cubepanel.kr', content: '4.4.4.5', comment: owner, created_on: iso(0), modified_on: iso(0) })
+    const cf = fakeCloudflare(seed)
+    const st = memoryStore()
+    const at = async (body: object, ip: string) => {
+      const res = await handleDomain(new Request('https://x/api/domain', { method: 'POST', headers: { 'cf-connecting-ip': ip }, body: JSON.stringify(body) }), env, cf.fetch, t0, st)
+      return (await res.json()) as { ok?: boolean; error?: string }
+    }
+    expect((await at({ action: 'claim', name: 'brandnew', key: K2 }, '9.9.9.9')).ok === true, '옛 기록을 치우고 자리를 만들지 못했어요')
+    const names = cf.records.map((r) => r.name)
+    expect(!names.includes('legacy.cubepanel.kr') && names.includes('recent.cubepanel.kr'), '5일 전 옛 기록만 치워야 해요')
+    expect(st.rows.get('legacy')?.owner === owner && st.rows.get('legacy')?.online === false, '치운 옛 기록의 예약을 옮겨 두지 않았어요')
+    // 주인이 서버를 켜면 같은 이름이 다시 만들어진다 (자리가 있으면)
+    await cf.records.splice(cf.records.findIndex((r) => r.name === 'site0.cubepanel.kr'), 1)
+    expect((await at({ action: 'claim', name: 'legacy', key: K1 }, '4.4.4.4')).ok === true && cf.records.some((r) => r.name === 'legacy.cubepanel.kr'), '주인이 이름을 되살리지 못했어요')
   })
   await check('이름 주소: 앱이 만들고·기억하고·서버를 켤 때 갱신하고·이름을 바꾸고·없애기 (가짜 중계 서버)', async () => {
     const cf = fakeCloudflare()
@@ -321,6 +553,173 @@ async function domainChecks(): Promise<void> {
       expect(threw, `${JSON.stringify(bad)}을(를) 받아들였어요`)
     }
   })
+}
+
+// ---------- 배드락 서버: 애드온·설정 ----------
+async function bedrockChecks(): Promise<void> {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'mcsm-bedrock-'))
+  const folder = path.join(base, 'bds')
+  fs.mkdirSync(path.join(folder, 'behavior_packs', 'vanilla'), { recursive: true })
+  fs.writeFileSync(path.join(folder, 'bedrock_server.exe'), '')
+  fs.writeFileSync(path.join(folder, 'server.properties'), 'level-name=World\nserver-port=19132\n')
+  const manifest = (name: string, uuid: string, type: string): Buffer =>
+    Buffer.from(
+      JSON.stringify({ format_version: 2, header: { name, description: 'd', uuid, version: [1, 2, 3], min_engine_version: [1, 21, 0] }, modules: [{ type, uuid: uuid.replace(/^./, '9'), version: [1, 0, 0] }] })
+    )
+  const zipOf = (file: string, entries: Record<string, Buffer>): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const zip = new yazl.ZipFile()
+      for (const [n, b] of Object.entries(entries)) zip.addBuffer(b, n)
+      zip.outputStream.pipe(fs.createWriteStream(file)).on('close', () => resolve(file)).on('error', reject)
+      zip.end()
+    })
+  const A = 'aaaaaaaa-1111-2222-3333-444444444444'
+  const B = 'bbbbbbbb-1111-2222-3333-444444444444'
+
+  await check('배드락: 애드온 넣기(.mcaddon)·켜고 끄기·지우기', async () => {
+    const file = await zipOf(path.join(base, 'my.mcaddon'), { 'BP/manifest.json': manifest('My Add-on', A, 'data'), 'BP/entities/a.json': Buffer.from('{}'), 'RP/manifest.json': manifest('My Add-on RP', B, 'resources') })
+    const names = await addAddonFile(folder, file)
+    expect(names.length === 2, `팩 이름: ${names}`)
+    const list = listAddons(folder)
+    expect(list.length === 2 && list.every((a) => a.enabled), `목록: ${JSON.stringify(list)}`)
+    expect(list.some((a) => a.kind === 'behavior' && a.id.startsWith('behavior_packs/')) && list.some((a) => a.kind === 'resource' && a.id.startsWith('resource_packs/')), '종류가 틀려요')
+    const bp = JSON.parse(fs.readFileSync(path.join(folder, 'worlds', 'World', 'world_behavior_packs.json'), 'utf8'))
+    const rp = JSON.parse(fs.readFileSync(path.join(folder, 'worlds', 'World', 'world_resource_packs.json'), 'utf8'))
+    expect(bp[0]?.pack_id === A && bp[0].version.join('.') === '1.2.3' && rp[0]?.pack_id === B, `등록: ${JSON.stringify([bp, rp])}`)
+    const first = list.find((a) => a.kind === 'behavior')!
+    setAddonEnabled(folder, first.id, false)
+    expect(listAddons(folder).find((a) => a.id === first.id)?.enabled === false, '끄지 못했어요')
+    expect(JSON.parse(fs.readFileSync(path.join(folder, 'worlds', 'World', 'world_behavior_packs.json'), 'utf8')).length === 0, '꺼도 등록에 남았어요')
+    setAddonEnabled(folder, first.id, true)
+    await addAddonFile(folder, file) // 같은 팩을 다시 넣으면 바꿔 넣고 두 개로 늘지 않는다
+    expect(listAddons(folder).length === 2, '같은 팩이 두 번 들어갔어요')
+    await removeAddon(folder, listAddons(folder).find((a) => a.kind === 'behavior')!.id)
+    expect(listAddons(folder).length === 1 && JSON.parse(fs.readFileSync(path.join(folder, 'worlds', 'World', 'world_behavior_packs.json'), 'utf8')).length === 0, '지운 뒤 상태가 이상해요')
+  })
+
+  await check('배드락: 애드온이 아닌 파일·이상한 경로는 막는다', async () => {
+    const empty = await zipOf(path.join(base, 'nothing.zip'), { 'readme.txt': Buffer.from('x') })
+    expect(await throws(() => addAddonFile(folder, empty)), '팩이 없는 zip을 받았어요')
+    fs.writeFileSync(path.join(base, 'a.txt'), 'x')
+    expect(await throws(() => addAddonFile(folder, path.join(base, 'a.txt'))), '글자 파일을 받았어요')
+    expect(await throws(() => removeAddon(folder, 'behavior_packs/../server.properties')), '다른 곳을 지우려는 경로를 받았어요')
+    expect(await throws(() => removeAddon(folder, '../x')), '이상한 id를 받았어요')
+  })
+
+  await check('배드락: 게임 규칙 이름(소문자·대소문자 섞임)이 한국어 이름표에 연결된다', () => {
+    for (const [name, label] of [['pvp', '플레이어끼리 공격(PvP)'], ['mobgriefing', '몹이 블록 망가뜨리기'], ['keepinventory', '죽어도 아이템 유지'], ['doMobSpawning', '몹 생성'], ['commandBlocksEnabled', '명령 블록 작동'], ['doDayLightCycle', '시간 흐름']]) {
+      expect(labelOf(name).label === label, `${name} → ${labelOf(name).label} (기대: ${label})`)
+    }
+  })
+  await check('배드락: 루프백 예외 목록에서 스토어 마인크래프트를 알아본다 (대소문자 무시)', () => {
+    const listing = '  [1] -----\n      이름: microsoft.minecraftuwp_8wekyb3d8bbwe\n  [2] -----\n      이름: microsoft.windowscommunicationsapps_8wekyb3d8bbwe\n'
+    expect(isExempt(listing, 'Microsoft.MinecraftUWP_8wekyb3d8bbwe'), '예외 목록에 있는데 없다고 했어요')
+    expect(!isExempt(listing, 'Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe'), '예외 목록에 없는데 있다고 했어요')
+    expect(!isExempt('', 'Microsoft.MinecraftUWP_8wekyb3d8bbwe'), '빈 목록인데 있다고 했어요')
+  })
+
+  await check('배드락: 만들 때 설정 (허용 목록 끄기·IPv6 포트·자바 값 버리기·범위 확인)', () => {
+    const p = bedrockProps({ gamemode: 'creative', difficulty: 'hard', 'max-players': '5', 'level-seed': '123', 'online-mode': 'false', hardcore: 'true', 'level-type': 'minecraft:flat', motd: 'x' }, 'My;Name', 19134)
+    expect(p['allow-list'] === 'false', '허용 목록이 켜진 채라 친구가 못 들어와요')
+    expect(p['transport'] === 'raknet', 'nethernet이면 UDP 포트 하나로는 접속이 안 돼요')
+    expect(p['server-port'] === '19134' && p['server-portv6'] === '19134', `포트: ${p['server-port']}/${p['server-portv6']} (IPv6 포트도 같은 번호여야 localhost가 돼요)`)
+    expect(p['gamemode'] === 'creative' && p['difficulty'] === 'hard' && p['max-players'] === '5' && p['level-seed'] === '123' && p['online-mode'] === 'false', JSON.stringify(p))
+    expect(!('hardcore' in p) && !('level-type' in p) && !('motd' in p), '자바 전용 값이 들어갔어요')
+    expect(p['server-name'] === 'My Name', `이름의 ;를 못 걸렀어요: ${p['server-name']}`)
+    const bad = bedrockProps({ gamemode: 'hacker', difficulty: 'x', 'max-players': '9999' }, 'a', 19132)
+    expect(!('gamemode' in bad) && !('difficulty' in bad) && !('max-players' in bad), '이상한 값을 받았어요')
+  })
+  await check('배드락: 월드 가져오기(.mcworld)·애드온 등록 이어받기·잘못된 월드 막기', async () => {
+    const world = await zipOf(path.join(base, 'map.mcworld'), { 'My Map/level.dat': Buffer.from('x'), 'My Map/levelname.txt': Buffer.from('My Map'), 'My Map/db/CURRENT': Buffer.from('MANIFEST-1') })
+    fs.mkdirSync(path.join(folder, 'worlds', 'World', 'db'), { recursive: true })
+    fs.writeFileSync(path.join(folder, 'worlds', 'World', 'level.dat'), 'old')
+    fs.writeFileSync(path.join(folder, 'worlds', 'World', 'world_behavior_packs.json'), JSON.stringify([{ pack_id: A, version: [1, 2, 3] }]))
+    await importBedrockWorld(folder, world)
+    expect(fs.readFileSync(path.join(folder, 'worlds', 'World', 'level.dat'), 'utf8') === 'x', '월드가 바뀌지 않았어요')
+    expect(JSON.parse(fs.readFileSync(path.join(folder, 'worlds', 'World', 'world_behavior_packs.json'), 'utf8'))[0]?.pack_id === A, '켜 둔 애드온 등록이 사라졌어요')
+    const java = await zipOf(path.join(base, 'java.zip'), { 'World/level.dat': Buffer.from('x'), 'World/region/r.0.0.mca': Buffer.from('x') })
+    expect(await throws(() => importBedrockWorld(folder, java)), '자바 월드를 받았어요')
+    expect(await throws(() => importBedrockWorld(folder, empty0(base))), '월드가 아닌 파일을 받았어요')
+  })
+
+  await check('배드락: 허용 목록 고치기(꺼진 서버)·관리 정보', () => {
+    runBedrockAction(folder, { type: 'allow', name: 'Test Player' })
+    runBedrockAction(folder, { type: 'allow', name: 'Other' })
+    expect(JSON.stringify(getBedrockManage(folder).allowlist) === '["Test Player","Other"]', JSON.stringify(getBedrockManage(folder)))
+    runBedrockAction(folder, { type: 'disallow', name: 'test player' }) // 대소문자 무시
+    expect(JSON.stringify(getBedrockManage(folder).allowlist) === '["Other"]', '목록에서 못 뺐어요')
+    runBedrockAction(folder, { type: 'allowOn', value: true })
+    expect(getBedrockManage(folder).allowlistOn && readProperties(folder)['allow-list'] === 'true', '허용 목록을 켜지 못했어요')
+    const fails = (fn: () => void): boolean => {
+      try {
+        fn()
+        return false
+      } catch {
+        return true
+      }
+    }
+    for (const bad of ['"; stop', 'a'.repeat(40), '', 'x\ny', 'a"b']) expect(fails(() => runBedrockAction(folder, { type: 'allow', name: bad })), `이상한 이름(${bad})을 받았어요`)
+    expect(fails(() => runBedrockAction(folder, { type: 'kick', name: 'A' })), '꺼진 서버에서 내보내기가 됐어요')
+    expect(fails(() => runBedrockAction(folder, { type: 'time', value: 'x' as 'day' })), '이상한 시간을 받았어요')
+    expect(JSON.stringify(getBedrockManage(folder).allowlist) === '["Other"]', '잘못된 요청이 목록을 바꿨어요')
+  })
+  await check('배드락: 켜기 전 점검 (빠진 의존 팩·꺼 둔 필요 팩·중복·지워진 팩)·스크립트 팩 구분', () => {
+    const f2 = path.join(base, 'bds2')
+    fs.mkdirSync(path.join(f2, 'behavior_packs'), { recursive: true })
+    fs.mkdirSync(path.join(f2, 'resource_packs'), { recursive: true })
+    fs.writeFileSync(path.join(f2, 'bedrock_server.exe'), '')
+    fs.writeFileSync(path.join(f2, 'server.properties'), 'level-name=World\n')
+    const UA = 'aaaaaaaa-0000-0000-0000-00000000000a'
+    const UB = 'bbbbbbbb-0000-0000-0000-00000000000b'
+    const UC = 'cccccccc-0000-0000-0000-00000000000c'
+    const put = (dir: string, name: string, uuid: string, type: string, deps: string[] = []): void => {
+      fs.mkdirSync(path.join(f2, dir), { recursive: true })
+      fs.writeFileSync(
+        path.join(f2, dir, 'manifest.json'),
+        JSON.stringify({
+          format_version: 2,
+          header: { name, description: 'd', uuid, version: [1, 0, 0], min_engine_version: [1, 21, 0] },
+          modules: [{ type, uuid: uuid.replace(/^./, '9'), version: [1, 0, 0] }],
+          dependencies: [...deps.map((u) => ({ uuid: u, version: [1, 0, 0] })), { module_name: '@minecraft/server', version: '1.0.0' }]
+        })
+      )
+    }
+    const enable = (kind: string, uuids: string[]): void => {
+      fs.mkdirSync(path.join(f2, 'worlds', 'World'), { recursive: true })
+      fs.writeFileSync(path.join(f2, 'worlds', 'World', `world_${kind}_packs.json`), JSON.stringify(uuids.map((u) => ({ pack_id: u, version: [1, 0, 0] }))))
+    }
+    // A(스크립트 팩)는 B(리소스 팩)가 있어야 한다
+    put('behavior_packs/a', 'Pack A', UA, 'script', [UB])
+    enable('behavior', [UA])
+    let r = checkAddons(f2)
+    expect(r.missing.length === 1 && r.missing[0].mod === 'Pack A' && r.missing[0].needs[0] === UB, `빠진 팩을 못 찾았어요: ${JSON.stringify(r)}`)
+    put('resource_packs/b', 'Pack B', UB, 'resources')
+    r = checkAddons(f2)
+    expect(r.missing.length === 1 && r.missing[0].needs[0] === 'Pack B (꺼져 있음)', `꺼 둔 필요 팩: ${JSON.stringify(r)}`)
+    enable('resource', [UB])
+    r = checkAddons(f2)
+    expect(r.missing.length === 0 && r.duplicates.length === 0, `문제없는데 걸렸어요: ${JSON.stringify(r)}`)
+    // 같은 팩이 두 폴더에
+    put('resource_packs/b-copy', 'Pack B', UB, 'resources')
+    r = checkAddons(f2)
+    expect(r.duplicates.length === 1 && r.duplicates[0].files.length === 2, `중복: ${JSON.stringify(r.duplicates)}`)
+    fs.rmSync(path.join(f2, 'resource_packs', 'b-copy'), { recursive: true, force: true })
+    // 월드에 켜 둔 팩이 지워졌다
+    enable('resource', [UB, UC])
+    r = checkAddons(f2)
+    expect(r.missing.some((m) => m.mod === '월드에 켜 둔 팩' && m.needs[0] === UC), `지워진 팩: ${JSON.stringify(r.missing)}`)
+    // 스크립트 팩은 스크립트 탭에 (script: true), 일반 비헤이비어 팩은 애드온 탭에
+    put('behavior_packs/plain', 'Plain', UC, 'data')
+    const list = listAddons(f2)
+    expect(list.find((a) => a.title === 'Pack A')?.script === true && list.find((a) => a.title === 'Plain')?.script === false && list.find((a) => a.title === 'Pack B')?.script === false, `스크립트 구분: ${JSON.stringify(list.map((a) => [a.title, a.script]))}`)
+  })
+  fs.rmSync(base, { recursive: true, force: true })
+}
+// 비어 있는 .zip (월드가 아닌 파일)
+function empty0(base: string): string {
+  const f = path.join(base, 'empty0.zip')
+  fs.writeFileSync(f, Buffer.from([0x50, 0x4b, 0x05, 0x06, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+  return f
 }
 
 // ---------- 기존 서버 가져오기 ----------
@@ -384,6 +783,17 @@ async function importChecks(): Promise<void> {
     expect(bad(path.join(root, 'inner')), '앱 서버 폴더 안을 받아들였어요')
     expect(bad(base), '앱 서버 폴더를 품은 폴더를 받아들였어요')
     expect(bad(mk('empty', { 'readme.txt': 'x' })), '서버가 아닌 폴더를 받아들였어요')
+    const why = (dir: string): string => {
+      try {
+        checkImportFolder(dir, root)
+        return ''
+      } catch (e) {
+        return (e as Error).message
+      }
+    }
+    expect(/월드 폴더/.test(why(mk('worldonly', { 'level.dat': 'x', 'region/r.0.0.mca': 'x' }))), '월드 폴더인데 월드 가져오기를 안내하지 않았어요')
+    expect(/게임\(클라이언트\) 폴더/.test(why(mk('clientdir', { 'saves/My World/level.dat': 'x', 'mods/a.jar': 'x', 'options.txt': 'x' }))), '게임 폴더인데 saves 안내를 하지 않았어요')
+    expect(/서버 폴더로 보이지 않아요/.test(why(mk('junk', { 'readme.txt': 'x' }))), '일반 안내가 바뀌었어요')
   })
 
   await check('가져오기: 폴더 복사·정보 파일·포트 겹침 피하기·원본 그대로·실패하면 흔적 없음', async () => {
@@ -1013,7 +1423,9 @@ async function modpackServers(): Promise<void> {
     expect(fs.readFileSync(path.join(f, 'server.jar')).length > 1000, '서버 실행 파일이 바뀌었어요')
     expect(readServerInfo(f).memoryMb !== 99999 && readServerInfo(f).name === '자동 테스트 나쁜 모드팩', '앱 설정 파일이 바뀌었어요')
     const p = readProperties(f)
-    expect(p['enable-rcon'] !== 'true' && p['rcon.password'] !== 'hacked' && p['server-port'] === '25596', `보안 설정이 바뀌었어요: rcon=${p['enable-rcon']} port=${p['server-port']}`)
+    // 서버 포트는 앱이 겹치지 않게 자동으로 정한다. 모드팩이 심은 server-port=25565가 그대로 들어갔다면 다른 서버와 포트가 겹친다
+    const portClash = listServers().some((x) => x.folderPath !== f && readProperties(x.folderPath)['server-port'] === p['server-port'])
+    expect(p['enable-rcon'] !== 'true' && p['rcon.password'] !== 'hacked' && !portClash && p['server-port'] !== '25565', `보안 설정이 바뀌었어요: rcon=${p['enable-rcon']} port=${p['server-port']} 겹침=${portClash}`)
     expect(p.motd === 'pack motd', '일반 설정(motd)은 들어가야 해요')
     expect(fs.existsSync(path.join(f, 'config', 'pack-setting.txt')), '모드 설정 파일은 들어가야 해요')
   })
@@ -1319,9 +1731,147 @@ async function paperServer(): Promise<void> {
   })
 }
 
+// ---------- 배드락 서버: 실제로 받아서 켜 보기 ----------
+async function bedrockServer(): Promise<void> {
+  console.log('\n[배드락 서버]')
+  let folder = ''
+  await check('배드락 서버 만들기 → 애드온 → 켜기(팩 적용) → 켠 채 백업 → 끄기 → 되돌리기', async () => {
+    const info = await createServer({ name: '자동 테스트 bedrock', software: 'bedrock', mcVersion: '', properties: { 'max-players': '5', 'online-mode': 'false' } }, () => undefined)
+    folder = info.folderPath
+    expect(info.software === 'bedrock' && /^\d+\.\d+\.\d+/.test(info.mcVersion), `정보: ${JSON.stringify(info)}`)
+    const props = readProperties(folder)
+    expect(props['allow-list'] === 'false' && props['max-players'] === '5' && props['online-mode'] === 'false' && props['server-port'] === '19132', `설정: ${JSON.stringify(props)}`)
+    expect(!fs.existsSync(path.join(folder, '.creating')), '만드는 중 표시가 남았어요')
+    acceptEula(folder)
+    const packZip = path.join(folder, 'test.mcpack')
+    await new Promise<void>((resolve, reject) => {
+      const zip = new yazl.ZipFile()
+      zip.addBuffer(
+        Buffer.from(
+          JSON.stringify({
+            format_version: 2,
+            header: { name: 'Auto Test Pack', description: 'd', uuid: '12121212-2222-3333-4444-555555555555', version: [1, 0, 0], min_engine_version: [1, 21, 0] },
+            modules: [{ type: 'data', uuid: '34343434-7777-8888-9999-000000000000', version: [1, 0, 0] }]
+          })
+        ),
+        'manifest.json'
+      )
+      zip.outputStream.pipe(fs.createWriteStream(packZip)).on('close', () => resolve()).on('error', reject)
+      zip.end()
+    })
+    expect((await addAddonFile(folder, packZip))[0] === 'Auto Test Pack', '애드온을 못 넣었어요')
+    fs.rmSync(packZip, { force: true })
+    expect(props['transport'] === 'raknet', `만들 때 접속 방식: ${props['transport']}`)
+    writeProperties(folder, { transport: 'nethernet', 'server-port': '19332', 'server-portv6': '19333' }) // (테스트 중에 쓰는 사람의 서버와 포트가 겹치지 않게 다른 포트로) 서버 1.26의 기본값이 남아 있는 서버도 켤 때 고쳐져야 한다
+    await startAndWait(folder)
+    expect(readProperties(folder)['transport'] === 'raknet', '켤 때 접속 방식을 raknet으로 고치지 않았어요')
+    expect(readProperties(folder)['server-portv6'] === '19332', 'IPv6 포트를 IPv4 포트와 같게 고치지 않았어요 (localhost 접속에 필요)')
+    // 실제로 UDP 핑(RakNet)에 답하는지: 안 답하면 UDP 포트만 열어서는 아무도 못 들어온다
+    const pongV6 = await new Promise<boolean>((resolve) => {
+      const sock = dgram.createSocket('udp6')
+      const time = Buffer.alloc(8)
+      time.writeBigInt64BE(BigInt(Date.now()))
+      const timer = setTimeout(() => (sock.close(), resolve(false)), 4000)
+      sock.on('message', (m) => (clearTimeout(timer), sock.close(), resolve(m[0] === 0x1c)))
+      sock.on('error', () => (clearTimeout(timer), resolve(false)))
+      sock.send(Buffer.concat([Buffer.from([0x01]), time, Buffer.from('00ffff00fefefefefdfdfdfd12345678', 'hex'), Buffer.alloc(8)]), 19332, '::1')
+    })
+    expect(pongV6, '서버가 IPv6(::1)로 온 UDP 핑에 답하지 않아요 (localhost 접속이 안 돼요)')
+    const pong = await new Promise<boolean>((resolve) => {
+      const sock = dgram.createSocket('udp4')
+      const time = Buffer.alloc(8)
+      time.writeBigInt64BE(BigInt(Date.now()))
+      const timer = setTimeout(() => (sock.close(), resolve(false)), 4000)
+      sock.on('message', (m) => (clearTimeout(timer), sock.close(), resolve(m[0] === 0x1c)))
+      sock.send(Buffer.concat([Buffer.from([0x01]), time, Buffer.from('00ffff00fefefefefdfdfdfd12345678', 'hex'), Buffer.alloc(8)]), 19332, '127.0.0.1')
+    })
+    expect(pong, '서버가 UDP 핑에 답하지 않아요 (접속 방식이 raknet이 아니에요)')
+    expect(getLog(folder).some((l) => /Pack Stack - .*Auto Test Pack/.test(l)), `팩이 적용되지 않았어요: ${getLog(folder).slice(-15).join(' | ')}`)
+    expect(fs.existsSync(path.join(folder, 'worlds', 'Bedrock level', 'level.dat')), '월드가 안 만들어졌어요')
+    const b = await createBackup(folder, false, '자동 테스트') // 켜진 채로 (save hold → query → resume)
+    expect(b.worlds.includes('worlds/Bedrock level'), `백업 월드: ${b.worlds}`)
+    expect(getState(folder) === 'running', '백업하고 나서 서버가 멈췄어요')
+    // 켜진 채로 관리: 허용 목록(명령 → 파일), 난이도, 게임 규칙
+    runBedrockAction(folder, { type: 'allow', name: 'Tester One' })
+    await waitFor('허용 목록 파일', () => getBedrockManage(folder).allowlist.includes('Tester One'), 15_000)
+    runBedrockAction(folder, { type: 'disallow', name: 'Tester One' })
+    await waitFor('허용 목록에서 빼기', () => !getBedrockManage(folder).allowlist.includes('Tester One'), 15_000)
+    runBedrockAction(folder, { type: 'difficulty', value: 'hard' })
+    expect(readProperties(folder)['difficulty'] === 'hard', '난이도를 파일에 적지 않았어요')
+    const rules = await listBedrockRules(folder)
+    expect(rules.length > 10 && rules.some((r) => r.name.toLowerCase() === 'keepinventory' && r.type === 'bool'), `게임 규칙: ${JSON.stringify(rules.slice(0, 5))}`)
+    sendCommand(folder, 'gamerule keepinventory true')
+    const again = await listBedrockRules(folder)
+    expect(again.find((r) => r.name.toLowerCase() === 'keepinventory')?.value === 'true', '게임 규칙을 바꾸지 못했어요')
+    await stopAndWait(folder)
+    await restoreBackup(folder, b.id)
+    expect(fs.existsSync(path.join(folder, 'worlds', 'Bedrock level', 'level.dat')), '되돌린 뒤 월드가 없어요')
+    await startAndWait(folder) // 되돌린 월드로 다시 켜진다
+    await stopAndWait(folder)
+  })
+  await check('배드락: 서버 업데이트 (설정·월드·허용 목록·애드온은 그대로, 프로그램 파일만 새로)', async () => {
+    expect(folder, '서버가 없어요')
+    const latest = (await checkBedrockUpdate(folder)).latest
+    expect(latest && !(await checkBedrockUpdate(folder)).available, '방금 만든 서버가 최신이 아니라고 나와요')
+    patchServerInfo(folder, { mcVersion: '1.0.0.0' }) // 옛 버전인 척
+    writeProperties(folder, { 'max-players': '7' })
+    runBedrockAction(folder, { type: 'allow', name: 'Keep Me' })
+    const worldBefore = fs.readFileSync(path.join(folder, 'worlds', 'Bedrock level', 'level.dat')).length
+    expect((await checkBedrockUpdate(folder)).available, '옛 버전인데 새 버전이 없다고 나와요')
+    const out = await updateBedrock(folder, () => undefined)
+    expect(out.mcVersion === latest, `버전: ${out.mcVersion}`)
+    expect(readProperties(folder)['max-players'] === '7', '업데이트가 설정을 덮어썼어요')
+    expect(getBedrockManage(folder).allowlist.includes('Keep Me'), '업데이트가 허용 목록을 지웠어요')
+    expect(fs.readFileSync(path.join(folder, 'worlds', 'Bedrock level', 'level.dat')).length === worldBefore, '업데이트가 월드를 건드렸어요')
+    expect(listAddons(folder).some((a) => a.title === 'Auto Test Pack'), '업데이트가 애드온을 지웠어요')
+    expect(listAddons(folder).every((a) => !/^vanilla|^chemistry|^editor/.test(path.basename(a.id))), '기본 팩이 애드온 목록에 나와요')
+    expect(listBackups(folder).some((x) => /업데이트 전/.test(x.note ?? '')), '업데이트 전 백업이 없어요')
+    await startAndWait(folder) // 업데이트한 서버가 켜진다
+    await stopAndWait(folder)
+    let again = false
+    try {
+      await updateBedrock(folder, () => undefined)
+    } catch {
+      again = true
+    }
+    expect(again, '최신인데 또 업데이트가 됐어요')
+  })
+  await check('배드락: CurseForge 검색 → 애드온 받아 넣기 → 맵 받아 넣기', async () => {
+    expect(folder, '서버가 없어요')
+    for (const kind of ['addon', 'resource', 'script', 'map'] as const) {
+      const r = await searchBedrockStore(kind, '', 0)
+      expect(r.hits.length > 0 && r.hits.every((h) => !!h.fileName && !!h.title), `${kind} 검색 결과가 없어요`)
+    }
+    const found = await searchBedrockStore('addon', '', 0)
+    const small = found.hits.find((h) => /\.(mcaddon|mcpack)$/i.test(h.fileName))
+    expect(small, '받을 애드온을 못 찾았어요')
+    const before = listAddons(folder).length
+    const title = await installBedrockHit(folder, small!.id, 'addon')
+    expect(!!title && listAddons(folder).length > before, `받은 애드온이 설치되지 않았어요: ${title}`)
+    const maps = (await searchBedrockStore('map', '', 0)).hits.filter((h) => /\.mcworld$/i.test(h.fileName))
+    expect(maps.length > 0, '맵을 못 찾았어요')
+    let imported = false
+    for (const m of maps.slice(0, 5)) {
+      try {
+        await installBedrockHit(folder, m.id, 'map')
+        imported = true
+        break
+      } catch (e) {
+        console.log(`      (맵 건너뜀: ${m.title}: ${e instanceof Error ? e.message : e})`)
+      }
+    }
+    expect(imported, '맵을 하나도 넣지 못했어요')
+    expect(fs.existsSync(path.join(folder, 'worlds', 'Bedrock level', 'level.dat')), '맵을 넣은 뒤 월드가 없어요')
+    await startAndWait(folder) // 받은 맵으로 켜진다
+    await stopAndWait(folder)
+  })
+  if (folder) await deleteServer(folder).catch(() => undefined)
+}
+
 async function main(): Promise<void> {
   const t = Date.now()
   if (only.length) {
+    if (only.includes('bedrock')) await bedrockServer()
     await otherSoftware()
     console.log(`
 결과: ${passed}개 통과, ${failed.length}개 실패 (${Math.round((Date.now() - t) / 1000)}초)`)
@@ -1333,6 +1883,7 @@ async function main(): Promise<void> {
     await paperServer()
     await modpackServers()
     await otherSoftware()
+    await bedrockServer()
     await moreFeatures()
     await automation()
   }

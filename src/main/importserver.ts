@@ -37,6 +37,9 @@ export function checkImportFolder(dir: string, serversRoot: string): string {
   if (!holds.startsWith('..') && !path.isAbsolute(holds)) throw new Error('앱 데이터가 들어 있는 폴더라서 가져올 수 없어요. 서버 폴더만 골라 주세요.')
   const names = fs.readdirSync(abs)
   if (!names.some((n) => /\.jar$/i.test(n) || n === 'server.properties' || n === 'libraries' || /^run\.(bat|sh)$/i.test(n))) {
+    // 에센셜 모드로 하던 멀티나 싱글플레이 월드는 서버 폴더가 아니라 월드(또는 게임 폴더)다. 어디로 가져와야 하는지 알려 준다
+    if (names.includes('level.dat')) throw new Error('서버 폴더가 아니라 월드 폴더예요. 새 서버를 만들 때 "내 월드·zip"으로 가져와 주세요.')
+    if (names.includes('saves')) throw new Error('서버 폴더가 아니라 게임(클라이언트) 폴더예요. 안의 saves 폴더에 있는 월드를 새 서버의 "내 월드·zip"으로 가져와 주세요.')
     throw new Error('서버 폴더로 보이지 않아요. server.properties나 서버 jar가 있는 폴더를 골라 주세요.')
   }
   return abs

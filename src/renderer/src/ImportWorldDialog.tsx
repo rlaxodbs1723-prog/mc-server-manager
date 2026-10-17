@@ -19,7 +19,7 @@ const compact = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3
 const mb = (b: number) => (b >= 1024 ** 3 ? `${(b / 1024 ** 3).toFixed(1)}GB` : `${Math.max(1, Math.round(b / 1024 ** 2))}MB`)
 
 // ---------- 내 월드: zip 파일이나 월드 폴더를 끌어다 놓기 (누르면 파일 고르기) ----------
-function SavePicker({ onPick }: { onPick: (w: SaveWorld) => void }) {
+export function SavePicker({ onPick }: { onPick: (w: SaveWorld) => void }) {
   const toast = useToast()
   const [busy, setBusy] = useState(false)
   const [over, setOver] = useState(false)
@@ -104,7 +104,7 @@ export function KeySetup({ onDone }: { onDone: () => void }) {
   )
 }
 
-function MapBrowser({ serverVersion, onPick }: { serverVersion: string; onPick: (w: SaveWorld) => void }) {
+export function MapBrowser({ serverVersion, onPick }: { serverVersion: string; onPick: (w: SaveWorld) => void }) {
   const rootRef = useRef<HTMLDivElement>(null)
   const toast = useToast()
   const [hasKey, setHasKey] = useState<boolean | null>(null)

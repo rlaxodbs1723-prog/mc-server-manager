@@ -1,17 +1,22 @@
 import { ArrowDown, CopyPlus, FolderOpen, Pencil, Play, Search, Send, Settings, Square, Trash2, X, Zap } from 'lucide-react'
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { SOFTWARE_INFO, type ModKindInfo, type PreflightResult, type Progress, type ServerListItem } from '../../shared-types'
+import { SOFTWARE_INFO, type BedrockUpdateInfo, type ModKindInfo, type PreflightResult, type Progress, type ServerListItem } from '../../shared-types'
 import { suggest, usageOf } from './consoleHelp'
 import EulaDialog from './EulaDialog'
 import DomainStartDialog from './DomainStartDialog'
 import InviteBox from './InviteBox'
 import FirstRunGuide from './FirstRunGuide'
 import ManageTab from './ManageTab'
+import MapTab from './MapTab'
 import ChatLogTab from './ChatLogTab'
 import BackupTab from './BackupTab'
 import FilesTab from './FilesTab'
 import DatapacksTab from './DatapacksTab'
 import ModsTab from './ModsTab'
+import AddonsTab from './AddonsTab'
+import BedrockLoopbackNotice from './BedrockLoopbackNotice'
+import BedrockManageTab from './BedrockManageTab'
+import BedrockSettingsDialog from './BedrockSettingsDialog'
 import SettingsDialog from './SettingsDialog'
 import StatsBar from './StatsBar'
 import { Confirm, Modal, ProgressView, SoftwareBadge, useToast } from './ui'
@@ -126,7 +131,11 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
   const [progress, setProgress] = useState<Progress | null>(null)
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState('')
-  const [tab, setTab] = useStored<'console' | 'manage' | 'chat' | 'mods' | 'datapacks' | 'backup' | 'files'>(`tab:${folderPath}`, 'console') // 서버마다 마지막 탭을 기억한다
+  const [tab, setTab] = useStored<'console' | 'manage' | 'chat' | 'mods' | 'datapacks' | 'addons' | 'resources' | 'scripts' | 'maps' | 'backup' | 'files'>(`tab:${folderPath}`, 'console') // 서버마다 마지막 탭을 기억한다
+  const [bedrockUpdate, setBedrockUpdate] = useState<BedrockUpdateInfo | null>(null)
+  const bedrock = software === 'bedrock' // 배드락은 관리·채팅·데이터팩·모드 탭 대신 애드온 탭을 쓴다
+  const BEDROCK_PACK_TABS = ['addons', 'resources', 'scripts', 'maps'] // 배드락: 애드온·리소스 팩·스크립트·맵을 탭으로 나눈다
+  const shownTab = bedrock ? (['console', 'manage', ...BEDROCK_PACK_TABS, 'backup', 'files'].includes(tab) ? tab : 'console') : ['addons', 'resources', 'scripts'].includes(tab) ? 'console' : tab
   const [modKind, setModKind] = useState<ModKindInfo | null>(null) // 바닐라면 null → 모드 탭 없음
   const consoleRef = useRef<HTMLPreElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
@@ -144,6 +153,20 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
   useEffect(() => {
     window.api.modKind(folderPath).then(setModKind)
   }, [folderPath])
+
+  // 배드락은 게임이 먼저 올라가면 접속이 안 되므로 새 서버 버전이 있는지 알아 둔다 (서버가 바뀌거나 업데이트되면 다시 본다)
+  useEffect(() => {
+    setBedrockUpdate(null)
+    if (software !== 'bedrock') return
+    let alive = true
+    window.api
+      .checkBedrockUpdate(folderPath)
+      .then((u) => alive && setBedrockUpdate(u))
+      .catch(() => undefined)
+    return () => {
+      alive = false
+    }
+  }, [folderPath, software, server.mcVersion])
 
   // 서버를 바꾸면 그 서버의 로그를 새로 불러오고, 이후 줄은 이벤트로 받는다
   useEffect(() => {
@@ -395,7 +418,12 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
               {SOFTWARE_INFO[software].label} {server.mcVersion}
               {server.loaderVersion ? ` · ${server.loaderVersion}` : ''}
             </span>
-            <InviteBox folderPath={folderPath} />
+            <InviteBox folderPath={folderPath} bedrock={bedrock} />
+            {bedrock && bedrockUpdate?.available && (
+              <button className="pill update-pill" onClick={() => setShowSettings(true)} title="배드락 게임이 먼저 업데이트되면 서버에 접속할 수 없어요. 눌러서 업데이트하기">
+                새 버전 {bedrockUpdate.latest}
+              </button>
+            )}
           </div>
         </div>
         <div className="head-actions">
@@ -446,26 +474,47 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
       {!starting && state === 'starting' && <BootProgress log={log} />}
       {error && <p className="error-text">{error}</p>}
 
+      {bedrock && <BedrockLoopbackNotice />}
+
       <StatsBar folderPath={folderPath} on={on} />
 
       <nav className="tabs">
         <button className={tab === 'console' ? 'active' : ''} onClick={() => setTab('console')}>
           콘솔
         </button>
-        <button className={tab === 'manage' ? 'active' : ''} onClick={() => setTab('manage')}>
+        <button className={shownTab === 'manage' ? 'active' : ''} onClick={() => setTab('manage')}>
           관리
         </button>
-        <button className={tab === 'chat' ? 'active' : ''} onClick={() => setTab('chat')}>
-          채팅
+        <button className={shownTab === 'maps' ? 'active' : ''} onClick={() => setTab('maps')}>
+          월드
         </button>
+        {!bedrock && (
+          <button className={tab === 'chat' ? 'active' : ''} onClick={() => setTab('chat')}>
+            채팅
+          </button>
+        )}
+        {bedrock &&
+          (
+            [
+              ['addons', '애드온'],
+              ['resources', '리소스 팩'],
+              ['scripts', '스크립트']
+            ] as const
+          ).map(([id, label]) => (
+            <button key={id} className={shownTab === id ? 'active' : ''} onClick={() => setTab(id)}>
+              {label}
+            </button>
+          ))}
         {modKind && (
           <button className={tab === 'mods' ? 'active' : ''} onClick={() => setTab('mods')}>
             {modKind.kind}
           </button>
         )}
-        <button className={tab === 'datapacks' ? 'active' : ''} onClick={() => setTab('datapacks')}>
-          데이터팩
-        </button>
+        {!bedrock && (
+          <button className={tab === 'datapacks' ? 'active' : ''} onClick={() => setTab('datapacks')}>
+            데이터팩
+          </button>
+        )}
         <button className={tab === 'backup' ? 'active' : ''} onClick={() => setTab('backup')}>
           백업
         </button>
@@ -474,7 +523,11 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
         </button>
       </nav>
 
-      {tab === 'datapacks' ? (
+      {bedrock && BEDROCK_PACK_TABS.includes(shownTab) ? (
+        <AddonsTab key={shownTab} folderPath={folderPath} serverOn={on} kind={shownTab === 'resources' ? 'resource' : shownTab === 'scripts' ? 'script' : shownTab === 'maps' ? 'map' : 'addon'} />
+      ) : shownTab === 'maps' ? (
+        <MapTab folderPath={folderPath} serverOn={on} mcVersion={server.mcVersion} />
+      ) : shownTab === 'datapacks' ? (
         <DatapacksTab folderPath={folderPath} serverOn={on} />
       ) : tab === 'backup' ? (
         <BackupTab folderPath={folderPath} serverOn={on} />
@@ -482,8 +535,8 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
         <FilesTab folderPath={folderPath} serverOn={on} />
       ) : tab === 'chat' ? (
         <ChatLogTab folderPath={folderPath} />
-      ) : tab === 'manage' ? (
-        <ManageTab folderPath={folderPath} running={state === 'running'} />
+      ) : shownTab === 'manage' ? (
+        bedrock ? <BedrockManageTab folderPath={folderPath} running={state === 'running'} /> : <ManageTab folderPath={folderPath} running={state === 'running'} />
       ) : tab === 'mods' && modKind ? (
         <ModsTab folderPath={folderPath} kind={modKind} serverOn={on} />
       ) : (
@@ -572,7 +625,8 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
         </div>
       )}
 
-      {showSettings && <SettingsDialog folderPath={folderPath} serverOn={on} mcVersion={server.mcVersion} software={software} loaderVersion={server.loaderVersion} onVersionChanged={onChanged} onClose={() => setShowSettings(false)} />}
+      {showSettings && bedrock && <BedrockSettingsDialog folderPath={folderPath} serverOn={on} onChanged={onChanged} onClose={() => setShowSettings(false)} />}
+      {showSettings && !bedrock && <SettingsDialog folderPath={folderPath} serverOn={on} mcVersion={server.mcVersion} software={software} loaderVersion={server.loaderVersion} onVersionChanged={onChanged} onClose={() => setShowSettings(false)} />}
       {modKind?.kind === '모드' && (
         <OffSuggestDialog
           folderPath={folderPath}

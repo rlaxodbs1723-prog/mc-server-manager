@@ -14,7 +14,8 @@ const SW_COLOR: Record<Software, string> = {
   fabric: '#dcc7a1',
   quilt: '#c490ff',
   forge: '#f29a55',
-  neoforge: '#ff7a45'
+  neoforge: '#ff7a45',
+  bedrock: '#3fc1a5'
 }
 
 // name을 주면 그 이름의 첫 글자를, 없으면 서버 종류의 첫 글자를 보여 준다. 색은 서버 종류를 따른다.

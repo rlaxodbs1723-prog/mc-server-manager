@@ -10,7 +10,7 @@ import { cleanError } from './util'
 
 // 만들기 화면에서 묶어 보여 줄 순서
 const GROUPS: { label: string; items: Software[] }[] = [
-  { label: '기본', items: ['vanilla'] },
+  { label: '기본', items: ['vanilla', 'bedrock'] },
   { label: '플러그인 서버', items: ['paper', 'purpur'] },
   { label: '모드 서버', items: ['fabric', 'quilt', 'forge', 'neoforge'] }
 ]
@@ -77,7 +77,7 @@ export default function CreateServer({ existingNames }: Props) {
           </div>
         ))}
         <div className="sw-group">
-          <div className="sw-group-label">모드팩</div>
+          <div className="sw-group-label">모드팩 · 가져오기</div>
           <div className="sw-grid">
             <button className="sw-tile" onClick={() => setModpack(true)}>
               <span className="sw-badge" style={{ width: 40, height: 40, borderRadius: 12, color: '#1bd96a', background: '#1bd96a24' }}>
@@ -87,11 +87,6 @@ export default function CreateServer({ existingNames }: Props) {
                 <div className="t">Modpack</div>
               </div>
             </button>
-          </div>
-        </div>
-        <div className="sw-group">
-          <div className="sw-group-label">가져오기</div>
-          <div className="sw-grid">
             <button className="sw-tile" onClick={pickImport}>
               <span className="sw-badge" style={{ width: 40, height: 40, borderRadius: 12, color: '#f5a524', background: '#f5a52424' }}>
                 <FolderInput size={22} />

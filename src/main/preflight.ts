@@ -7,6 +7,7 @@ import os from 'os'
 import path from 'path'
 import type { PreflightResult } from '../shared-types'
 import { parseLenient, readEntries } from './clientjar'
+import { checkAddons } from './bedrock'
 import { scanForOff } from './mods'
 import { readServerInfo } from './servers'
 
@@ -153,6 +154,8 @@ function memoryWarning(memoryMb: number | undefined): string | null {
 
 export async function runPreflight(folderPath: string): Promise<PreflightResult> {
   const info = readServerInfo(folderPath)
+  // 배드락: 자바 메모리·모드 점검은 해당 없고, 애드온의 빠진 의존·중복만 본다
+  if (info.software === 'bedrock') return { ...checkAddons(folderPath), memory: null, askOff: false, kind: '애드온' }
   const modded = MODDED.includes(info.software ?? 'vanilla')
   return {
     ...(modded ? await checkMods(folderPath, info.software === 'forge' || info.software === 'neoforge').catch(() => ({ missing: [], duplicates: [] })) : { missing: [], duplicates: [] }),

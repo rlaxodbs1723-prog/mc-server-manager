@@ -1,15 +1,14 @@
-import { Cpu, Layers, Globe2, MessageSquare, Package, RotateCcw, Save, Swords, Timer, Users, Wrench, X, Zap } from 'lucide-react'
+import { Cpu, Layers, MessageSquare, Package, Save, Swords, Timer, Users, Wrench, X, Zap } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useLeaveAnimation } from './leave'
 import { PAPER_FIELDS, type PaperField, type ServerAutomation, type ServerSettings, type Software } from '../../shared-types'
 import Select from './Select'
 import { Confirm, Loading, Modal, useToast } from './ui'
-import WorldResetDialog from './WorldResetDialog'
 import VersionSection, { versionLabel, type PickedVersion } from './VersionSection'
 import { useTasks } from './tasks'
 import { cleanError } from './util'
 
-type Field =
+export type Field =
   | { key: string; label: string; desc?: string; type: 'bool'; def: boolean; legacy?: boolean }
   | { key: string; label: string; desc?: string; type: 'number'; def: number; min: number; max: number; unit?: string; legacy?: boolean }
   | { key: string; label: string; desc?: string; type: 'text'; def: string; placeholder?: string; legacy?: boolean }
@@ -26,6 +25,21 @@ interface Section {
   fields: Field[]
 }
 
+// 월드와 관련된 설정 (맵 탭에서 보여 준다): 월드의 규칙·범위·거리. 서버 설정 창에는 없다
+export const WORLD_FIELDS: Field[] = [
+  { key: 'pvp', label: '플레이어끼리 공격(PvP)', type: 'bool', def: true, legacy: true },
+  { key: 'enable-command-block', label: '명령 블록 사용', desc: '명령 블록을 설치하고 작동시킬 수 있어요.', type: 'bool', def: false, legacy: true },
+  { key: 'spawn-animals', label: '동물 생성', type: 'bool', def: true, legacy: true },
+  { key: 'spawn-npcs', label: '주민 생성', type: 'bool', def: true, legacy: true },
+  { key: 'allow-nether', label: '네더 허용', type: 'bool', def: true, legacy: true },
+  { key: 'spawn-monsters', label: '몬스터 생성', type: 'bool', def: true, legacy: true },
+  { key: 'view-distance', label: '보이는 거리', desc: '클수록 멀리 보이지만 컴퓨터가 힘들어해요. 보통 8~12가 적당해요.', type: 'number', def: 10, min: 3, max: 32, unit: '청크' },
+  { key: 'simulation-distance', label: '움직이는 거리', desc: '플레이어 주변에서 동물·작물이 움직이는 범위예요. 보이는 거리보다 크게 해도 효과가 없어요.', type: 'number', def: 10, min: 3, max: 32, unit: '청크' },
+  { key: 'spawn-protection', label: '스폰 보호 범위', desc: '처음 태어나는 곳 주변을 관리자만 부술 수 있어요. 0이면 꺼져요.', type: 'number', def: 16, min: 0, max: 256, unit: '블록' },
+  { key: 'max-world-size', label: '월드 크기 제한', desc: '월드 경계까지의 거리(반지름)예요. 작게 하면 지도가 좁아져서 용량이 덜 늘어요.', type: 'number', def: 29999984, min: 1, max: 29999984, unit: '블록' },
+  { key: 'max-build-height', label: '건축 높이 제한', type: 'number', def: 256, min: 64, max: 256, unit: '블록', legacy: true }
+]
+
 // 설정 항목은 그 서버의 server.properties에 실제로 있을 때만 보여 준다 (버전마다 있는 항목이 다르다).
 // legacy: 예전 버전에만 있는 설정 (최신 버전은 게임 규칙으로 옮겨졌다). 처음 켜기 전(파일이 없을 때)에는 숨긴다.
 const SECTIONS: Section[] = [
@@ -35,11 +49,7 @@ const SECTIONS: Section[] = [
     icon: <Swords size={18} />,
     fields: [
       { key: 'motd', label: '서버 설명', desc: '마인크래프트 서버 목록에서 서버 이름 아래에 보이는 문구예요. §a 같은 색 코드도 쓸 수 있어요.', type: 'text', def: 'A Minecraft Server', placeholder: '우리들의 서버' },
-      { key: 'pvp', label: '플레이어끼리 공격(PvP)', type: 'bool', def: true, legacy: true },
       { key: 'allow-flight', label: '비행 허용', desc: '비행 기능이 있는 모드·플러그인을 쓸 때 켜 주세요. 끄면 날아다니는 사람을 서버가 내보내요.', type: 'bool', def: false },
-      { key: 'enable-command-block', label: '명령 블록 사용', desc: '명령 블록을 설치하고 작동시킬 수 있어요.', type: 'bool', def: false, legacy: true },
-      { key: 'spawn-animals', label: '동물 생성', type: 'bool', def: true, legacy: true },
-      { key: 'spawn-npcs', label: '주민 생성', type: 'bool', def: true, legacy: true },
       { key: 'announce-player-achievements', label: '업적 알림', desc: '업적을 달성하면 채팅에 알려 줘요.', type: 'bool', def: true, legacy: true },
       {
         key: 'op-permission-level', label: '관리자 권한 단계', desc: '관리자(OP)가 쓸 수 있는 명령어 범위예요. 보통 4(전부)로 두면 돼요.', type: 'select', def: '4',
@@ -50,19 +60,6 @@ const SECTIONS: Section[] = [
           { value: '4', label: '4 · 전부 (서버 끄기 포함)' }
         ]
       }
-    ]
-  },
-  {
-    title: '월드',
-    icon: <Globe2 size={18} />,
-    fields: [
-      { key: 'allow-nether', label: '네더 허용', type: 'bool', def: true, legacy: true },
-      { key: 'spawn-monsters', label: '몬스터 생성', type: 'bool', def: true, legacy: true },
-      { key: 'view-distance', label: '보이는 거리', desc: '클수록 멀리 보이지만 컴퓨터가 힘들어해요. 보통 8~12가 적당해요.', type: 'number', def: 10, min: 3, max: 32, unit: '청크' },
-      { key: 'simulation-distance', label: '움직이는 거리', desc: '플레이어 주변에서 동물·작물이 움직이는 범위예요. 보이는 거리보다 크게 해도 효과가 없어요.', type: 'number', def: 10, min: 3, max: 32, unit: '청크' },
-      { key: 'spawn-protection', label: '스폰 보호 범위', desc: '처음 태어나는 곳 주변을 관리자만 부술 수 있어요. 0이면 꺼져요.', type: 'number', def: 16, min: 0, max: 256, unit: '블록' },
-      { key: 'max-world-size', label: '월드 크기 제한', desc: '월드 경계까지의 거리(반지름)예요. 작게 하면 지도가 좁아져서 용량이 덜 늘어요.', type: 'number', def: 29999984, min: 1, max: 29999984, unit: '블록' },
-      { key: 'max-build-height', label: '건축 높이 제한', type: 'number', def: 256, min: 64, max: 256, unit: '블록', legacy: true }
     ]
   },
   {
@@ -152,12 +149,12 @@ const SECTIONS: Section[] = [
 ]
 
 // 파일에 없으면 기본값을 보여 준다
-function valueOf(f: Field, props: Record<string, string>): string {
+export function valueOf(f: Field, props: Record<string, string>): string {
   return props[f.key] ?? String(f.def)
 }
 
 const PERF_TAB = '성능' // 메모리 슬라이더가 맨 위에 붙는 탭
-const ALWAYS_TABS = ['버전', '게임', '월드', '자동', PERF_TAB]
+const ALWAYS_TABS = ['버전', '게임', '자동', PERF_TAB]
 
 interface Props {
   folderPath: string
@@ -177,8 +174,6 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
   const { runJob } = useTasks()
   const [picked, setPicked] = useState<PickedVersion | null>(null) // 고른 새 버전 (저장하기를 누르면 바뀐다)
   const [askDowngrade, setAskDowngrade] = useState(false)
-  const [hardcore, setHardcore] = useState<boolean | null>(null) // 파일에 적힌 하드코어 값
-  const [hardcoreEdit, setHardcoreEdit] = useState<boolean | null>(null) // 바꾼 값 (저장 전)
   const [settings, setSettings] = useState<ServerSettings | null>(null)
   const [edits, setEdits] = useState<Record<string, string>>({})
   const [memory, setMemory] = useState<number | null>(null)
@@ -189,12 +184,9 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
   const [paperEdit, setPaperEdit] = useState<Record<string, string>>({}) // 바꾼 Paper 설정 (파일에 쓸 값)
   const [saving, setSaving] = useState(false)
   const [tab, setTab] = useState(SECTIONS[1].title) // 처음에는 게임 탭
-  const [askReset, setAskReset] = useState(false)
   const [askDiscard, setAskDiscard] = useState(false)
 
   const load = () => {
-    window.api.getHardcore(folderPath).then((h) => setHardcore(h.hardcore))
-    setHardcoreEdit(null)
     return window.api.getSettings(folderPath).then((s) => {
       setSettings(s)
       setEdits({})
@@ -208,12 +200,6 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
     })
   }
 
-  // 월드 리셋 창은 바로 저장하므로, 닫을 때 파일 값만 다시 읽고 아직 저장 안 한 다른 변경은 그대로 둔다
-  async function reloadKeepingEdits() {
-    const s = await window.api.getSettings(folderPath)
-    setSettings((cur) => (cur ? { ...cur, properties: s.properties, worldExists: s.worldExists } : s))
-  }
-
   useEffect(() => {
     load()
   }, [folderPath]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -221,8 +207,7 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
   const props = useMemo(() => ({ ...(settings?.properties ?? {}), ...edits }), [settings, edits])
   const fileExists = settings ? Object.keys(settings.properties).length > 0 : false
   const propsDirty = Object.keys(edits).length > 0 || memory != null || autoRestart != null || optimize != null || javaArgs != null || Object.keys(autoEdit).length > 0 || Object.keys(paperEdit).length > 0
-  const hardcoreDirty = hardcoreEdit != null && hardcoreEdit !== hardcore
-  const dirty = propsDirty || hardcoreDirty || picked != null
+  const dirty = propsDirty || picked != null
 
   // Esc나 바깥을 눌러 닫을 때 저장 안 한 변경이 있으면 한 번 묻는다
   const requestClose = () => (dirty ? setAskDiscard(true) : onClose())
@@ -230,7 +215,7 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       // 드롭다운이 Esc를 먼저 처리했으면(defaultPrevented) 창은 닫지 않는다
-      if (e.key !== 'Escape' || e.defaultPrevented || askReset || askDiscard || askDowngrade) return
+      if (e.key !== 'Escape' || e.defaultPrevented || askDiscard || askDowngrade) return
       requestClose()
     }
     window.addEventListener('keydown', onKey)
@@ -269,8 +254,7 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
           paper: Object.keys(paperEdit).length ? paperEdit : undefined
         })
       }
-      if (hardcoreDirty) await window.api.setHardcore(folderPath, !!hardcoreEdit)
-      if ((propsDirty || hardcoreDirty) && !picked) toast(serverOn ? '저장했어요. 서버를 다시 켜면 적용돼요' : '저장했어요')
+      if (propsDirty && !picked) toast(serverOn ? '저장했어요. 서버를 다시 켜면 적용돼요' : '저장했어요')
       if (picked) {
         const target = `${picked.mcVersion}${software === 'vanilla' ? '' : ` · ${versionLabel(software, picked.loaderVersion)}`}`
         runJob(folderPath, '버전 바꾸기', `${target}(으)로 바꿨어요`, async (report) => {
@@ -299,7 +283,6 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
     SECTIONS.find((s) => s.title === title)?.fields.filter((f) => (fileExists ? f.key in (settings?.properties ?? {}) : !f.legacy)) ?? []
   const changedIn = (title: string) =>
     (title === '버전' && picked != null) ||
-    (title === '게임' && hardcoreDirty) ||
     (title === PERF_TAB && (memory != null || autoRestart != null || optimize != null || javaArgs != null)) ||
     (title === '자동' && Object.keys(autoEdit).length > 0) ||
     (title === 'Paper' && Object.keys(paperEdit).length > 0) ||
@@ -445,24 +428,6 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
           />
         )}
         {tab === '게임' && <IconRow folderPath={folderPath} />}
-        {tab === '게임' && <HardcoreRow serverOn={serverOn} value={hardcoreEdit ?? hardcore} changed={hardcoreDirty} onChange={setHardcoreEdit} />}
-        {tab === '월드' && (
-          <div className="setting-row">
-            <div className="setting-text">
-              <div className="setting-label">{settings.worldExists ? '월드 리셋' : '새 월드 설정'}</div>
-              <div className="setting-desc">하드코어, 시드, 월드 종류를 정하고 월드를 새로 만들어요.</div>
-            </div>
-            <button
-              className={`btn ${settings.worldExists ? 'danger' : ''}`}
-              onClick={() => setAskReset(true)}
-              disabled={serverOn}
-              title={serverOn ? '서버를 끈 다음에 할 수 있어요' : undefined}
-            >
-              <RotateCcw size={16} />
-              {settings.worldExists ? '월드 리셋' : '설정하기'}
-            </button>
-          </div>
-        )}
         {fields.map((f) =>
           <FieldRow key={f.key} field={f} value={valueOf(f, props)} changed={f.key in edits} onChange={(v) => set(f.key, v)} />
         )}
@@ -506,19 +471,6 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
         </section>
       </div>
 
-      {askReset && settings && (
-        <WorldResetDialog
-          mcVersion={mcVersion}
-          folderPath={folderPath}
-          properties={settings.properties}
-          worldExists={settings.worldExists}
-          onClose={() => setAskReset(false)}
-          onDone={() => {
-            setAskReset(false)
-            reloadKeepingEdits()
-          }}
-        />
-      )}
       {askDowngrade && picked && (
         <Confirm
           title="낮은 버전으로 바꿀까요?"
@@ -550,7 +502,7 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
   )
 }
 
-function FieldRow({ field: f, value, changed, focus, onChange }: { field: Field; value: string; changed: boolean; focus?: boolean; onChange: (v: string) => void }) {
+export function FieldRow({ field: f, value, changed, focus, onChange }: { field: Field; value: string; changed: boolean; focus?: boolean; onChange: (v: string) => void }) {
   const rowRef = useRef<HTMLDivElement>(null)
   // 다른 곳에서 "이 칸을 바꿔 주세요"로 데려왔으면 보이게 굴리고 입력칸에 커서를 둔다
   useEffect(() => {
@@ -690,21 +642,6 @@ function IconRow({ folderPath }: { folderPath: string }) {
 }
 
 // 하드코어: 다른 설정처럼 저장하기를 눌러야 바뀐다. 월드 파일을 고치므로 서버가 꺼져 있을 때만 바꿀 수 있다.
-function HardcoreRow({ serverOn, value, changed, onChange }: { serverOn: boolean; value: boolean | null; changed: boolean; onChange: (on: boolean) => void }) {
-  return (
-    <div className={`setting-row ${changed ? 'changed' : ''}`}>
-      <div className="setting-text">
-        <div className="setting-label">하드코어</div>
-        <div className="setting-desc">{serverOn ? '서버를 끈 다음에 바꿀 수 있어요.' : '죽으면 다시 살아날 수 없고 관전 모드가 돼요. 난이도는 어려움으로 고정돼요.'}</div>
-      </div>
-      <label className="switch">
-        <input type="checkbox" checked={!!value} disabled={value == null || serverOn} onChange={(e) => onChange(e.target.checked)} />
-        <span />
-      </label>
-    </div>
-  )
-}
-
 // ---------- 자동 탭 ----------
 const EMPTY_STOP = [
   { value: '0', label: '안 함' },

@@ -4,7 +4,7 @@
 import { app } from 'electron'
 import fs from 'fs'
 import path from 'path'
-import type { MapFile, MapHit, MapSort, ModSearchHit, ModpackBrowseHit, ModpackBrowseOptions, ModpackSort, ModpackVersion } from '../shared-types'
+import type { BedrockHit, BedrockKind, MapFile, MapHit, MapSort, ModSearchHit, ModpackBrowseHit, ModpackBrowseOptions, ModpackSort, ModpackVersion } from '../shared-types'
 import { downloadFile, HEADERS } from './download'
 import { registerPing, watchSite } from './sitestatus'
 import { tempRoot } from './worldzip'
@@ -415,4 +415,70 @@ export async function matchFingerprints(fps: number[]): Promise<Map<number, { mo
   const res = await call<{ data: { exactMatches: { id: number; file: CfFileFull & { fileFingerprint: number } }[] } }>('/fingerprints/432', apiKey(), { fingerprints: fps })
   for (const m of res.data.exactMatches) map.set(m.file.fileFingerprint, { modId: m.id, file: m.file })
   return map
+}
+
+// ---------- 배드락 (CurseForge의 "Minecraft Bedrock" 게임) ----------
+const GAME_BEDROCK = 78022
+// 분류 번호: 애드온 4984, 리소스 팩(텍스처) 6929, 스크립트 6940, 맵 6913
+const BEDROCK_CLASS: Record<BedrockKind, number> = { addon: 4984, resource: 6929, script: 6940, map: 6913 }
+const BEDROCK_EXT = /\.(mcaddon|mcpack|mcworld|zip)$/i
+
+interface CfBedrockFile {
+  id: number
+  fileName: string
+  displayName?: string
+  fileDate: string
+  downloadUrl: string | null
+  hashes?: { value: string; algo: number }[]
+}
+interface CfBedrockMod extends CfMod {
+  latestFiles?: CfBedrockFile[]
+}
+
+// 가장 새로운, 받을 수 있는 파일 (제작자가 다른 앱에서 받는 것을 막았으면 downloadUrl이 null이다)
+const newestFile = (m: CfBedrockMod): CfBedrockFile | null =>
+  (m.latestFiles ?? []).filter((f) => !!f.downloadUrl && BEDROCK_EXT.test(f.fileName)).sort((a, b) => Date.parse(b.fileDate) - Date.parse(a.fileDate))[0] ?? null
+
+export async function searchBedrockStore(kind: BedrockKind, query: string, offset = 0): Promise<{ total: number; more: boolean; hits: BedrockHit[] }> {
+  const q = new URLSearchParams({
+    gameId: String(GAME_BEDROCK),
+    classId: String(BEDROCK_CLASS[kind] ?? BEDROCK_CLASS.addon),
+    searchFilter: String(query).slice(0, 100),
+    sortField: '2', // 인기
+    sortOrder: 'desc',
+    pageSize: '20',
+    index: String(Math.max(0, Math.floor(offset)))
+  })
+  const res = await call<{ data: CfBedrockMod[]; pagination: { totalCount: number; index: number; resultCount: number } }>('/mods/search?' + q)
+  const total = Math.min(res.pagination.totalCount, 10000)
+  return {
+    total,
+    more: res.pagination.index + res.pagination.resultCount < total,
+    hits: res.data
+      .filter((m) => m.allowModDistribution !== false && newestFile(m))
+      .map((m) => ({
+        id: m.id,
+        title: m.name,
+        summary: m.summary,
+        author: m.authors?.[0]?.name ?? '',
+        downloads: m.downloadCount,
+        iconUrl: m.logo?.thumbnailUrl ?? null,
+        url: m.links?.websiteUrl ?? 'https://www.curseforge.com/minecraft-bedrock',
+        fileName: newestFile(m)!.fileName
+      }))
+  }
+}
+
+// 배드락 항목의 최신 파일을 받아 경로를 돌려준다
+export async function downloadBedrockHit(modId: number, onBytes?: (done: number, total?: number) => void): Promise<{ file: string; fileName: string; title: string }> {
+  const res = await call<{ data: CfBedrockMod }>(`/mods/${Math.floor(modId)}`)
+  const m = res.data
+  if (m.allowModDistribution === false) throw new Error('제작자가 다른 앱에서 받는 것을 막아 두었어요. CurseForge 사이트에서 받아서 파일을 직접 넣어 주세요.')
+  const f = newestFile(m)
+  if (!f?.downloadUrl) throw new Error('받을 수 있는 파일이 없어요. CurseForge 사이트에서 받아서 파일을 직접 넣어 주세요.')
+  if (!/^https:\/\/[^/]*(forgecdn\.net|curseforge\.com)\//.test(f.downloadUrl)) throw new Error('알 수 없는 다운로드 주소예요.')
+  fs.mkdirSync(tempRoot(), { recursive: true })
+  const dest = path.join(tempRoot(), `bedrock-${f.id}${path.extname(f.fileName).toLowerCase()}`)
+  await downloadFile({ url: f.downloadUrl, dest, onBytes, sha1: cfSha1(f) })
+  return { file: dest, fileName: f.fileName, title: m.name }
 }

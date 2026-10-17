@@ -3,7 +3,7 @@ import { getUpdateState, initUpdater, installUpdateNow } from './updater'
 import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, Notification, screen, shell, Tray } from 'electron'
 import fs from 'fs'
 import { join, resolve, sep } from 'path'
-import { EULA_URL, friendlyError, SOFTWARE_INFO, type CreateServerOptions, type BackupSettings, type ManageAction, type ModpackBrowseOptions, type SearchSite, type MapSort, type Progress, type SaveSettings, type ServerEvent, type Software } from '../shared-types'
+import { EULA_URL, friendlyError, SOFTWARE_INFO, type BedrockAction, type BedrockKind, type CreateServerOptions, type BackupSettings, type ManageAction, type ModpackBrowseOptions, type SearchSite, type MapSort, type Progress, type SaveSettings, type ServerEvent, type Software } from '../shared-types'
 import { CreateEta } from './eta'
 import { listGameRules, setGameRule } from './gamerules'
 import { getHardcore, setHardcore } from './hardcore'
@@ -11,6 +11,11 @@ import { getGameRuleLang } from './lang'
 import { checkReachable, closeAllPorts, getInvite, initInvite, useTunnel } from './invite'
 import { checkDomainName, claimDomain, getDomain, releaseDomain } from './domain'
 import { detectServer } from './importserver'
+import { addAddonFile, isBedrockFolder, latestBedrock, listAddons, removeAddon, setAddonEnabled } from './bedrock'
+import { allowLoopback, getLoopbackState } from './bedrockloopback'
+import { getBedrockManage, runBedrockAction } from './bedrockmanage'
+import { checkBedrockUpdate, importBedrockWorld, installBedrockHit, updateBedrock } from './bedrockops'
+import { searchBedrockStore } from './curseforge'
 import { track as trackUsage } from './usage'
 import { getClaimUrl, openClaimPage, prepareClaim, tunnelLinked, unlinkTunnel } from './tunnel'
 import { getInbox } from './inbox'
@@ -36,7 +41,7 @@ import * as whitelist from './whitelist'
 import { getManageInfo, runAction } from './manage'
 import { getVersions } from './mojang'
 import { acceptEula, anyRunning, getLog, getState, onServerEvent, sendCommand, stopAll, stopServer } from './runner'
-import { changeVersion, deleteServer, memoryRange, cancelAutoRestarts, setServerOrder, duplicateServer, renameServer, createServer, getSettings, readServerInfo, listServers, cleanupUnfinished, getCleanupReport, resetWorld, saveSettings, serversRoot, startServerAt } from './servers'
+import { changeVersion, deleteServer, memoryRange, cancelAutoRestarts, setServerOrder, duplicateServer, renameServer, createServer, patchServerInfo, getSettings, readServerInfo, listServers, cleanupUnfinished, getCleanupReport, resetWorld, saveSettings, serversRoot, startServerAt } from './servers'
 import { assertFree, busyJobs, setOnJobDone, withLock } from './lock'
 import { getSiteStatus } from './sitestatus'
 import { runPreflight } from './preflight'
@@ -254,9 +259,10 @@ ipcMain.handle('createServer', async (event, options: CreateServerOptions, taskI
     // 만들기 창에서 이름 주소를 정했으면 달아 준다. 실패해도 서버는 만들어졌으니 알려만 준다 (이름이 겹치거나 인터넷이 막힌 경우)
     if (options.domainName) {
       track({ message: '이름 주소를 만들고 있어요', phase: 'base' })
-      await claimDomain(info.folderPath, options.domainName).catch((e) =>
-        notify('이름 주소를 만들지 못했어요', `${options.name}: ${e instanceof Error ? e.message : String(e)} 숫자 주소는 그대로 쓸 수 있어요.`)
-      )
+      await claimDomain(info.folderPath, options.domainName).catch((e) => {
+        patchServerInfo(info.folderPath, { domainWish: options.domainName }) // 정한 이름을 기억해 두고 서버를 켤 때 다시 시도한다
+        notify('이름 주소를 만들지 못했어요', `${options.name}: ${e instanceof Error ? e.message : String(e)} 서버를 켤 때 다시 시도하고, 그동안은 숫자 주소를 쓸 수 있어요.`)
+      })
     }
     eta.finish()
     notify('서버를 만들었어요', `${options.name} 서버가 준비됐어요. 눌러서 열어 보세요.`)
@@ -362,6 +368,37 @@ ipcMain.handle('getLog', (_event, folderPath: string) => getLog(checkServerFolde
 ipcMain.handle('getInvite', (_event, folderPath: string) => getInvite(checkServerFolder(folderPath)))
 ipcMain.handle('checkReachable', (_event, folderPath: string) => checkReachable(checkServerFolder(folderPath)))
 ipcMain.handle('checkDomainName', (_event, name: string) => checkDomainName(String(name)))
+ipcMain.handle('getBedrockVersion', async () => (await latestBedrock()).version)
+ipcMain.handle('listAddons', (_event, folderPath: string) => listAddons(checkServerFolder(folderPath)))
+ipcMain.handle('addAddonFile', (_event, folderPath: string, file: string) => addAddonFile(checkServerFolder(folderPath), String(file)))
+ipcMain.handle('setAddonEnabled', (_event, folderPath: string, id: string, enabled: boolean) => setAddonEnabled(checkServerFolder(folderPath), String(id), !!enabled))
+ipcMain.handle('removeAddon', (_event, folderPath: string, id: string) => removeAddon(checkServerFolder(folderPath), String(id)))
+const bedrockKindOf = (k: unknown): BedrockKind => (k === 'resource' || k === 'script' || k === 'map' ? k : 'addon')
+ipcMain.handle('searchBedrock', (_event, kind: string, query: string, offset: number) => searchBedrockStore(bedrockKindOf(kind), String(query ?? ''), Number(offset) || 0))
+ipcMain.handle('installBedrockHit', (_event, folderPath: string, modId: number, kind: string) => {
+  const target = checkServerFolder(folderPath)
+  const k = bedrockKindOf(kind)
+  return withLock(target, k === 'map' ? '월드 가져오기' : '애드온 설치', () => installBedrockHit(target, Number(modId), k))
+})
+ipcMain.handle('pickBedrockWorld', async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  const opts = { title: tr('가져올 배드락 월드를 골라 주세요'), properties: ['openFile' as const], filters: [{ name: tr('배드락 월드'), extensions: ['mcworld', 'zip'] }] }
+  const res = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts)
+  return res.canceled || !res.filePaths[0] ? null : res.filePaths[0]
+})
+ipcMain.handle('importBedrockWorld', (_event, folderPath: string, source: string) => {
+  const target = checkServerFolder(folderPath)
+  return withLock(target, '월드 가져오기', () => importBedrockWorld(target, String(source)))
+})
+ipcMain.handle('checkBedrockUpdate', (_event, folderPath: string) => checkBedrockUpdate(checkServerFolder(folderPath)))
+ipcMain.handle('updateBedrock', (event, folderPath: string) => {
+  const target = checkServerFolder(folderPath)
+  return withLock(target, '서버 업데이트', () => updateBedrock(target, (progress) => event.sender.send('versionProgress', { ...progress, folderPath: target })))
+})
+ipcMain.handle('getBedrockLoopback', () => getLoopbackState())
+ipcMain.handle('allowBedrockLoopback', () => allowLoopback())
+ipcMain.handle('getBedrockManage', (_event, folderPath: string) => getBedrockManage(checkServerFolder(folderPath)))
+ipcMain.handle('bedrockAction', (_event, folderPath: string, action: BedrockAction) => runBedrockAction(checkServerFolder(folderPath), action))
 ipcMain.handle('pickServerFolder', async (event) => {
   const win = BrowserWindow.fromWebContents(event.sender)
   const opts = { title: tr('가져올 서버 폴더를 골라 주세요'), properties: ['openDirectory' as const] }
@@ -369,7 +406,20 @@ ipcMain.handle('pickServerFolder', async (event) => {
   return res.canceled || !res.filePaths[0] ? null : res.filePaths[0]
 })
 ipcMain.handle('detectServer', (_event, folderPath: string) => detectServer(String(folderPath), serversRoot()))
-ipcMain.handle('getDomain', (_event, folderPath: string) => getDomain(checkServerFolder(folderPath)))
+ipcMain.handle('getDomain', async (_event, folderPath: string) => {
+  const target = checkServerFolder(folderPath)
+  const have = getDomain(target)
+  if (have) return have
+  // 만들 때 정한 이름이 있는데 그때 주소를 못 만들었으면 여기서 다시 시도한다 (되면 "주소 정하기" 창을 띄우지 않는다)
+  const wish = readServerInfo(target).domainWish
+  if (!wish) return null
+  try {
+    await claimDomain(target, wish)
+    return getDomain(target)
+  } catch {
+    return null
+  }
+})
 ipcMain.handle('claimDomain', (_event, folderPath: string, name: string) => claimDomain(checkServerFolder(folderPath), String(name)))
 ipcMain.handle('getMemoryRange', () => memoryRange())
 ipcMain.handle('useTunnel', (_event, folderPath: string) => useTunnel(checkServerFolder(folderPath)))
@@ -388,7 +438,7 @@ ipcMain.handle('setGameRule', (_event, folderPath: string, name: string, value: 
   setGameRule(checkServerFolder(folderPath), String(name), String(value))
 )
 ipcMain.handle('getGameRuleLang', (_event, folderPath: string) =>
-  getGameRuleLang(readServerInfo(checkServerFolder(folderPath)).mcVersion).catch(() => ({})) // 못 받으면 앱의 이름을 쓴다
+  isBedrockFolder(checkServerFolder(folderPath)) ? {} : getGameRuleLang(readServerInfo(checkServerFolder(folderPath)).mcVersion).catch(() => ({})) // 못 받으면 앱의 이름을 쓴다 (배드락은 자바 번역이 없다)
 )
 ipcMain.handle('getSettings', (_event, folderPath: string) => getSettings(checkServerFolder(folderPath)))
 ipcMain.handle('saveSettings', (_event, folderPath: string, settings: SaveSettings) =>

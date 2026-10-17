@@ -168,9 +168,9 @@ interface RunData {
 const localPortOf = (t: RunData['tunnels'][number]): number => Number(t.agent_config.fields.find((f) => f.name === 'local_port')?.value)
 
 // 이 서버 포트로 이어지는 터널을 찾거나 만들고, 에이전트를 켜서 접속 주소를 돌려준다
-export async function openTunnel(folderPath: string, port: number): Promise<string> {
+export async function openTunnel(folderPath: string, port: number, udp = false): Promise<string> {
   try {
-    return await openTunnelWith(folderPath, port)
+    return await openTunnelWith(folderPath, port, udp)
   } catch (e) {
     // 저장해 둔 키가 playit에서 무효가 됐다(계정·에이전트를 지웠거나 승인을 취소함). 그대로 두면 승인 화면이 안 열리고 같은 오류만 나서 키를 지운다
     if (/InvalidAgentKey/.test(String(e))) {
@@ -181,7 +181,9 @@ export async function openTunnel(folderPath: string, port: number): Promise<stri
   }
 }
 
-async function openTunnelWith(folderPath: string, port: number): Promise<string> {
+async function openTunnelWith(folderPath: string, port: number, udp: boolean): Promise<string> {
+  // 배드락(UDP)은 이름으로 구분한다. 자바 터널과 같은 포트 번호를 쓸 수 있다
+  const isMine = (t: RunData['tunnels'][number]): boolean => localPortOf(t) === port && (!udp || t.name === `cubepanel-udp-${port}`)
   const secret = readSecret()
   if (!secret) throw new Error('playit 연결이 안 되어 있어요.')
   await downloadFile({ url: AGENT_URL, dest: agentExe(), sha256: AGENT_SHA256 })
@@ -195,14 +197,14 @@ async function openTunnelWith(folderPath: string, port: number): Promise<string>
     if (t.name.startsWith('cubepanel-') && !inUse.has(localPortOf(t))) await call('/tunnels/delete', { tunnel_id: t.id }, secret).catch(() => {})
   // 막 켠 에이전트가 playit에 버전을 알리기 전에는 AgentVersionTooOld로 거절되므로, 잠깐 기다리며 다시 시도한다
   const createEnd = Date.now() + ADDRESS_TIMEOUT_MS
-  while (!run.tunnels.some((t) => localPortOf(t) === port)) {
+  while (!run.tunnels.some(isMine)) {
     try {
       await call(
         '/tunnels/create',
         {
-          name: `cubepanel-${port}`,
-          tunnel_type: 'minecraft-java',
-          port_type: 'tcp',
+          name: udp ? `cubepanel-udp-${port}` : `cubepanel-${port}`,
+          tunnel_type: udp ? 'minecraft-bedrock' : 'minecraft-java',
+          port_type: udp ? 'udp' : 'tcp',
           port_count: 1,
           origin: { type: 'agent', data: { agent_id: run.agent_id, local_ip: '127.0.0.1', local_port: port } },
           enabled: true,
@@ -223,7 +225,7 @@ async function openTunnelWith(folderPath: string, port: number): Promise<string>
   const end = Date.now() + ADDRESS_TIMEOUT_MS
   for (;;) {
     run = await call<RunData>('/v1/agents/rundata', {}, secret)
-    const t = run.tunnels.find((x) => localPortOf(x) === port)
+    const t = run.tunnels.find(isMine)
     if (t?.display_address) return t.display_address
     if (Date.now() > end) throw new Error('터널 주소를 받지 못했어요.')
     await sleep(2000)
