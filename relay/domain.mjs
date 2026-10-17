@@ -1,6 +1,6 @@
 // 이름 주소 중계: 앱이 "내서버" 같은 이름을 정하면 Cloudflare DNS에 내서버.<DOMAIN_BASE> 기록을 만들어 준다.
 // 환경 변수: CF_DNS_TOKEN(DNS 편집 권한만 있는 Cloudflare 키), CF_ZONE_ID(도메인의 구역 번호), DOMAIN_BASE(기본 cubepanel.kr)
-//   선택: DNS_LIMIT(영역의 기록 개수 한도, 기본 200), STALE_ONLINE_HOURS(켜 둔 채로 이만큼 소식이 없으면 기록을 치운다, 기본 48)
+//   선택: DNS_LIMIT(영역의 기록 개수 한도, 기본 200), STALE_ONLINE_HOURS(켜 둔 채로 이만큼 소식이 없으면 기록을 치운다, 기본 12)
 // 연결(binding): DB = Cloudflare D1 데이터베이스. 없으면 예전 방식(DNS 기록의 메모로만 주인을 가림)으로 동작한다
 //
 // 구조
@@ -23,7 +23,7 @@ const RESERVED = new Set([
 const TUNNEL_HOST_RE = /^([a-z0-9-]+\.)+(joinmc\.link|ply\.gg|playit\.gg|playit\.cloud)$/ // 터널로 보낼 때 허용하는 주소 (남의 사이트로 보내지 못하게)
 const DEFAULT_LIMIT = 200 // 무료 요금제의 영역당 DNS 기록 개수 (사이트 자체 기록도 포함)
 const IDLE_DAYS = 30 // 켜지 않은 채 이만큼 지나면 이름 예약이 풀린다
-const DEFAULT_ONLINE_STALE_HOURS = 48
+const DEFAULT_ONLINE_STALE_HOURS = 12
 const BEAT_MS = 15 * 60_000 // 이 안에 다시 불린 서버는 D1에 또 쓰지 않는다 (앱이 주기적으로 부른다)
 const MAX_SWEEP_DELETES = 12 // 한 번에 치우는 기록 수 (요청 하나가 쓸 수 있는 외부 요청 수를 넘지 않게)
 const MAX_SWEEP_PAGES = 6
