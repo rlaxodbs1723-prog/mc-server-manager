@@ -10,6 +10,7 @@ const RESERVED = new Set([
   'www', 'api', 'app', 'mail', 'smtp', 'imap', 'pop', 'ftp', 'ns', 'ns1', 'ns2', 'admin', 'administrator', 'root', 'support', 'help', 'status', 'download', 'downloads',
   'cubepanel', 'cube', 'panel', 'mc', 'minecraft', 'mojang', 'microsoft', 'discord', 'official', 'staff', 'mod', 'moderator', 'dev', 'test', 'localhost', 'server', 'play', 'join'
 ])
+const TUNNEL_HOST_RE = /^([a-z0-9-]+\.)+(joinmc\.link|ply\.gg|playit\.gg|playit\.cloud)$/ // 터널로 보낼 때 허용하는 주소 (남의 사이트로 보내지 못하게)
 const MAX_RECORDS = 900 // 무료 DNS의 기록 개수 한도에 닿기 전에 새 이름을 막는다
 const MAX_PER_IP = 10 // 같은 인터넷 주소로 만들 수 있는 이름 수 (이름을 마구 선점하는 것을 막는다. 서버가 많은 사람과 한 주소를 같이 쓰는 통신사 환경을 위해 넉넉히)
 const DEFAULT_PORT = 25565
@@ -40,6 +41,9 @@ export async function handleDomain(req, env, doFetch = fetch) {
   const name = String(body?.name ?? '').toLowerCase()
   const key = String(body?.key ?? '')
   const port = body?.port == null ? DEFAULT_PORT : Number(body.port)
+  const bedrock = body?.bedrock === true // 배드락 클라이언트는 SRV 기록을 읽지 못한다. 주소(A 기록)만 만들고 접속할 때 포트를 따로 적게 한다
+  const target = body?.target == null ? '' : String(body.target).toLowerCase()
+  if (target && !TUNNEL_HOST_RE.test(target)) return json({ error: 'bad-request' }, 400)
   if (action !== 'claim' && action !== 'release' && action !== 'check') return json({ error: 'bad-request' }, 400)
   if (!NAME_RE.test(name)) return json({ error: 'name' }, 400)
   if (RESERVED.has(name)) return json({ error: 'reserved' }, 400)
@@ -47,7 +51,7 @@ export async function handleDomain(req, env, doFetch = fetch) {
   if (!Number.isInteger(port) || port < 1024 || port > 65535) return json({ error: 'port' }, 400)
 
   const ip = req.headers.get('cf-connecting-ip') || ''
-  if (action === 'claim' && !/^(\d{1,3}\.){3}\d{1,3}$/.test(ip)) return json({ error: 'ipv4' }, 400) // 지금은 IPv4 주소만 연결한다
+  if (action === 'claim' && !target && !/^(\d{1,3}\.){3}\d{1,3}$/.test(ip)) return json({ error: 'ipv4' }, 400) // 지금은 IPv4 주소만 연결한다
 
   const tag = action === 'check' ? '' : await ownerTag(key)
   const host = `${name}.${base}`
@@ -61,7 +65,7 @@ export async function handleDomain(req, env, doFetch = fetch) {
       signal: AbortSignal.timeout(10000)
     })
     const out = await res.json().catch(() => null)
-    if (!out?.success) throw new Error(`cloudflare ${method} ${path} ${res.status}`)
+    if (!out?.success) throw new Error(`cloudflare ${method} ${path.split('?')[0] || '/'} ${res.status} ${(out?.errors ?? []).slice(0, 2).map((x) => `${x.code}: ${x.message}`).join(' | ')}`)
     return out
   }
   const find = async (n) => (await cf('GET', `?name=${encodeURIComponent(n)}&per_page=100`)).result ?? []
@@ -81,6 +85,20 @@ export async function handleDomain(req, env, doFetch = fetch) {
 
     const a = have.find((r) => r.type === 'A')
     const srv = have.find((r) => r.type === 'SRV')
+
+    // 터널(playit)로 열린 서버: IP 대신 터널 주소로 보내는 SRV 기록만 만든다 (접속 주소는 앱이 알아낸 터널의 호스트·포트)
+    if (target && !bedrock) {
+      if (!srv) {
+        const total = (await cf('GET', '?per_page=1')).result_info?.total_count ?? 0
+        if (total >= MAX_RECORDS) return json({ error: 'full' }, 503)
+      }
+      const data = { priority: 0, weight: 5, port, target }
+      if (srv && srv.data?.port === port && srv.data?.target === target) {
+        // 그대로면 쓰지 않는다
+      } else if (srv) await cf('PATCH', `/${srv.id}`, { data })
+      else await cf('POST', '', { type: 'SRV', name: srvName, data, ttl: 60, comment: tag })
+      return json({ ok: true, host, target, port })
+    }
     if (!a) {
       const total = (await cf('GET', '?per_page=1')).result_info?.total_count ?? 0
       if (total >= MAX_RECORDS) return json({ error: 'full' }, 503)
@@ -92,7 +110,7 @@ export async function handleDomain(req, env, doFetch = fetch) {
     } else if (a) await cf('PATCH', `/${a.id}`, { content: ip })
     else await cf('POST', '', { type: 'A', name: host, content: ip, ttl: 60, proxied: false, comment: tag })
 
-    if (port !== DEFAULT_PORT) {
+    if (!bedrock && port !== DEFAULT_PORT) {
       const data = { priority: 0, weight: 5, port, target: host }
       if (srv && srv.data?.port === port) {
         // 포트가 그대로면 쓰지 않는다
@@ -102,7 +120,8 @@ export async function handleDomain(req, env, doFetch = fetch) {
       await cf('DELETE', `/${srv.id}`)
     }
     return json({ ok: true, host, ip, port })
-  } catch {
-    return json({ error: 'dns' }, 502)
+  } catch (e) {
+    // 어떤 요청이 왜 거절됐는지(Cloudflare가 준 오류 번호·문구)를 함께 돌려준다. 토큰·열쇠는 들어 있지 않다
+    return json({ error: 'dns', detail: String(e?.message ?? e).slice(0, 300) }, 502)
   }
 }
