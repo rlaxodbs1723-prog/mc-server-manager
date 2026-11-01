@@ -1,6 +1,7 @@
-import { CloudLightning, CloudRain, Crown, Gamepad2, LogOut, Megaphone, Moon, Plus, Send, ShieldCheck, Sun, Sunrise, X } from 'lucide-react'
+import { CloudLightning, CloudRain, Crown, Gamepad2, LogOut, Megaphone, Moon, Plus, Send, ShieldCheck, Skull, Sun, Sunrise, X } from 'lucide-react'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import type { BedrockAction, BedrockManageInfo } from '../../shared-types'
+import Select from './Select'
 import { Empty, Loading, Modal, useToast } from './ui'
 import { cleanError } from './util'
 import WelcomeBox from './WelcomeBox'
@@ -113,6 +114,14 @@ export default function BedrockManageTab({ folderPath, running }: { folderPath: 
                       <span className="n">{p.name}</span>
                       {p.op && <span className="chip blue">관리자</span>}
                     </div>
+                    <div className="player-mode">
+                      <Select
+                        value=""
+                        placeholder="게임 모드"
+                        options={GAMEMODE}
+                        onChange={(v) => act({ type: 'gamemode', name: p.name, value: v as 'survival' | 'creative' | 'adventure' }, `${p.name}님을 ${GAMEMODE.find((g) => g.value === v)?.label} 모드로 바꿨어요`)}
+                      />
+                    </div>
                     <button
                       className={`btn icon sm ${p.op ? 'op-on' : 'ghost'}`}
                       title={p.op ? '관리자 권한 빼기' : '관리자로 만들기'}
@@ -121,6 +130,9 @@ export default function BedrockManageTab({ folderPath, running }: { folderPath: 
                       }
                     >
                       <Crown size={16} />
+                    </button>
+                    <button className="btn icon sm danger" title="죽이기" onClick={() => act({ type: 'kill', name: p.name }, `${p.name}님을 죽였어요`)}>
+                      <Skull size={16} />
                     </button>
                     <button className="btn icon sm ghost" title="내보내기" onClick={() => act({ type: 'kick', name: p.name }, `${p.name}님을 내보냈어요`)}>
                       <LogOut size={16} />

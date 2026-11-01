@@ -25,7 +25,7 @@ import { startInvite } from './invite'
 import { autoBackupBeforeStart, backupRoot, createBackup, listBackups } from './backup'
 import { assertFree } from './lock'
 import { assertWorldFits, importWorld } from './worldimport'
-import { BEDROCK_EXE, BEDROCK_PORT, bedrockProps, bedrockWorldDir, installBedrock, isBedrockFolder, latestBedrock } from './bedrock'
+import { BEDROCK_EXE, BEDROCK_PORT, bedrockProps, bedrockWorldDir, installBedrock, isBedrockFolder, latestBedrock, nethernetUdpPorts } from './bedrock'
 import { importBedrockWorld } from './bedrockops'
 import { installModpack } from './modpack'
 import { checkImportFolder, copyServerFolder } from './importserver'
@@ -501,7 +501,10 @@ export async function startServerAt(folderPath: string, report: (p: Progress) =>
   if (readServerInfo(folderPath).software === 'bedrock') {
     // 이미 만든 서버도 켤 때 접속 방식을 맞춘다 (위 createBedrock의 transport 설명 참고)
     const props = readProperties(folderPath)
-    if (props['transport'] !== 'raknet') writeProperties(folderPath, { transport: 'raknet' })
+    // 접속자용 UDP 포트는 server-port와 같은 번호 하나. 공인 IP는 붙이지 않는다 (붙이면 같은 PC·같은 집에서 localhost로 들어갈 때도 그 공인 IP로 연결하려 해서 막힐 수 있다)
+    const udpPorts = nethernetUdpPorts(Number(props['server-port']) || BEDROCK_PORT)
+    if (props['transport'] !== 'nethernet') writeProperties(folderPath, { transport: 'nethernet' })
+    writeProperties(folderPath, { 'server-udp-ports': udpPorts }, true)
     if (props['server-portv6'] !== (props['server-port'] ?? '19132')) writeProperties(folderPath, { 'server-portv6': props['server-port'] ?? '19132' }) // IPv6 포트도 같은 번호로 (localhost는 IPv6로 먼저 접속한다)
     await autoBackupBeforeStart(folderPath)
     await startServer(folderPath, { java: path.join(folderPath, BEDROCK_EXE), args: [], bedrock: true })

@@ -287,7 +287,20 @@ export async function addAddonFile(folderPath: string, source: string): Promise<
   }
 }
 
+// 배드락 서버는 콘솔로 받은 글을 글자 하나가 바이트 하나인 것처럼 읽어서, 한글을 그대로 보내면 깨진다 (UTF-8이든 CP949든).
+// 그래서 한글이 들어가는 메시지는 tellraw로 보내되, JSON 안의 글자를 \uXXXX로 바꿔 영문자·숫자만으로 보낸다 (JSON 해석기가 원래 글자로 되돌린다)
+export function bedrockTellraw(target: string, text: string): string {
+  const json = JSON.stringify({ rawtext: [{ text }] }).replace(/[\u0080-￿]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`)
+  return `tellraw ${target} ${json}`
+}
+
 // ---------- 서버 설정 ----------
+// server.properties의 server-udp-ports 값: 접속자 모두가 UDP 포트 하나(server-port와 같은 번호)를 같이 쓴다. 공유기에서 TCP·UDP 같은 번호만 열면 된다.
+// 공인 IP를 알면 앞에 붙인다 (서버가 접속자에게 알려 주는 주소. IP를 붙일 땐 두 포트 번호를 다 써야 한다)
+export function nethernetUdpPorts(port: number, publicIp?: string | null): string {
+  return publicIp ? `${publicIp}:${port}:${port}` : String(port)
+}
+
 // 만들기 창에서 넘어온 설정 중 배드락 server.properties에 있는 것만 받는다 (자바 전용 값은 버린다)
 export function bedrockProps(chosen: Record<string, string>, name: string, port: number): Record<string, string> {
   const out: Record<string, string> = {
@@ -295,8 +308,9 @@ export function bedrockProps(chosen: Record<string, string>, name: string, port:
     'server-port': String(port),
     'server-portv6': String(port), // IPv4와 같은 번호 (게임이 localhost를 IPv6(::1)로 먼저 찾아서, 다르면 localhost로 접속이 안 된다)
     'allow-list': 'false', // 기본값이 허용 목록 켜짐이라 그대로면 친구가 못 들어온다
-    // 1.26부터 기본 접속 방식(nethernet)은 TCP로 인사한 뒤 임의의 UDP 포트를 쓴다. 앱은 UDP 포트 하나(기본 19132)만 열 수 있어서 예전 방식(raknet)으로 맞춘다
-    transport: 'raknet'
+    // 새 마인크래프트(26.60~)는 예전 방식(raknet)으로는 접속이 안 된다. nethernet은 접속자가 쓸 UDP 포트를 따로 정해 줘야 공유기에서 열 수 있다
+    transport: 'nethernet',
+    'server-udp-ports': nethernetUdpPorts(port)
   }
   const gamemode = chosen['gamemode']
   if (gamemode && /^(survival|creative|adventure)$/.test(gamemode)) out['gamemode'] = gamemode

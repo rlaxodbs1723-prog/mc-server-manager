@@ -3,6 +3,7 @@
 import fs from 'fs'
 import path from 'path'
 import type { BedrockAction, BedrockManageInfo, GameRule } from '../shared-types'
+import { bedrockTellraw } from './bedrock'
 import { readProperties, writeProperties } from './properties'
 import { getPlayers, getState, getXuid, quietQuery, sendCommand } from './runner'
 
@@ -49,7 +50,7 @@ export function getBedrockManage(folderPath: string): BedrockManageInfo {
   }
 }
 
-export function runBedrockAction(folderPath: string, action: BedrockAction): void {
+export function runBedrockAction(folderPath: string, action: BedrockAction): void | Promise<void> {
   const running = getState(folderPath) === 'running'
   // 허용 목록은 꺼진 서버에서도 파일만 고치면 된다
   if (action.type === 'allow' || action.type === 'disallow') {
@@ -73,13 +74,24 @@ export function runBedrockAction(folderPath: string, action: BedrockAction): voi
         .trim()
         .slice(0, 256)
       if (!text) throw new Error('보낼 메시지를 입력해 주세요.')
-      return sendCommand(folderPath, `say ${text}`)
+      return sendCommand(folderPath, bedrockTellraw('@a', `§e[공지] ${text}`), `say ${text}`)
     }
     case 'kick':
-      return sendCommand(folderPath, `kick "${checkName(action.name)}" 관리자가 내보냈어요`)
+      return sendCommand(folderPath, `kick "${checkName(action.name)}" Kicked by an admin`) // 사유는 한글이 깨져서 영어로 (위 bedrockTellraw 설명 참고)
+    case 'kill':
+      return killPlayer(folderPath, checkName(action.name))
+    case 'gamemode':
+      if (!GAMEMODES.includes(action.value)) throw new Error('잘못된 게임 모드예요.')
+      return sendCommand(folderPath, `gamemode ${action.value} "${checkName(action.name)}"`)
     case 'op':
     case 'deop':
-      return sendCommand(folderPath, `${action.type} "${checkName(action.name)}"`)
+      sendCommand(folderPath, `${action.type} "${checkName(action.name)}"`)
+      // 치트 허용이 꺼져 있으면 관리자여도 명령어를 못 쓴다("이 세계에서는 치트를 사용할 수 없습니다"). 관리자로 만들 때 같이 켠다 (켜진 채로도, 다음에 켤 때도)
+      if (action.type === 'op' && readProperties(folderPath)['allow-cheats'] !== 'true') {
+        writeProperties(folderPath, { 'allow-cheats': 'true' })
+        sendCommand(folderPath, 'changesetting allow-cheats true')
+      }
+      return
     case 'time': {
       if (!['day', 'noon', 'night', 'midnight'].includes(action.value)) throw new Error('잘못된 시간이에요.')
       return sendCommand(folderPath, `time set ${action.value}`)
@@ -101,6 +113,14 @@ export function runBedrockAction(folderPath: string, action: BedrockAction): voi
     default:
       throw new Error('알 수 없는 동작이에요.')
   }
+}
+
+// kill은 서바이벌·모험인 사람에게만 듣는다 (크리에이티브·관전은 안 죽는다). 먼저 물어보고, 아니면 죽이지 않고 알려 준다
+// testfor는 조건에 맞는 사람이 있으면 "Found 이름", 없으면 "No targets matched selector"라고 답한다. 답을 못 받으면 그냥 보낸다
+async function killPlayer(folderPath: string, name: string): Promise<void> {
+  const answer = await quietQuery(folderPath, ['survival', 'adventure'].map((m) => `testfor @a[name="${name}",m=${m}]`), (l) => /Found |No targets matched/i.test(l), { firstMs: 3000, maxMs: 5000 }).catch(() => [])
+  if (!answer.some((l) => /Found /i.test(l)) && answer.some((l) => /No targets matched/i.test(l))) throw new Error(`${name}님은 서바이벌이나 모험 모드일 때만 죽일 수 있어요.`)
+  sendCommand(folderPath, `kill "${name}"`)
 }
 
 // ---------- 게임 규칙 ----------

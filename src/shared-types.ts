@@ -48,7 +48,8 @@ export interface BedrockUpdateInfo {
 }
 export type BedrockAction =
   | { type: 'say'; text: string }
-  | { type: 'kick' | 'op' | 'deop' | 'allow' | 'disallow'; name: string }
+  | { type: 'kick' | 'op' | 'deop' | 'allow' | 'disallow' | 'kill'; name: string }
+  | { type: 'gamemode'; name: string; value: 'survival' | 'creative' | 'adventure' }
   | { type: 'allowOn'; value: boolean }
   | { type: 'time'; value: 'day' | 'noon' | 'night' | 'midnight' }
   | { type: 'weather'; value: 'clear' | 'rain' | 'thunder' }

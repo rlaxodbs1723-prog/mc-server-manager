@@ -291,12 +291,13 @@ export function sendQuiet(folderPath: string, command: string): void {
   r.proc.stdin.write(command.replace(/[\r\n]+/g, ' ') + '\n')
 }
 
-export function sendCommand(folderPath: string, command: string): void {
+// shown: 콘솔에 보여 줄 모양 (서버에 보내는 명령이 \uXXXX처럼 읽기 어려울 때 사람이 읽는 글로)
+export function sendCommand(folderPath: string, command: string, shown?: string): void {
   const r = running.get(folderPath)
   if (!r) throw new Error('서버가 켜져 있지 않아요.')
   const text = command.replace(/[\r\n]+/g, ' ').trim().replace(/^\//, '') // 콘솔에서는 / 없이 쓴다
   if (!text) return
-  pushLog(folderPath, `> ${text}`)
+  pushLog(folderPath, `> ${shown ?? text}`)
   if (/^stop$/i.test(text)) return stopServer(folderPath)
   r.proc.stdin.write(text + '\n')
 }

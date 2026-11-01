@@ -4,7 +4,7 @@
 // - 앱을 켜면 서버도 켜기
 // - 들어온 사람에게 환영 메시지
 import { DEFAULT_AUTOMATION, type ServerAutomation } from '../shared-types'
-import { isBedrockFolder } from './bedrock'
+import { bedrockTellraw, isBedrockFolder } from './bedrock'
 import { notify } from './notify'
 import os from 'os'
 import { appLog, getPlayers, getState, onServerEvent, quietQuery, sendQuiet, serverPort, stopServer } from './runner'
@@ -54,10 +54,21 @@ onServerEvent((e) => {
     if (before.has(name) || !(bedrock ? /^[A-Za-z0-9 _#.-]{1,32}$/ : PLAYER_NAME).test(name)) continue
     const text = welcome.replace(/\{name\}/g, name)
     // tellraw: 그 사람에게만, 앱이 보낸 티 없이 보인다. 콘솔에는 안 찍는다
-    const cmd = bedrock ? `tellraw "${name}" ${JSON.stringify({ rawtext: [{ text: `§e${text}` }] })}` : `tellraw ${name} ${JSON.stringify({ text, color: 'yellow' })}`
-    setTimeout(() => sendQuiet(e.folderPath, cmd), 1500)
+    const cmd = bedrock ? bedrockTellraw(`"${name}"`, `§e${text}`) : `tellraw ${name} ${JSON.stringify({ text, color: 'yellow' })}`
+    if (bedrock) void welcomeWhenSpawned(e.folderPath, cmd)
+    else setTimeout(() => sendQuiet(e.folderPath, cmd), 1500)
   }
 })
+
+// 배드락은 접속하고 몇 초 뒤에야 월드에 나타나서, 그 전에 보내면 "No targets matched selector"가 난다. 그 답이 오면(콘솔에는 안 보인다) 2초 뒤에 다시 보낸다
+async function welcomeWhenSpawned(folderPath: string, cmd: string): Promise<void> {
+  await new Promise((r) => setTimeout(r, 1500))
+  for (let i = 0; i < 6; i++) {
+    const miss = await quietQuery(folderPath, [cmd], (l) => /No targets matched/i.test(l), { firstMs: 1200, maxMs: 3000 }).catch(() => null)
+    if (!miss || !miss.length) return // 보냈거나(답 없음) 서버가 꺼졌다
+    await new Promise((r) => setTimeout(r, 2000))
+  }
+}
 
 // ---------- 매일 다시 켜기 ----------
 const restartedOn = new Map<string, string>() // 서버 폴더 → 이미 다시 켠 날짜 (하루에 한 번만)
@@ -69,7 +80,8 @@ const hhmm = (d: Date): string => `${String(d.getHours()).padStart(2, '0')}:${St
 async function dailyRestart(folderPath: string): Promise<void> {
   restarting.add(folderPath)
   try {
-    sendQuiet(folderPath, `say 서버가 1분 뒤에 다시 시작돼요. 잠시 뒤에 다시 들어와 주세요.`)
+    const notice = '서버가 1분 뒤에 다시 시작돼요. 잠시 뒤에 다시 들어와 주세요.'
+    sendQuiet(folderPath, isBedrockFolder(folderPath) ? bedrockTellraw('@a', `§e${notice}`) : `say ${notice}`)
     appLog(folderPath, '매일 다시 켜기: 1분 뒤에 서버를 다시 켜요.')
     await new Promise((r) => setTimeout(r, 60_000))
     if (getState(folderPath) !== 'running') return // 그사이 사용자가 껐다

@@ -42,7 +42,7 @@ import { BUG_MAX_BYTES, bugFileInfo, bugMessage, sendBugReport } from '../src/ma
 import { d1Store, handleDomain } from '../relay/domain.mjs'
 import { DatabaseSync } from 'node:sqlite'
 import { checkImportFolder, detectServer } from '../src/main/importserver'
-import { addAddonFile, bedrockProps, checkAddons, listAddons, removeAddon, setAddonEnabled } from '../src/main/bedrock'
+import { addAddonFile, bedrockProps, bedrockTellraw, checkAddons, listAddons, nethernetUdpPorts, removeAddon, setAddonEnabled } from '../src/main/bedrock'
 import { getBedrockManage, listBedrockRules, runBedrockAction } from '../src/main/bedrockmanage'
 import { isExempt } from '../src/main/bedrockloopback'
 import { labelOf } from '../src/renderer/src/gameruleLabels'
@@ -719,7 +719,9 @@ async function bedrockChecks(): Promise<void> {
   await check('배드락: 만들 때 설정 (허용 목록 끄기·IPv6 포트·자바 값 버리기·범위 확인)', () => {
     const p = bedrockProps({ gamemode: 'creative', difficulty: 'hard', 'max-players': '5', 'level-seed': '123', 'online-mode': 'false', hardcore: 'true', 'level-type': 'minecraft:flat', motd: 'x' }, 'My;Name', 19134)
     expect(p['allow-list'] === 'false', '허용 목록이 켜진 채라 친구가 못 들어와요')
-    expect(p['transport'] === 'raknet', 'nethernet이면 UDP 포트 하나로는 접속이 안 돼요')
+    expect(p['transport'] === 'nethernet', '새 마인크래프트는 raknet으로는 접속이 안 돼요')
+    expect(p['server-udp-ports'] === '19134', `접속자용 UDP 포트: ${p['server-udp-ports']}`)
+    expect(nethernetUdpPorts(19132, '1.2.3.4') === '1.2.3.4:19132:19132', '공인 IP를 앞에 붙이면 포트를 두 번 써야 해요')
     expect(p['server-port'] === '19134' && p['server-portv6'] === '19134', `포트: ${p['server-port']}/${p['server-portv6']} (IPv6 포트도 같은 번호여야 localhost가 돼요)`)
     expect(p['gamemode'] === 'creative' && p['difficulty'] === 'hard' && p['max-players'] === '5' && p['level-seed'] === '123' && p['online-mode'] === 'false', JSON.stringify(p))
     expect(!('hardcore' in p) && !('level-type' in p) && !('motd' in p), '자바 전용 값이 들어갔어요')
@@ -738,6 +740,13 @@ async function bedrockChecks(): Promise<void> {
     const java = await zipOf(path.join(base, 'java.zip'), { 'World/level.dat': Buffer.from('x'), 'World/region/r.0.0.mca': Buffer.from('x') })
     expect(await throws(() => importBedrockWorld(folder, java)), '자바 월드를 받았어요')
     expect(await throws(() => importBedrockWorld(folder, empty0(base))), '월드가 아닌 파일을 받았어요')
+  })
+
+  await check('배드락: 한글 메시지는 영문자·숫자만으로 보낸다 (서버가 글자를 바이트 단위로 읽어서 깨진다)', () => {
+    const cmd = bedrockTellraw('@a', '§e[공지] 안녕하세요 "따옴표"')
+    expect(/^[\x20-\x7e]+$/.test(cmd), `ASCII가 아닌 글자가 남았어요: ${cmd}`)
+    const back = JSON.parse(cmd.slice('tellraw @a '.length)) as { rawtext: { text: string }[] }
+    expect(back.rawtext[0].text === '§e[공지] 안녕하세요 "따옴표"', `되돌린 글: ${back.rawtext[0].text}`)
   })
 
   await check('배드락: 허용 목록 고치기(꺼진 서버)·관리 정보', () => {
@@ -1859,31 +1868,12 @@ async function bedrockServer(): Promise<void> {
     })
     expect((await addAddonFile(folder, packZip))[0] === 'Auto Test Pack', '애드온을 못 넣었어요')
     fs.rmSync(packZip, { force: true })
-    expect(props['transport'] === 'raknet', `만들 때 접속 방식: ${props['transport']}`)
-    writeProperties(folder, { transport: 'nethernet', 'server-port': '19332', 'server-portv6': '19333' }) // (테스트 중에 쓰는 사람의 서버와 포트가 겹치지 않게 다른 포트로) 서버 1.26의 기본값이 남아 있는 서버도 켤 때 고쳐져야 한다
+    expect(props['transport'] === 'nethernet', `만들 때 접속 방식: ${props['transport']}`)
+    writeProperties(folder, { transport: 'raknet', 'server-udp-ports': '', 'server-port': '19332', 'server-portv6': '19333' }) // (테스트 중에 쓰는 사람의 서버와 포트가 겹치지 않게 다른 포트로) 예전 방식이 남아 있는 서버도 켤 때 고쳐져야 한다
     await startAndWait(folder)
-    expect(readProperties(folder)['transport'] === 'raknet', '켤 때 접속 방식을 raknet으로 고치지 않았어요')
+    expect(readProperties(folder)['transport'] === 'nethernet', '켤 때 접속 방식을 nethernet으로 고치지 않았어요')
+    expect(/^(\d+\.\d+\.\d+\.\d+:\d+:)?\d+$/.test(readProperties(folder)['server-udp-ports'] ?? ''), `접속자용 UDP 포트: ${readProperties(folder)['server-udp-ports']}`)
     expect(readProperties(folder)['server-portv6'] === '19332', 'IPv6 포트를 IPv4 포트와 같게 고치지 않았어요 (localhost 접속에 필요)')
-    // 실제로 UDP 핑(RakNet)에 답하는지: 안 답하면 UDP 포트만 열어서는 아무도 못 들어온다
-    const pongV6 = await new Promise<boolean>((resolve) => {
-      const sock = dgram.createSocket('udp6')
-      const time = Buffer.alloc(8)
-      time.writeBigInt64BE(BigInt(Date.now()))
-      const timer = setTimeout(() => (sock.close(), resolve(false)), 4000)
-      sock.on('message', (m) => (clearTimeout(timer), sock.close(), resolve(m[0] === 0x1c)))
-      sock.on('error', () => (clearTimeout(timer), resolve(false)))
-      sock.send(Buffer.concat([Buffer.from([0x01]), time, Buffer.from('00ffff00fefefefefdfdfdfd12345678', 'hex'), Buffer.alloc(8)]), 19332, '::1')
-    })
-    expect(pongV6, '서버가 IPv6(::1)로 온 UDP 핑에 답하지 않아요 (localhost 접속이 안 돼요)')
-    const pong = await new Promise<boolean>((resolve) => {
-      const sock = dgram.createSocket('udp4')
-      const time = Buffer.alloc(8)
-      time.writeBigInt64BE(BigInt(Date.now()))
-      const timer = setTimeout(() => (sock.close(), resolve(false)), 4000)
-      sock.on('message', (m) => (clearTimeout(timer), sock.close(), resolve(m[0] === 0x1c)))
-      sock.send(Buffer.concat([Buffer.from([0x01]), time, Buffer.from('00ffff00fefefefefdfdfdfd12345678', 'hex'), Buffer.alloc(8)]), 19332, '127.0.0.1')
-    })
-    expect(pong, '서버가 UDP 핑에 답하지 않아요 (접속 방식이 raknet이 아니에요)')
     expect(getLog(folder).some((l) => /Pack Stack - .*Auto Test Pack/.test(l)), `팩이 적용되지 않았어요: ${getLog(folder).slice(-15).join(' | ')}`)
     expect(fs.existsSync(path.join(folder, 'worlds', 'Bedrock level', 'level.dat')), '월드가 안 만들어졌어요')
     const b = await createBackup(folder, false, '자동 테스트') // 켜진 채로 (save hold → query → resume)

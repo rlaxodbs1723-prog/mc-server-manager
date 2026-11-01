@@ -50,7 +50,8 @@ export function readProperties(folderPath: string): Record<string, string> {
 }
 
 // 주어진 키만 바꾸고 나머지 줄(주석 포함)은 그대로 둔다. 파일이 없으면 새로 만든다.
-export function writeProperties(folderPath: string, changes: Record<string, string>): void {
+// raw: 값을 자바식(콜론 앞에 \ 등)으로 바꾸지 않고 그대로 쓴다. 배드락은 그런 변환을 모른다 (server-udp-ports의 IP:포트 등)
+export function writeProperties(folderPath: string, changes: Record<string, string>, raw = false): void {
   const file = fileOf(folderPath)
   const { text, encoding } = fs.existsSync(file) ? readText(file) : { text: '', encoding: 'utf8' as FileEncoding }
   const eol = text.includes('\r\n') ? '\r\n' : '\n' // 마인크래프트가 쓴 줄바꿈 방식을 그대로 유지
@@ -61,12 +62,12 @@ export function writeProperties(folderPath: string, changes: Record<string, stri
     if (key && left.has(key)) {
       const value = left.get(key)!
       left.delete(key)
-      return `${key}=${escape(value)}`
+      return `${key}=${raw ? value : escape(value)}`
     }
     return line
   })
   while (out.length && out[out.length - 1] === '') out.pop()
-  for (const [key, value] of left) out.push(`${key}=${escape(value)}`)
+  for (const [key, value] of left) out.push(`${key}=${raw ? value : escape(value)}`)
   // 새로 쓰는 값은 한글을 \uXXXX로 바꿔 ASCII만 남기므로 어느 방식으로 읽어도 깨지지 않는다
   fs.writeFileSync(file, out.join(eol) + eol, encoding)
 }
