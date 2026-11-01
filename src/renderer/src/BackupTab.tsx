@@ -106,6 +106,7 @@ export default function BackupTab({ folderPath, serverOn }: { folderPath: string
                 onChange={(v) => saveSettings({ ...settings, everyMin: Number(v) })}
                 options={[
                   { value: '0', label: '안 함' },
+                  { value: '10', label: '10분마다' },
                   { value: '30', label: '30분마다' },
                   { value: '60', label: '1시간마다' },
                   { value: '180', label: '3시간마다' },

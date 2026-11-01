@@ -51,7 +51,7 @@ export default function AddonsTab({ folderPath, serverOn, kind }: { folderPath: 
   const list = listRaw.filter((a) => !hidden.has(a.id) && belongs(a, kind))
   const [worldName, setWorldName] = useState('')
   const [worldExists, setWorldExists] = useState(false)
-  const applied = serverOn ? ' 서버를 다시 켜면 적용돼요' : ''
+  const applied = serverOn ? ' 서버를 껐다 켜야 적용돼요' : ''
 
   const [query, setQuery] = useState('')
   const [hits, setHits] = useState<BedrockHit[]>([])

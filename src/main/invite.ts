@@ -2,7 +2,7 @@
 import type { InviteStatus, ServerEvent } from '../shared-types'
 import { getState, onServerEvent, serverPort } from './runner'
 import { HEADERS } from './download'
-import { closePort, localIPv4, openPort } from './upnp'
+import { closePort, isPrivate, localIPv4, openPort, publicIpFromWeb } from './upnp'
 import { isBedrockFolder } from './bedrock'
 import { refreshDomain, setDomainOffline } from './domain'
 import { closeAllTunnels, closeTunnel, linkTunnel, openTunnel, tunnelLinked } from './tunnel'
@@ -40,6 +40,15 @@ async function open(folderPath: string, name: string): Promise<void> {
     return
   }
   if (!result.ok) {
+    // 자동으로 못 열었어도 공유기에서 직접 포트를 열어 둔 사람이면 밖에서 접속된다. 확인되면 그 IP로 연다 (공유기가 두 겹이면 소용없다)
+    // 확인은 서버가 켜질 때까지 기다려야 해서, 터널을 연결해 둔 사람은 기다리지 않고 바로 터널로 연다
+    const manualIp = result.reason === 'double-nat' || tunnelLinked() ? null : await manualAddress(folderPath, port, bedrock)
+    if (status.get(folderPath)?.state !== 'opening') return
+    if (manualIp) {
+      set(folderPath, { state: 'open', address: withPort(manualIp, port, bedrock), lan, port })
+      void refreshDomain(folderPath).then((host) => setInviteDomain(folderPath, host ? withPort(host, port, bedrock) : undefined))
+      return
+    }
     // 공유기로 못 열면, playit을 연결해 둔 사람은 터널로 연다
     if (tunnelLinked()) return openViaTunnel(folderPath, port, lan, result.message)
     return set(folderPath, { state: 'failed', message: result.message, lan, port })
@@ -66,6 +75,35 @@ async function open(folderPath: string, name: string): Promise<void> {
   set(folderPath, { state: 'open', address: withPort(result.externalIp, port, bedrock), lan, port })
   // 이름 주소를 만들어 뒀으면 지금 IP로 갱신하고, 끝나면 접속 주소를 이름 주소로 보여 준다 (실패해도 IP 주소가 그대로 쓰인다)
   void refreshDomain(folderPath).then((host) => setInviteDomain(folderPath, host ? withPort(host, port, bedrock) : undefined))
+}
+
+// 직접 연 포트 확인: 내 공인 IP를 알아내고, 서버가 켜지면 바깥 인터넷에서 그 주소로 접속되는지 본다. 접속되면 IP, 아니면 null
+const MANUAL_WAIT_MS = 3 * 60 * 1000
+async function manualAddress(folderPath: string, port: number, bedrock: boolean): Promise<string | null> {
+  const ip = await publicIpFromWeb()
+  if (!ip || isPrivate(ip)) return null
+  const deadline = Date.now() + MANUAL_WAIT_MS
+  while (getState(folderPath) !== 'running') {
+    if (status.get(folderPath)?.state !== 'opening' || Date.now() > deadline) return null
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+  }
+  return (await mcstatusOnline(withPort(ip, port, bedrock), bedrock).catch(() => false)) ? ip : null
+}
+
+// 바깥 인터넷(mcstatus.io)에서 이 주소의 서버에 접속되는지 묻는다
+async function mcstatusOnline(target: string, bedrock: boolean): Promise<boolean> {
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), 20000)
+  try {
+    const res = await fetch(`https://api.mcstatus.io/v2/status/${bedrock ? 'bedrock' : 'java'}/${encodeURIComponent(target).replace('%3A', ':')}?timeout=8`, {
+      headers: HEADERS,
+      signal: ctrl.signal
+    })
+    if (!res.ok) throw new Error()
+    return !!((await res.json()) as { online?: boolean }).online
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 // 접속 주소를 이름 주소로 바꿔 보여 준다 (열린 상태일 때만. host가 없으면 IP 주소로 되돌린다)
@@ -170,17 +208,8 @@ export async function checkReachable(folderPath: string): Promise<{ ok: boolean;
   if (getState(folderPath) !== 'running') throw new Error('서버가 완전히 켜진 다음에 확인할 수 있어요.')
   // 터널 주소는 playit이 정한 포트를 쓰므로 주소 그대로 묻는다
   const target = invite.tunnel ? invite.address : `${invite.address.replace(/:\d+$/, '')}:${serverPort(folderPath)}`
-  const ctrl = new AbortController()
-  const timer = setTimeout(() => ctrl.abort(), 20000)
   try {
-    const kind = isBedrockFolder(folderPath) ? 'bedrock' : 'java'
-    const res = await fetch(`https://api.mcstatus.io/v2/status/${kind}/${encodeURIComponent(target).replace('%3A', ':')}?timeout=8`, {
-      headers: HEADERS,
-      signal: ctrl.signal
-    })
-    if (!res.ok) throw new Error()
-    const data = (await res.json()) as { online?: boolean }
-    if (data.online) return { ok: true, message: '밖에서도 접속돼요! 플레이어에게 주소를 보내 주세요.' }
+    if (await mcstatusOnline(target, isBedrockFolder(folderPath))) return { ok: true, message: '밖에서도 접속돼요! 플레이어에게 주소를 보내 주세요.' }
     const message =
       `밖에서 접속되지 않아요. 윈도우 방화벽이 ${isBedrockFolder(folderPath) ? '배드락 서버' : 'Java'}를 막고 있거나, 공유기가 두 개(공유기 뒤에 또 공유기)이거나, 통신사가 포트를 막았을 수 있어요.`
     // 공유기 포트는 열렸는데 실제로는 막힌 경우: 빨간 표시로 바꿔서 터널로 열 수 있게 한다 (터널을 연결해 둔 사람은 바로 터널로)
@@ -192,7 +221,5 @@ export async function checkReachable(folderPath: string): Promise<{ ok: boolean;
     return { ok: false, message }
   } catch {
     throw new Error('확인 서비스에 연결하지 못했어요. 잠시 뒤에 다시 해 보세요.')
-  } finally {
-    clearTimeout(timer)
   }
 }

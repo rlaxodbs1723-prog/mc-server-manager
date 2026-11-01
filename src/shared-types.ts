@@ -346,8 +346,9 @@ export interface ServerAutomation {
   dailyRestart: string // 매일 이 시각(HH:MM)에 다시 켜기. 빈 문자열이면 안 함
   emptyStopMin: number // 아무도 없이 이만큼(분) 지나면 끄기. 0이면 안 함
   welcome: string // 들어온 사람에게 보낼 말. {name}은 닉네임으로 바뀐다. 빈 문자열이면 안 함
+  autoSaveMin: number // 사람이 있는 동안 이만큼(분)마다 월드를 저장한다 (튕겨도 덜 되돌아가게). 0이면 안 함
 }
-export const DEFAULT_AUTOMATION: ServerAutomation = { autoStart: false, dailyRestart: '', emptyStopMin: 0, welcome: '' }
+export const DEFAULT_AUTOMATION: ServerAutomation = { autoStart: false, dailyRestart: '', emptyStopMin: 0, welcome: '', autoSaveMin: 0 }
 
 // Paper·Purpur 전용 설정 (bukkit.yml · spigot.yml · config/paper-world-defaults.yml). 처음 켠 뒤에 파일이 생긴다
 export interface PaperField {

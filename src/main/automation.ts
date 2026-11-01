@@ -7,7 +7,7 @@ import { DEFAULT_AUTOMATION, type ServerAutomation } from '../shared-types'
 import { isBedrockFolder } from './bedrock'
 import { notify } from './notify'
 import os from 'os'
-import { appLog, getPlayers, getState, onServerEvent, sendQuiet, serverPort, stopServer } from './runner'
+import { appLog, getPlayers, getState, onServerEvent, quietQuery, sendQuiet, serverPort, stopServer } from './runner'
 import { listServers, readServerInfo } from './servers'
 
 const PLAYER_NAME = /^[A-Za-z0-9_]{3,16}$/
@@ -114,6 +114,36 @@ setInterval(() => {
     }
   }
 }, 30_000).unref()
+
+// ---------- 자동 저장 ----------
+// 사람이 있는 동안 정한 분마다 save-all을 보낸다. 튕겨도 마지막 저장 이후만 되돌아가므로 주기가 짧을수록 덜 잃는다.
+// 저장할 때 서버 로그에 찍히는 줄은 콘솔에 안 보이게 가로챈다. 배드락은 알아서 계속 저장하니 건드리지 않는다
+const lastSave = new Map<string, number>()
+const SAVE_LINE = /Saving the game|Saved the game|Automatic saving|Saving is already turned|Saving chunks|ThreadedAnvilChunkStorage|ChunkHolderManager/i
+
+onServerEvent((e) => {
+  if (e.type === 'status' && e.state !== 'running') lastSave.delete(e.folderPath)
+})
+
+setInterval(() => {
+  let servers: ReturnType<typeof listServers> = []
+  try {
+    servers = listServers()
+  } catch {
+    return
+  }
+  for (const s of servers) {
+    if (s.state !== 'running' || isBedrockFolder(s.folderPath) || restarting.has(s.folderPath)) continue
+    const min = automationOf(s.folderPath).autoSaveMin
+    if (min <= 0 || getPlayers(s.folderPath).length === 0) continue
+    const last = lastSave.get(s.folderPath)
+    if (last == null) lastSave.set(s.folderPath, Date.now()) // 막 켜졌거나 설정을 켠 때부터 센다
+    else if (Date.now() - last >= min * 60_000) {
+      lastSave.set(s.folderPath, Date.now())
+      quietQuery(s.folderPath, ['save-all'], (l) => SAVE_LINE.test(l), { idleMs: 600, maxMs: 30_000 }).catch(() => undefined)
+    }
+  }
+}, 10_000).unref()
 
 // ---------- 앱을 켤 때 ----------
 // 여러 개면 한꺼번에 켜지 않고 목록 순서대로 하나씩 켠다 (다 켜진 뒤 다음 것).

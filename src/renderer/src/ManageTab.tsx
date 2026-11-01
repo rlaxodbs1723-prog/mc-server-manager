@@ -5,6 +5,7 @@ import PlayerDialog, { ago } from './PlayerDialog'
 import Select from './Select'
 import { Confirm, Empty, Loading, Modal, useToast } from './ui'
 import { cleanError } from './util'
+import WelcomeBox from './WelcomeBox'
 import { WhitelistPanel } from './WhitelistDialog'
 
 const DIFFICULTY: { value: Difficulty; label: string }[] = [
@@ -187,6 +188,10 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
         </div>
 
         <div className="manage-col">
+          <Card title="환영 메시지" icon={<span className="card-emoji">👋</span>}>
+            <WelcomeBox folderPath={folderPath} />
+          </Card>
+
           <Card title="난이도" icon={<span className="card-emoji">⚔️</span>}>
             <Segmented
               value={info.difficulty}

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import type { BedrockAction, BedrockManageInfo } from '../../shared-types'
 import { Empty, Loading, Modal, useToast } from './ui'
 import { cleanError } from './util'
+import WelcomeBox from './WelcomeBox'
 
 const DIFFICULTY: { value: BedrockManageInfo['difficulty']; label: string }[] = [
   { value: 'peaceful', label: '평화로움' },
@@ -183,6 +184,10 @@ export default function BedrockManageTab({ folderPath, running }: { folderPath: 
         </div>
 
         <div className="manage-col">
+          <Card title="환영 메시지" icon={<span className="card-emoji">👋</span>}>
+            <WelcomeBox folderPath={folderPath} />
+          </Card>
+
           <Card title="난이도" icon={<span className="card-emoji">⚔️</span>}>
             <div className="seg">
               {DIFFICULTY.map((d) => (

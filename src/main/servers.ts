@@ -31,10 +31,10 @@ import { installModpack } from './modpack'
 import { checkImportFolder, copyServerFolder } from './importserver'
 import { getServerIcon, setServerIconFrom } from './icon'
 import { notify } from './notify'
-import { analyzeCrash } from './crash'
+import { analyzeCrash, analyzeJoinFailure } from './crash'
 import { suggestFromCrash } from './mods'
 import { readYamlValue, writeYamlValue } from './yamlvalue'
-import { appLog, emitEvent, getPlayers, getStartedAt, getState, serverPort, isEulaAccepted, onCrash, onServerEvent, startServer } from './runner'
+import { appLog, emitEvent, getPlayers, getStartedAt, getState, serverPort, isEulaAccepted, onCrash, onJoinError, onServerEvent, startServer } from './runner'
 
 const INFO_FILE = 'server-manager.json' // 서버 폴더마다 앱이 쓰는 정보 파일
 const CREATING_FILE = '.creating' // 만드는 중 표시. 다 만들면 지운다 (앱이 도중에 꺼지면 남는다)
@@ -51,13 +51,24 @@ const DEFAULTS_BY_VERSION: Record<string, string>[] = [
   // 1: 최신 바닐라는 화이트리스트가 켜진 채로 만들어져 플레이어가 못 들어온다
   { 'white-list': 'false', 'enforce-whitelist': 'false' },
   // 2: 앱(콘솔)에서 보낸 명령 결과가 OP의 게임 채팅에 뜨지 않게
-  { 'broadcast-console-to-ops': 'false' }
+  { 'broadcast-console-to-ops': 'false' },
+  // 3: 스폰 보호는 끈다 (켜져 있으면 처음 온 사람이 스폰 근처에서 블록을 못 부숴서 서버가 고장난 줄 안다)
+  { 'spawn-protection': '0' },
+  // 4: 보이는 거리는 16 (바닐라 기본 10은 멀리 안 보여서 답답하다. 직접 바꿔 둔 값은 그대로 둔다)
+  { 'view-distance': '16' }
 ]
 
-function applyDefaultsOnce(info: ServerInfo): void {
+export function applyDefaultsOnce(info: ServerInfo): void {
   const done = info.defaultsVersion ?? (info.defaultsApplied ? 1 : 0)
   if (done >= DEFAULTS_BY_VERSION.length) return
-  writeProperties(info.folderPath, Object.assign({}, ...DEFAULTS_BY_VERSION.slice(done)))
+  const next: Record<string, string> = Object.assign({}, ...DEFAULTS_BY_VERSION.slice(done))
+  try {
+    const have = readProperties(info.folderPath)['view-distance']
+    if (have && have !== '10') delete next['view-distance'] // 직접 정해 둔 값(10이 아닌 값)은 건드리지 않는다
+  } catch {
+    // server.properties가 아직 없으면 그냥 쓴다
+  }
+  writeProperties(info.folderPath, next)
   info.defaultsVersion = DEFAULTS_BY_VERSION.length
   fs.writeFileSync(path.join(info.folderPath, INFO_FILE), JSON.stringify(info, null, 2))
 }
@@ -669,7 +680,8 @@ function cleanAutomation(a: ServerAutomation): ServerAutomation {
     autoStart: !!a.autoStart,
     dailyRestart: /^([01]\d|2[0-3]):[0-5]\d$/.test(a.dailyRestart) ? a.dailyRestart : '',
     emptyStopMin: Math.max(0, Math.min(24 * 60, Math.round(Number(a.emptyStopMin) || 0))),
-    welcome: String(a.welcome ?? '').replace(/[\r\n]+/g, ' ').slice(0, 200)
+    welcome: String(a.welcome ?? '').replace(/[\r\n]+/g, ' ').slice(0, 200),
+    autoSaveMin: Math.max(0, Math.min(60, Math.round(Number(a.autoSaveMin) || 0)))
   }
 }
 
@@ -718,6 +730,16 @@ export function cancelAutoRestarts(): void {
   pendingRestarts.clear()
 }
 
+// 서버는 켜져 있는데 모드 오류로 플레이어가 못 들어오는 경우: 콘솔에 원인 모드를 적어 주고 알린다
+onJoinError((folderPath, log) => {
+  const f = analyzeJoinFailure(folderPath, log)
+  if (!f) return
+  appLog(folderPath, `[앱] 접속 실패 원인: ${f.title}`)
+  f.cause.split('\n').forEach((l) => appLog(folderPath, `[앱]   ${l}`))
+  appLog(folderPath, `[앱]   해결: ${f.fix ?? '모드 탭에서 위 모드를 끄고 서버를 다시 켜 보세요. 모드 업데이트 확인도 해 보세요.'}`)
+  notify(`${serverName(folderPath)}: 플레이어가 들어오지 못했어요`, f.suspects.length ? `${f.suspects.map((s) => s.title).join(', ')} 모드가 오류를 내요.` : f.title)
+})
+
 onCrash(async (folderPath, { log, startedAt, wasRunning }) => {
   // 게임 화면용 모드 때문에 켜다가 멈췄으면 끌지 물어볼 목록에 넣는다 (창은 튕김 알림 뒤에 화면에서 띄운다)
   await suggestFromCrash(folderPath, log).catch(() => 0)
@@ -725,6 +747,7 @@ onCrash(async (folderPath, { log, startedAt, wasRunning }) => {
   const reason = analysis.title
   notify(`${serverName(folderPath)} 서버가 튕겼어요`, reason + (wasRunning ? '' : ' (켜지는 중에 꺼졌어요)'))
   const lines = [`[앱] 튕긴 원인: ${analysis.title}`, ...analysis.cause.split('\n').map((l) => `[앱]   ${l}`)]
+  if (analysis.suspects.length) lines.push(`[앱]   의심 모드: ${analysis.suspects.map((s) => s.title).join(', ')}`)
   lines.forEach((line) => appLog(folderPath, line))
   let enabled = true
   try {

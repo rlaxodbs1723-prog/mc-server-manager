@@ -464,7 +464,7 @@ function FileEditor({ folderPath, rel, serverOn, onDirty, onClose, onFailed }: {
     try {
       const modified = await window.api.writeConfigFile(folderPath, rel, text, open.modified)
       setOpen({ text, modified })
-      toast(serverOn ? '저장했어요. 서버를 다시 켜면 적용돼요' : '저장했어요')
+      toast(serverOn ? '저장했어요. 서버를 껐다 켜야 적용돼요' : '저장했어요')
     } catch (e) {
       toast(cleanError(e), 'error')
     } finally {

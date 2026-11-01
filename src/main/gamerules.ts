@@ -4,6 +4,7 @@ import type { GameRule } from '../shared-types'
 import { isBedrockFolder } from './bedrock'
 import { listBedrockRules } from './bedrockmanage'
 import { quietQuery, sendCommand } from './runner'
+import { readServerInfo } from './servers'
 
 const NAME = /^[A-Za-z0-9_]{1,64}$/
 
@@ -23,13 +24,16 @@ const VALUE = new RegExp(`${FROM_SERVER}Game ?rule ([A-Za-z0-9_:]+) is currently
 const OLD_LIST = new RegExp(`${FROM_SERVER}([A-Za-z0-9_]+(?:, [A-Za-z0-9_]+)+(?:,? and [A-Za-z0-9_]+)?)\\s*$`)
 const OLD_VALUE = new RegExp(`${FROM_SERVER}([A-Za-z0-9_]+) = (\\S+)\\s*$`)
 const OLD_USAGE = new RegExp(`${FROM_SERVER}Usage: /gamerule`)
+// help가 없거나 "minecraft:"를 못 알아듣는 서버의 오류 답 (두 줄: 알려 주는 줄과 어디서 틀렸는지 보여 주는 줄)
+export const UNKNOWN_HELP = new RegExp(`${FROM_SERVER}(?:Unknown or incomplete command|(?:minecraft:)?help gamerule<--\\[HERE\\])`)
 
 export async function listGameRules(folderPath: string): Promise<GameRule[]> {
   if (isBedrockFolder(folderPath)) return listBedrockRules(folderPath) // 배드락은 "gamerule" 한 줄로 목록이 나온다
   // 막 켜졌거나 모드가 많으면 서버가 바빠서 답이 몇 초 늦게 온다. 첫 답을 넉넉히 기다린다
   // Paper·Spigot은 "help"를 자기 도움말로 바꿔 놓아서 규칙 목록이 안 나온다. "minecraft:help"는 바닐라 도움말 그대로다.
   // 둘 다 보내고 알아듣는 답만 모은다 (바닐라·Fabric·Forge는 둘이 같은 답이라 겹쳐도 괜찮다. 옛 버전은 아래에서 따로 한다)
-  const help = await quietQuery(folderPath, ['minecraft:help gamerule', 'help gamerule'], (l) => HELP_ONE.test(l) || HELP_ALL.test(l) || OLD_USAGE.test(l), { firstMs: 8000, maxMs: 15000 })
+  // 바닐라·Fabric은 "minecraft:" 붙인 명령을 몰라서 "Unknown or incomplete command"로 답한다. 그 오류 줄은 앱이 만든 것이니 콘솔에 안 보이게 같이 가로챈다
+  const help = await quietQuery(folderPath, ['minecraft:help gamerule', 'help gamerule'], (l) => HELP_ONE.test(l) || HELP_ALL.test(l) || OLD_USAGE.test(l) || UNKNOWN_HELP.test(l), { firstMs: 8000, maxMs: 15000 })
   const names = new Set<string>()
   for (const line of help) {
     const one = HELP_ONE.exec(line)
@@ -67,4 +71,9 @@ export function setGameRule(folderPath: string, name: string, value: string): vo
   if (!NAME.test(name)) throw new Error('잘못된 게임 규칙 이름이에요.')
   if (!/^(true|false|-?\d{1,9})$/.test(value)) throw new Error('잘못된 값이에요.')
   sendCommand(folderPath, `gamerule ${name} ${value}`)
+  // Paper·Purpur는 게임 규칙이 월드(오버월드·네더·엔드)마다 따로라서, 콘솔로 바꾸면 오버월드만 바뀐다. 네더·엔드에도 같이 건다
+  const software = readServerInfo(folderPath).software
+  if (software === 'paper' || software === 'purpur') {
+    for (const dim of ['the_nether', 'the_end']) sendCommand(folderPath, `execute in minecraft:${dim} run gamerule ${name} ${value}`)
+  }
 }

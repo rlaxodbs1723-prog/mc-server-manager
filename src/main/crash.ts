@@ -4,7 +4,7 @@ import path from 'path'
 import type { CrashAnalysis, CrashDep, CrashSuspect } from '../shared-types'
 import * as mods from './mods'
 import { readProperties } from './properties'
-import { getState } from './runner'
+import { getState, JOIN_ERROR } from './runner'
 
 interface Ctx {
   text: string // 로그 끝부분 + 크래시 보고서
@@ -58,6 +58,9 @@ const titleOf = (c: Ctx, id: string): string =>
   c.text.match(new RegExp(`(?:Mod|모드) '([^\\n]+?)' \\(${id.replace(/[-]/g, '\\-')}\\)`))?.[1] ?? id
 
 // 위에서부터 먼저 맞는 것을 쓴다. 구체적인 원인일수록 위에 둔다.
+// 월드·플레이어 파일(NBT)을 읽다가 깨진 걸 만났을 때의 오류. 컴퓨터가 갑자기 꺼지면서 저장 중이던 파일이 깨지면 생긴다
+const NBT_BROKEN = /net\.minecraft\.nbt\.\w+(?:\$\d+)?\.read(?:String|Compound|List|Tag|Entry)\b|Not in GZIP format|Unexpected end of ZLIB input stream|Premature end of GZIP/i
+
 const RULES: Rule[] = [
   // 옛날(1.7 전) 방식의 플레이어 파일(players 폴더)이 든 맵: 서버가 켜질 때 바꾸려다 실패하고 멈춘다
   (c) =>
@@ -173,7 +176,7 @@ const RULES: Rule[] = [
     },
   (c) =>
     // "RegionFile"·"corrupt"만으로는 정상 경고에도 걸려서, 월드 파일과 같이 나올 때만 본다
-    has(c, /Failed to load level|Exception reading [^\n]*level\.dat|Couldn't load chunk|Chunk file at [^\n]* is in the wrong location|(?:chunk|region|level\.dat)[^\n]*corrupt|corrupt[^\n]*(?:chunk|region|level\.dat)/i) && {
+    (has(c, /Failed to load level|Exception reading [^\n]*level\.dat|Couldn't load chunk|Chunk file at [^\n]* is in the wrong location|(?:chunk|region|level\.dat)[^\n]*corrupt|corrupt[^\n]*(?:chunk|region|level\.dat)/i) || has(c, NBT_BROKEN)) && {
       title: '월드 파일이 손상됐을 수 있어요',
       cause: '월드 파일을 읽다가 오류가 났어요. 컴퓨터가 갑자기 꺼졌거나, 월드가 저장되는 중에 서버가 강제로 꺼지면 생겨요.',
       fixes: ['백업 탭에서 최근 백업으로 되돌려 보세요.', '백업이 없으면 설정 → 월드 리셋으로 새로 시작할 수 있어요.'],
@@ -221,9 +224,15 @@ function suspectIds(c: Ctx): string[] {
   for (const m of c.text.matchAll(/(?:HARD_DEP|BREAKS?)\w* ([\w-]+) \S+ \{/g)) ids.add(m[1].toLowerCase())
   for (const m of c.text.matchAll(/(?:Could not load|enabling) (?:'|")?(?:plugins[\\/])?([\w .-]+?)(?:\.jar)?(?:'|")?(?:\s|$)/gi)) ids.add(m[1].toLowerCase())
   // 스택의 패키지 이름 (net.minecraft·java 등 기본 패키지는 뺀다)
-  for (const m of c.text.matchAll(/\bat (?:[\w$]+\.)*?([a-z][\w]{2,})\.[\w$.]+\(/g)) {
+  for (const m of c.text.matchAll(/\bat (?:knot\/\/)?(?:[\w$]+\.)*?([a-z][\w]{2,})\.[\w$.]+\(/g)) {
     const pkg = m[1].toLowerCase()
     if (!/^(net|java|javax|jdk|sun|com|org|io|it|cpw|mixin|fabricmc|minecraft|mojang|spongepowered|neoforged|minecraftforge|google|apache|lwjgl)$/.test(pkg)) ids.add(pkg)
+  }
+  // 모드 패키지는 "제작자.모드이름.…"(gvoper.gokis, dev.architectury)처럼 두 번째 칸에 모드 이름이 있는 경우가 많다
+  for (const m of c.text.matchAll(/\bat (?:knot\/\/)?((?:[a-z][\w$]*\.){1,3})[A-Z]/g)) {
+    const segs = m[1].split('.').filter(Boolean)
+    if (/^(net|java|javax|jdk|sun|com|org|io|it|cpw)$/.test(segs[0]) && segs[1] !== 'architectury') continue
+    for (const s of segs.slice(0, 2)) if (s.length >= 4 && !/^(dev|mods?|impl|api|common|core|client|server|util|utils|network|networking|event|events|fabric|forge|minecraft|mojang)$/.test(s)) ids.add(s.toLowerCase())
   }
   ids.delete('')
   return [...ids]
@@ -281,6 +290,41 @@ export function disableDatapack(folderPath: string, name: string): void {
   const toDir = path.join(world, 'datapacks-disabled') // 지우지 않고 옮겨 둬서 되살릴 수 있다
   fs.mkdirSync(toDir, { recursive: true })
   fs.renameSync(from, path.join(toDir, name))
+}
+
+// 켜진 채로 있는데 플레이어가 들어오는 순간 모드가 오류를 내서 못 들어오는 경우 ("Couldn't place player in world").
+// 서버는 안 꺼지니 튕김 분석에 안 걸린다. 오류 아래 스택에서 모드를 찾아 알려 준다
+export interface JoinFailure {
+  title: string
+  cause: string
+  suspects: CrashSuspect[]
+  fix?: string // 없으면 모드 쪽 해결 안내
+}
+export function analyzeJoinFailure(folderPath: string, log: string[]): JoinFailure | null {
+  const i = log.map((l) => JOIN_ERROR.test(l)).lastIndexOf(true)
+  if (i === -1) return null
+  const block = log.slice(i, i + 40)
+  // 오류 한 건의 스택만 읽는다 ("at ..." 줄이 끝나는 곳까지)
+  const end = block.findIndex((l, k) => k > 0 && !/^\s*(at |\.\.\.|Caused by|java\.|[\w.$]+(?:Exception|Error))/.test(l))
+  const text = block.slice(0, end === -1 ? block.length : end).join('\n')
+  // 모드가 아니라 월드·플레이어 파일이 깨져서 못 들어오는 경우 (컴퓨터가 갑자기 꺼진 뒤 계속 떨어지기만 하는 등)
+  if (NBT_BROKEN.test(text)) {
+    return {
+      title: '플레이어나 월드 파일이 깨졌어요',
+      cause: '들어오는 사람의 저장 파일(playerdata)이나 월드 파일을 읽다가 깨진 걸 찾았어요. 컴퓨터가 갑자기 꺼지거나 서버가 강제로 꺼질 때 저장 중이던 파일이 깨질 수 있어요.',
+      suspects: [],
+      fix: '백업 탭에서 최근 백업으로 되돌려 보세요. (서버를 켤 때마다 자동으로 백업해 둬요)'
+    }
+  }
+  const suspects = matchInstalled(folderPath, suspectIds({ text, report: null }))
+  const names = suspects.map((s) => s.title)
+  return {
+    title: '플레이어가 들어오는 순간 모드가 오류를 내요',
+    cause: names.length
+      ? `${names.join(', ')} 모드가 플레이어가 들어올 때 오류를 내서 접속이 거부돼요. 서버는 꺼지지 않지만 이 모드가 있는 동안은 들어올 수 없어요. 모드 쪽 문제라서 아래처럼 해 보세요.`
+      : '모드 하나가 플레이어가 들어올 때 오류를 내서 접속이 거부돼요. 정확한 모드는 콘솔의 오류 줄에서 찾을 수 있어요.',
+    suspects
+  }
 }
 
 export function analyzeCrash(folderPath: string, log: string[], startedAt: number): CrashAnalysis {

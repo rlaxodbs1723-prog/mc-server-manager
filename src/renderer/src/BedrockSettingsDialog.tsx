@@ -142,7 +142,7 @@ export default function BedrockSettingsDialog({
         ...(Object.keys(autoEdit).length && { automation: autoEdit as ServerAutomation }),
         ...(autoRestart != null && { autoRestart })
       })
-      toast(serverOn ? '저장했어요. 서버를 다시 켜면 적용돼요' : '저장했어요')
+      toast(serverOn ? '저장했어요. 서버를 껐다 켜야 적용돼요' : '저장했어요')
       onClose()
     } catch (e) {
       toast(cleanError(e), 'error')
@@ -291,7 +291,7 @@ export default function BedrockSettingsDialog({
           </header>
           <div className="settings-content">{content}</div>
           <footer>
-            <span className="hint">{dirty ? (serverOn ? '바뀐 설정은 서버를 다시 켜면 적용돼요' : '바뀐 설정이 있어요') : ''}</span>
+            <span className="hint">{dirty ? (serverOn ? '바뀐 설정은 서버를 껐다 켜야 적용돼요' : '바뀐 설정이 있어요') : ''}</span>
             <button className="btn primary" onClick={save} disabled={!dirty || busy}>
               {busy ? <span className="spinner" /> : <Save size={16} />}
               저장하기

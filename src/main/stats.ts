@@ -75,9 +75,10 @@ function before1203(mc: string): boolean {
 }
 
 // 서버 속도를 물어보는 명령 (없는 버전이면 null → 묻지 않는다. 물으면 콘솔에 "Unknown command"가 찍힌다)
-function tpsCommand(folderPath: string): string | null {
+export function tpsCommand(folderPath: string): string | null {
   const info = readServerInfo(folderPath)
   const sw = info.software ?? 'vanilla'
+  if (sw === 'bedrock') return null
   if (sw === 'paper' || sw === 'purpur') return 'tps'
   if (sw === 'forge') return 'forge tps'
   if (sw === 'neoforge') return 'neoforge tps'

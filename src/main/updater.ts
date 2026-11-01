@@ -1,5 +1,6 @@
 // 자동 업데이트: 깃허브 Releases에 새 버전이 올라오면 뒤에서 받아 두고, 준비되면 화면에 알린다.
 // 설치는 사용자가 "업데이트"를 누르거나 앱을 끌 때 한다 (서버가 돌고 있는데 갑자기 다시 시작하지 않는다).
+// 다만 앱을 켤 때 이미 새 버전이 있으면 바로 설치한다 (켜진 서버가 없을 때만).
 // 설치 파일로 설치한 앱에서만 동작한다 (개발 중에는 하지 않는다)
 // 테스트용 (환경 변수, 평소에는 없음):
 //   MCSM_UPDATE_URL: 깃허브 대신 이 주소에서 새 버전을 찾는다 (내 컴퓨터에 띄운 업데이트 서버 등)
@@ -10,6 +11,11 @@ import fs from 'fs'
 import path from 'path'
 import type { UpdateState } from '../shared-types'
 import { notify } from './notify'
+import { anyRunning } from './runner'
+
+// 앱을 켤 때 새 버전이 이미 있으면(껐다가 켰는데 그 사이 새 버전이 나왔을 때 등) 버튼 없이 바로 설치한다.
+// 앱이 켜진 채로 있다가 받은 업데이트는 지금처럼 알림과 "업데이트" 버튼으로 한다. 켜진 서버가 있으면 이때도 버튼으로 둔다
+let installAtLaunch = true
 
 let state: UpdateState = { state: 'none' }
 const CHECK_EVERY_MS = 6 * 60 * 60 * 1000 // 6시간마다 다시 확인 (앱을 며칠씩 켜 두는 사람이 많다)
@@ -42,7 +48,10 @@ export function initUpdater(): void {
   if (testUrl) autoUpdater.setFeedURL({ provider: 'generic', url: testUrl })
   autoUpdater.autoDownload = true // 새 버전이 있으면 뒤에서 받아 둔다
   autoUpdater.autoInstallOnAppQuit = true // 받아 둔 채로 앱을 끄면 그때 설치된다
-  autoUpdater.on('update-not-available', () => log('새 버전 없음'))
+  autoUpdater.on('update-not-available', () => {
+    installAtLaunch = false // 켤 때 확인했는데 새 버전이 없었다. 이후에 받는 업데이트는 버튼으로
+    log('새 버전 없음')
+  })
   // 6시간마다 다시 확인하면 이미 받아 둔 버전도 "있음 → 받음"이 다시 온다. 그때 버튼이 깜빡이거나 알림이 또 뜨지 않게 한다
   const alreadyReady = (version: string): boolean => state.state === 'ready' && state.version === version
   autoUpdater.on('update-available', (info) => {
@@ -56,6 +65,13 @@ export function initUpdater(): void {
   autoUpdater.on('update-downloaded', (info) => {
     if (alreadyReady(info.version)) return
     log(`새 버전 ${info.version} 준비됨`)
+    if (installAtLaunch && !anyRunning()) {
+      installAtLaunch = false
+      log('앱을 켤 때 있던 새 버전이라 바로 설치하고 다시 켜기')
+      autoUpdater.quitAndInstall(true, true)
+      return
+    }
+    installAtLaunch = false
     set({ state: 'ready', version: info.version })
     notify('업데이트가 준비됐어요', `새 버전 ${info.version}이 준비됐어요. 앱에서 "업데이트"를 누르거나, 앱을 끄면 설치돼요.`)
     if (process.env.MCSM_UPDATE_AUTOINSTALL === '1') {
@@ -65,6 +81,7 @@ export function initUpdater(): void {
   })
   // 인터넷이 안 되는 등: 조용히 넘어가고 다음에 다시 확인한다 (앱 쓰는 데는 지장 없다)
   autoUpdater.on('error', (e) => {
+    installAtLaunch = false
     log(`오류: ${e?.message ?? e}`)
     if (state.state === 'downloading') set({ state: 'none' })
   })

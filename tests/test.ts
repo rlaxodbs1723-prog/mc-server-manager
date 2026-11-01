@@ -7,7 +7,7 @@ import { sameMod } from '../src/shared-types'
 import { preferCurseForge } from '../src/main/merge'
 import { readYamlValue, writeYamlValue } from '../src/main/yamlvalue'
 import { readProperties, writeProperties } from '../src/main/properties'
-import { parseJavaArgs, picksGc, createServer, startServerAt, readServerInfo, patchServerInfo, saveSettings, getSettings, duplicateServer, resetWorld, changeVersion, renameServer, listServers, setServerOrder, deleteServer, cleanupUnfinished } from '../src/main/servers'
+import { applyDefaultsOnce, parseJavaArgs, picksGc, createServer, startServerAt, readServerInfo, patchServerInfo, saveSettings, getSettings, duplicateServer, resetWorld, changeVersion, renameServer, listServers, setServerOrder, deleteServer, cleanupUnfinished } from '../src/main/servers'
 import { getLoaderVersions } from '../src/main/loaders'
 import { acceptEula, emitEvent, getLog, getStartedAt, getState, isEulaAccepted, onServerEvent, sendCommand, stopServer } from '../src/main/runner'
 import { autoStartServers, setStarter } from '../src/main/automation'
@@ -15,9 +15,9 @@ import { createEntry, renameEntry, trashEntries } from '../src/main/configfiles'
 import { disableDatapack } from '../src/main/crash'
 import { cancelTask, runCancellable } from '../src/main/cancel'
 import { getAppSettings, setAppSettings } from '../src/main/appsettings'
-import { getStats } from '../src/main/stats'
+import { getStats, tpsCommand } from '../src/main/stats'
 import { getManageInfo, runAction } from '../src/main/manage'
-import { listGameRules, setGameRule } from '../src/main/gamerules'
+import { listGameRules, setGameRule, UNKNOWN_HELP } from '../src/main/gamerules'
 import { addWhitelist, getWhitelist, removeWhitelist, setWhitelistEnabled } from '../src/main/whitelist'
 import { getInvite } from '../src/main/invite'
 import { getPlayerHistory } from '../src/main/playerlog'
@@ -32,7 +32,7 @@ import yazl from 'yazl'
 import * as mods from '../src/main/mods'
 import { curseForgeKeySource, getFile, hasCurseForgeKey, mapFiles, removeCurseForgeKey, searchMaps, setCurseForgeKey } from '../src/main/curseforge'
 import { createBackup, deleteBackup, getBackupSettings, listBackups, restoreBackup, setBackupSettings } from '../src/main/backup'
-import { analyzeCrash } from '../src/main/crash'
+import { analyzeCrash, analyzeJoinFailure } from '../src/main/crash'
 import http from 'http'
 import dgram from 'dgram'
 import { execFileSync } from 'child_process'
@@ -139,6 +139,104 @@ async function quick(): Promise<void> {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcsm-crash-'))
     const a = analyzeCrash(dir, ['[Server thread/ERROR]: Encountered an unexpected exception', 'java.lang.OutOfMemoryError: Java heap space'], Date.now())
     expect(/메모리/.test(a.title + a.cause), `원인이 메모리가 아니에요: ${a.title}`)
+    fs.rmSync(dir, { recursive: true, force: true })
+  })
+  await check('접속 실패 분석: 플레이어가 들어올 때 모드 오류 (Gokis·Architectury) / 서버가 켜진 채라 튕김이 아님', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcsm-join-'))
+    fs.mkdirSync(path.join(dir, 'mods'))
+    fs.writeFileSync(path.join(dir, 'server-manager.json'), JSON.stringify({ name: 't', software: 'fabric', mcVersion: '26.3', createdAt: '' }))
+    for (const f of ['gokis-1.1.jar', 'architectury-22.0.5+fabric.jar', 'lithium-0.26.1.jar']) fs.writeFileSync(path.join(dir, 'mods', f), 'x')
+    const log = [
+      '[16:03:20] [Server thread/INFO]: Steve joined the game',
+      "[16:03:27] [Server thread/ERROR]: Couldn't place player in world",
+      'java.lang.NullPointerException: Cannot invoke "net.minecraft.network.codec.StreamCodec.encode(Object, Object)" because "codec" is null',
+      'at knot//dev.architectury.impl.NetworkAggregator.collectPackets(NetworkAggregator.java:117)',
+      'at knot//dev.architectury.networking.NetworkManager.sendToPlayer(NetworkManager.java:119)',
+      'at knot//gvoper.gokis.network.GokiNetwork.sendSkillInfoSync(GokiNetwork.java:67)',
+      'at knot//gvoper.gokis.skill.SkillHooks.onPlayerLogin(SkillHooks.java:233)',
+      'at knot//net.minecraft.server.players.PlayerList.placeNewPlayer(PlayerList.java:238)',
+      'at java.base/java.lang.Thread.run(Thread.java:1474)',
+      '[16:03:28] [Server thread/INFO]: Steve lost connection'
+    ]
+    const f = analyzeJoinFailure(dir, log)
+    expect(f != null, '접속 실패를 못 알아봤어요')
+    const names = f!.suspects.map((s) => s.fileName).join(',')
+    expect(/gokis/.test(names), `Gokis를 못 찾았어요: ${names}`)
+    expect(/architectury/.test(names), `Architectury를 못 찾았어요: ${names}`)
+    expect(!/lithium/.test(names), '관계없는 모드를 의심했어요')
+    expect(analyzeJoinFailure(dir, ['[INFO]: Steve joined the game']) === null, '오류가 없는데 접속 실패라고 했어요')
+    fs.rmSync(dir, { recursive: true, force: true })
+  })
+  await check('월드·플레이어 파일이 깨졌을 때: 튕김 분석과 접속 실패 분석 둘 다 백업 복원을 안내한다', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcsm-nbt-'))
+    fs.writeFileSync(path.join(dir, 'server-manager.json'), JSON.stringify({ name: 't', software: 'fabric', mcVersion: '26.3', createdAt: '' }))
+    const stack = [
+      'at knot//MC/net.minecraft.nbt.NbtCompound$1.readString(NbtCompound.java:148) ~[server-intermediary.jar:?]',
+      'at knot//MC/net.minecraft.nbt.NbtCompound$1.readCompound(NbtCompound.java:75) ~[server-intermediary.jar:?]',
+      'at knot//MC/net.minecraft.nbt.NbtCompound$1.read(NbtCompound.java:63) ~[server-intermediary.jar:?]'
+    ]
+    const a = analyzeCrash(dir, ['[Server thread/ERROR]: Encountered an unexpected exception', ...stack], Date.now())
+    expect(/손상/.test(a.title) && a.action === 'backup', `월드 손상이라고 못 짚었어요: ${a.title}`)
+    const f = analyzeJoinFailure(dir, ["[Server thread/ERROR]: Couldn't place player in world", ...stack])
+    expect(f != null && /깨졌/.test(f.title) && !!f.fix && /백업/.test(f.fix), '접속 실패에서 파일 손상을 못 짚었어요')
+    fs.rmSync(dir, { recursive: true, force: true })
+  })
+  await check('이번 변경: 자동 저장 주기는 0~60분으로 다듬고 환영 메시지는 그대로 둔다', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcsm-auto-'))
+    fs.writeFileSync(path.join(dir, 'server-manager.json'), JSON.stringify({ name: 't', software: 'vanilla', mcVersion: '1.21', createdAt: '' }))
+    saveSettings(dir, { automation: { welcome: '어서 와요', autoSaveMin: 2 } as never })
+    let a = readServerInfo(dir).automation!
+    expect(a.autoSaveMin === 2 && a.welcome === '어서 와요', `저장값이 달라요: ${JSON.stringify(a)}`)
+    saveSettings(dir, { automation: { autoSaveMin: 999 } as never })
+    a = readServerInfo(dir).automation!
+    expect(a.autoSaveMin === 60 && a.welcome === '어서 와요', `너무 큰 값/다른 값이 사라졌어요: ${JSON.stringify(a)}`)
+    saveSettings(dir, { automation: { autoSaveMin: -5 } as never })
+    expect(readServerInfo(dir).automation!.autoSaveMin === 0, '음수가 0으로 안 바뀌었어요')
+    fs.rmSync(dir, { recursive: true, force: true })
+  })
+  await check('이번 변경: 보이는 거리 기본값 16은 10일 때만 바꾸고 직접 정한 값은 둔다 / 스폰 보호 0', () => {
+    for (const [have, want] of [['10', '16'], ['8', '8'], ['32', '32']]) {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcsm-defaults-'))
+      fs.writeFileSync(path.join(dir, 'server.properties'), `view-distance=${have}\nspawn-protection=16\n`)
+      const info = { name: 't', software: 'vanilla' as const, mcVersion: '1.21', defaultsVersion: 3, folderPath: dir, createdAt: '' }
+      fs.writeFileSync(path.join(dir, 'server-manager.json'), JSON.stringify(info))
+      applyDefaultsOnce(info as never)
+      expect(readProperties(dir)['view-distance'] === want, `view-distance ${have} → ${readProperties(dir)['view-distance']} (기대 ${want})`)
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcsm-defaults-'))
+    fs.writeFileSync(path.join(dir, 'server.properties'), 'view-distance=10\nspawn-protection=16\n')
+    const info = { name: 't', software: 'vanilla' as const, mcVersion: '1.21', folderPath: dir, createdAt: '' }
+    fs.writeFileSync(path.join(dir, 'server-manager.json'), JSON.stringify(info))
+    applyDefaultsOnce(info as never)
+    const p = readProperties(dir)
+    expect(p['spawn-protection'] === '0' && p['view-distance'] === '16', `옛 서버에 기본값이 안 들어갔어요: ${JSON.stringify(p)}`)
+    fs.rmSync(dir, { recursive: true, force: true })
+  })
+  await check('이번 변경: 배드락 서버에는 속도 확인(tick) 명령을 보내지 않는다 / 앱이 보낸 명령의 오류 답만 가린다', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcsm-tps-'))
+    fs.writeFileSync(path.join(dir, 'server-manager.json'), JSON.stringify({ name: 't', software: 'bedrock', mcVersion: '1.21.0', createdAt: '' }))
+    expect(tpsCommand(dir) === null, `배드락에 ${tpsCommand(dir)} 명령을 보내요`)
+    fs.writeFileSync(path.join(dir, 'server-manager.json'), JSON.stringify({ name: 't', software: 'vanilla', mcVersion: '1.21', createdAt: '' }))
+    expect(tpsCommand(dir) === 'tick query', '바닐라에는 tick query를 보내야 해요')
+    fs.rmSync(dir, { recursive: true, force: true })
+    const log = (s: string): string => `[11:05:53] [Server thread/INFO]: System chat: ${s}`
+    expect(UNKNOWN_HELP.test(log('Unknown or incomplete command. See below for error')), '오류 첫 줄을 못 가렸어요')
+    expect(UNKNOWN_HELP.test(log('minecraft:help gamerule<--[HERE]')), '오류 둘째 줄을 못 가렸어요')
+    expect(!UNKNOWN_HELP.test('[11:05:53] [Server thread/INFO]: <Steve> Unknown or incomplete command'), '플레이어 채팅까지 가렸어요')
+  })
+  await check('튕김 분석: 화면 코드를 건드리는 모드(CreativeCore)를 의심 모드로 짚는다', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcsm-crash2-'))
+    fs.mkdirSync(path.join(dir, 'mods'))
+    fs.writeFileSync(path.join(dir, 'server-manager.json'), JSON.stringify({ name: 't', software: 'fabric', mcVersion: '26.3', createdAt: '' }))
+    fs.writeFileSync(path.join(dir, 'mods', 'CreativeCore_FABRIC_v2.14.16_mc26.3.jar'), 'x')
+    const a = analyzeCrash(
+      dir,
+      ['[main/ERROR]: @Mixin target net.minecraft.client.renderer.GameRenderer was not found creativecore.fabric.mixins.json:GameRendererMixin from mod creativecore'],
+      Date.now()
+    )
+    expect(/화면 코드/.test(a.title), `원인이 달라요: ${a.title}`)
+    expect(a.suspects.some((s) => /creativecore/i.test(s.fileName)), `CreativeCore를 의심하지 않았어요: ${a.suspects.map((s) => s.fileName)}`)
     fs.rmSync(dir, { recursive: true, force: true })
   })
   await i18nChecks()

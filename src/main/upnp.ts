@@ -127,11 +127,11 @@ async function soap(gw: Gateway, action: string, args: Record<string, string | n
   return text
 }
 
-const isPrivate = (ip: string): boolean =>
+export const isPrivate = (ip: string): boolean =>
   /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.|169\.254\.)/.test(ip)
 
 // 공유기가 외부 IP를 알려 주지 않을 때 쓰는 대안
-async function publicIpFromWeb(): Promise<string | null> {
+export async function publicIpFromWeb(): Promise<string | null> {
   try {
     const res = await fetch('https://api.ipify.org', { signal: AbortSignal.timeout(5000) })
     const ip = (await res.text()).trim()

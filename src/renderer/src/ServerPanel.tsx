@@ -269,8 +269,8 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
     if (startBusy.current) return
     setError('')
     if (!server.eulaAccepted) return setShowEula(true)
-    // 이름 주소가 없는 서버(기능이 생기기 전에 만든 서버)는 켜기 전에 정하는 창을 띄운다. 건너뛰면 이번 켜기에서는 다시 묻지 않는다
-    if (!domainSkipped.current) {
+    // 이름 주소가 없는 서버(기능이 생기기 전에 만든 서버)는 켜기 전에 정하는 창을 띄운다. 건너뛰면 이 서버는 다시 묻지 않는다
+    if (!domainSkipped.current && readStored<string>(`domainSkip:${folderPath}`, '') !== '1') {
       const d = await window.api.getDomain(folderPath).catch(() => ({ name: '', host: '' }))
       if (!d) return setAskDomain(true)
     }
@@ -667,6 +667,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
           }}
           onSkip={() => {
             domainSkipped.current = true
+            writeStored(`domainSkip:${folderPath}`, '1') // 한 번 건너뛰면 이 서버는 다시 묻지 않는다
             setAskDomain(false)
             void start()
           }}

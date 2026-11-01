@@ -107,6 +107,10 @@ function pushLog(folderPath: string, line: string): void {
       }, 4000)
     }
     const clean = stripColors(line).trimEnd()
+    if (!r.bedrock && JOIN_ERROR.test(clean) && Date.now() - (lastJoinError.get(folderPath) ?? 0) > 30_000) {
+      lastJoinError.set(folderPath, Date.now())
+      setTimeout(() => running.get(folderPath) === r && joinErrorHandler?.(folderPath, r.log), 1500).unref()
+    }
     const m = r.bedrock ? BEDROCK_JOIN_LEFT.exec(clean) : JOIN_LEFT.exec(clean)
     if (m) {
       const [who, joined] = r.bedrock ? [m[2], m[1] === 'connected'] : [m[1], m[2] === 'joined']
@@ -193,6 +197,14 @@ export const onCrash = (fn: (folderPath: string, info: CrashInfo) => void): void
   crashHandler = fn
 }
 export const emitEvent = emit
+
+// 켜진 채로 접속만 실패하는 오류가 찍히면 알려 준다 (오류 줄이 다 나올 때까지 잠깐 기다린다). 같은 서버는 30초에 한 번만
+export const JOIN_ERROR = /Couldn't place player in world/
+let joinErrorHandler: ((folderPath: string, log: string[]) => void) | null = null
+export const onJoinError = (fn: (folderPath: string, log: string[]) => void): void => {
+  joinErrorHandler = fn
+}
+const lastJoinError = new Map<string, number>()
 
 // 앱이 콘솔에 남기는 안내 줄 ([앱] …). 화면에 보내고, 다른 서버를 보다 돌아와도 보이게 로그에도 남긴다
 export function appLog(folderPath: string, line: string): void {

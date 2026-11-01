@@ -33,10 +33,10 @@ export const WORLD_FIELDS: Field[] = [
   { key: 'spawn-npcs', label: '주민 생성', type: 'bool', def: true, legacy: true },
   { key: 'allow-nether', label: '네더 허용', type: 'bool', def: true, legacy: true },
   { key: 'spawn-monsters', label: '몬스터 생성', type: 'bool', def: true, legacy: true },
-  { key: 'view-distance', label: '보이는 거리', desc: '클수록 멀리 보이지만 컴퓨터가 힘들어해요. 보통 8~12가 적당해요.', type: 'number', def: 10, min: 3, max: 32, unit: '청크' },
+  { key: 'view-distance', label: '보이는 거리', desc: '클수록 멀리 보이지만 컴퓨터가 힘들어해요. 보통 10~16이 적당해요. 플레이어 본인의 렌더 거리도 올려야 해요 (둘 중 작은 값이 적용돼요).', type: 'number', def: 16, min: 3, max: 32, unit: '청크' },
   { key: 'simulation-distance', label: '움직이는 거리', desc: '플레이어 주변에서 동물·작물이 움직이는 범위예요. 보이는 거리보다 크게 해도 효과가 없어요.', type: 'number', def: 10, min: 3, max: 32, unit: '청크' },
-  { key: 'spawn-protection', label: '스폰 보호 범위', desc: '처음 태어나는 곳 주변을 관리자만 부술 수 있어요. 0이면 꺼져요.', type: 'number', def: 16, min: 0, max: 256, unit: '블록' },
-  { key: 'max-world-size', label: '월드 크기 제한', desc: '월드 경계까지의 거리(반지름)예요. 작게 하면 지도가 좁아져서 용량이 덜 늘어요.', type: 'number', def: 29999984, min: 1, max: 29999984, unit: '블록' },
+  { key: 'spawn-protection', label: '스폰 보호 범위', desc: '처음 태어나는 곳 주변을 관리자만 부술 수 있어요. 0이면 꺼져요.', type: 'number', def: 0, min: 0, max: 256, unit: '블록' },
+  { key: 'max-world-size', label: '자기장 크기 제한', desc: '월드 경계까지의 거리(반지름)예요. 작게 하면 지도가 좁아져서 용량이 덜 늘어요.', type: 'number', def: 29999984, min: 1, max: 29999984, unit: '블록' },
   { key: 'max-build-height', label: '건축 높이 제한', type: 'number', def: 256, min: 64, max: 256, unit: '블록', legacy: true }
 ]
 
@@ -254,7 +254,7 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
           paper: Object.keys(paperEdit).length ? paperEdit : undefined
         })
       }
-      if (propsDirty && !picked) toast(serverOn ? '저장했어요. 서버를 다시 켜면 적용돼요' : '저장했어요')
+      if (propsDirty && !picked) toast(serverOn ? '저장했어요. 서버를 껐다 켜야 적용돼요' : '저장했어요')
       if (picked) {
         const target = `${picked.mcVersion}${software === 'vanilla' ? '' : ` · ${versionLabel(software, picked.loaderVersion)}`}`
         runJob(folderPath, '버전 바꾸기', `${target}(으)로 바꿨어요`, async (report) => {
@@ -459,7 +459,7 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
           </header>
           <div className="settings-content">{content}</div>
           <footer>
-            <span className="hint">{dirty ? (serverOn ? '바뀐 설정은 서버를 다시 켜면 적용돼요' : '바뀐 설정이 있어요') : ''}</span>
+            <span className="hint">{dirty ? (serverOn ? '바뀐 설정은 서버를 껐다 켜야 적용돼요' : '바뀐 설정이 있어요') : ''}</span>
             <button className="btn ghost" onClick={load} disabled={saving || !dirty}>
               되돌리기
             </button>
@@ -594,7 +594,7 @@ function IconRow({ folderPath }: { folderPath: string }) {
       if (url) {
         setIcon(url)
         window.dispatchEvent(new Event('servers-changed'))
-        toast('서버 아이콘을 바꿨어요. 서버를 다시 켜면 보여요')
+        toast('서버 아이콘을 바꿨어요. 서버를 껐다 켜야 보여요')
       }
     } catch (e) {
       toast(cleanError(e), 'error')
@@ -643,6 +643,12 @@ function IconRow({ folderPath }: { folderPath: string }) {
 
 // 하드코어: 다른 설정처럼 저장하기를 눌러야 바뀐다. 월드 파일을 고치므로 서버가 꺼져 있을 때만 바꿀 수 있다.
 // ---------- 자동 탭 ----------
+const AUTO_SAVE = [
+  { value: '0', label: '안 함' },
+  { value: '1', label: '1분마다' },
+  { value: '2', label: '2분마다' },
+  { value: '5', label: '5분마다' }
+]
 const EMPTY_STOP = [
   { value: '0', label: '안 함' },
   { value: '10', label: '10분' },
@@ -706,6 +712,19 @@ function AutomationRows({ value: a, changed, port, portClash, onGoPort, onChange
           </label>
         </div>
       </div>
+      <div className={`setting-row ${'autoSaveMin' in changed ? 'changed' : ''}`}>
+        <div className="setting-text">
+          <div className="setting-label">자동 저장</div>
+          <div className="setting-desc">사람이 있는 동안 이 주기로 월드를 저장해요. 서버가 튕겨도 되돌아가는 시간이 줄어요. 큰 월드나 모드팩은 저장할 때마다 잠깐 끊길 수 있어요.</div>
+        </div>
+        <div style={{ width: 160 }}>
+          <Select
+            value={String(a.autoSaveMin)}
+            onChange={(v) => onChange({ autoSaveMin: Number(v) })}
+            options={AUTO_SAVE.some((o) => o.value === String(a.autoSaveMin)) ? AUTO_SAVE : [...AUTO_SAVE, { value: String(a.autoSaveMin), label: `${a.autoSaveMin}분마다` }]}
+          />
+        </div>
+      </div>
       <div className={`setting-row ${'emptyStopMin' in changed ? 'changed' : ''}`}>
         <div className="setting-text">
           <div className="setting-label">아무도 없으면 끄기</div>
@@ -719,13 +738,6 @@ function AutomationRows({ value: a, changed, port, portClash, onGoPort, onChange
           />
         </div>
       </div>
-      <div className={`setting-row col ${'welcome' in changed ? 'changed' : ''}`}>
-        <div className="setting-text">
-          <div className="setting-label">환영 메시지</div>
-          <div className="setting-desc">들어온 사람에게만 보여요. {'{name}'}은 그 사람 닉네임으로 바뀌어요. 비우면 보내지 않아요.</div>
-        </div>
-        <input className="input" value={a.welcome} maxLength={200} placeholder="{name}님 어서 오세요!" onChange={(e) => onChange({ welcome: e.target.value })} />
-      </div>
     </>
   )
 }
@@ -735,7 +747,7 @@ function PaperRows({ values, edits, onChange }: { values: Record<string, string>
   const missing = PAPER_FIELDS.filter((f) => values[f.id] == null)
   return (
     <>
-      <p className="hint" style={{ padding: '4px 0 8px' }}>Paper·Purpur 서버에만 있는 설정이에요. 서버를 다시 켜면 적용돼요.</p>
+      <p className="hint" style={{ padding: '4px 0 8px' }}>Paper·Purpur 서버에만 있는 설정이에요. 서버를 껐다 켜야 적용돼요.</p>
       {PAPER_FIELDS.filter((f) => values[f.id] != null).map((f) => (
         <PaperRow key={f.id} field={f} fileValue={values[f.id]} value={edits[f.id] ?? values[f.id]} changed={f.id in edits} onChange={(v) => onChange(f.id, v)} />
       ))}

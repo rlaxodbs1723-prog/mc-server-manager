@@ -16,9 +16,15 @@ const TOP_RULES = ['pvp', 'spawn_mobs', 'command_blocks_work', 'allow_entering_n
 const GROUP: Record<string, string[]> = {
   spawn_mobs: ['spawn_mobs', 'spawn_monsters', 'spawn_phantoms', 'spawn_patrols', 'spawn_wandering_traders', 'spawn_wardens']
 }
-const QUICK_RULES = [...TOP_RULES, 'mob_griefing', 'keep_inventory']
+// 왼쪽 칸에 보여 줄 규칙 (이 순서대로)
+const SIDE_RULES = ['keep_inventory', 'advance_time', 'advance_weather']
+const QUICK_RULES = [...TOP_RULES, ...SIDE_RULES]
+// "시간 고정"처럼 규칙이 꺼져 있을 때 스위치가 켜져 보여야 하는 것 (규칙은 "흐름"이라 반대다)
+const INVERTED = ['advance_time', 'advance_weather']
 // 스위치에 보일 이름·설명 (게임 규칙 창의 설명과 따로 쓴다)
 const QUICK_TEXT: Record<string, { label: string; desc: string }> = {
+  advance_time: { label: '시간 고정', desc: '켜면 지금 시간에서 낮·밤이 바뀌지 않아요' },
+  advance_weather: { label: '날씨 고정', desc: '켜면 지금 날씨에서 바뀌지 않아요' },
   spawn_mobs: { label: '몹 생성', desc: '끄면 몬스터·동물 등 모든 몹이 자연스럽게 생기지 않아요' },
   command_blocks_work: { label: '명령 블록 사용', desc: '명령 블록을 설치하고 작동시킬 수 있어요.' },
   allow_entering_nether_using_portals: { label: '네더 허용', desc: '끄면 차원문으로 네더에 들어갈 수 없어요' }
@@ -27,6 +33,10 @@ const QUICK_TEXT: Record<string, { label: string; desc: string }> = {
 const MOB_KEYS = ['spawn-monsters', 'spawn-animals', 'spawn-npcs']
 // 옛 버전에서 맨 위에 둘 항목 (PvP, 몹 생성(위의 MOB_KEYS), 명령 블록, 네더)
 const LEGACY_TOP = ['pvp', 'enable-command-block', 'allow-nether']
+
+// 켜진 서버에서 읽은 게임 규칙은 탭을 떠나도 잠깐 기억해 둔다. 다시 열 때 바로 보여 주고 뒤에서 새로 읽는다 (읽는 데 몇 초 걸려서)
+const RULES_FRESH_MS = 10 * 60 * 1000
+const rulesCache = new Map<string, { at: number; list: GameRule[] }>()
 
 // 자바 서버의 맵 탭: 지금 월드, 하드코어, 월드 리셋(새로 만들기·내 월드·맵 받기는 이 창 안에 있다), 게임 규칙, 월드 관련 설정(거리·범위·몹 생성 등)
 export default function MapTab({ folderPath, serverOn, mcVersion }: { folderPath: string; serverOn: boolean; mcVersion: string }) {
@@ -37,7 +47,10 @@ export default function MapTab({ folderPath, serverOn, mcVersion }: { folderPath
   const [showRules, setShowRules] = useState(false)
   const [edits, setEdits] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
-  const [rules, setRules] = useState<GameRule[] | null>(null) // 켜진 서버에서 읽은 게임 규칙 (자주 쓰는 것만 보인다)
+  const [rules, setRules] = useState<GameRule[] | null>(() => {
+    const c = serverOn ? rulesCache.get(folderPath) : undefined
+    return c && Date.now() - c.at < RULES_FRESH_MS ? c.list : null
+  }) // 켜진 서버에서 읽은 게임 규칙 (자주 쓰는 것만 보인다)
 
   const load = useCallback(async () => {
     const s = await window.api.getSettings(folderPath)
@@ -64,7 +77,17 @@ export default function MapTab({ folderPath, serverOn, mcVersion }: { folderPath
   const props = useMemo(() => ({ ...(world?.properties ?? {}), ...edits }), [world, edits])
   const fileExists = world ? Object.keys(world.properties).length > 0 : false
   const fields = WORLD_FIELDS.filter((f) => (fileExists ? f.key in (world?.properties ?? {}) : !f.legacy))
-  const dirty = Object.keys(edits).length > 0
+  // 왼쪽(지금 월드)에는 거리·범위 같은 설정, 오른쪽(월드 설정)에는 규칙 스위치. 바꾼 칸의 머리에 저장하기가 뜬다 (저장은 둘 다 같이 한다)
+  const leftFields = fields.filter((f) => !LEGACY_TOP.includes(f.key) && !MOB_KEYS.includes(f.key))
+  const dirtyLeft = Object.keys(edits).some((k) => leftFields.some((f) => f.key === k))
+  const dirtyRight = Object.keys(edits).some((k) => !leftFields.some((f) => f.key === k))
+  const saveButton = (show: boolean): React.ReactNode =>
+    show && (
+      <button className="btn sm primary" onClick={save} disabled={saving}>
+        {saving ? <span className="spinner" /> : <Save size={15} />}
+        저장하기
+      </button>
+    )
   // 옛 버전 목록의 맨 위 항목과 몹 생성 스위치
   const mobKeys = MOB_KEYS.filter((k) => fields.some((f) => f.key === k))
   const mobsOn = mobKeys.every((k) => props[k] !== 'false') // 설정 파일에 값이 없으면 켜진 것(기본값)
@@ -75,14 +98,23 @@ export default function MapTab({ folderPath, serverOn, mcVersion }: { folderPath
 
   // 설정 파일에 PvP 같은 항목이 없는 최신 버전이면, 켜진 서버에서 규칙을 읽어 스위치로 보여 준다. 막 켜져서 아직 못 읽으면 몇 번 다시 해 본다
   const newer = !!world && fileExists && !('pvp' in world.properties)
+  const loaded = !!world
   useEffect(() => {
-    if (!newer || !serverOn) return setRules(null)
+    if (!serverOn) {
+      rulesCache.delete(folderPath)
+      return setRules(null)
+    }
+    if (!loaded) return // 설정을 읽기 전에는 기억해 둔 규칙을 그대로 둔다
+    if (!newer) return setRules(null)
     let alive = true
     let tries = 0
     const attempt = (): void => {
       window.api
         .listGameRules(folderPath)
-        .then((list) => alive && setRules(list))
+        .then((list) => {
+          rulesCache.set(folderPath, { at: Date.now(), list })
+          if (alive) setRules(list)
+        })
         .catch(() => {
           if (alive && ++tries < 12) setTimeout(attempt, 4000)
         })
@@ -91,11 +123,11 @@ export default function MapTab({ folderPath, serverOn, mcVersion }: { folderPath
     return () => {
       alive = false
     }
-  }, [newer, serverOn, folderPath])
+  }, [newer, serverOn, folderPath, loaded])
   const shortName = (r: GameRule): string => r.name.replace(/^minecraft:/, '')
   const quick = (rules ?? []).filter((r) => r.type === 'bool' && QUICK_RULES.includes(shortName(r)))
   const topRules = TOP_RULES.flatMap((n) => quick.filter((r) => shortName(r) === n)) // 순서는 TOP_RULES대로
-  const sideRules = quick.filter((r) => !TOP_RULES.includes(shortName(r)))
+  const sideRules = SIDE_RULES.flatMap((n) => quick.filter((r) => shortName(r) === n))
   // 이 스위치가 바꾸는 규칙들 (켜진 서버에 실제로 있는 것만)
   const membersOf = (r: GameRule): GameRule[] => {
     const names = GROUP[shortName(r)] ?? [shortName(r)]
@@ -103,7 +135,8 @@ export default function MapTab({ folderPath, serverOn, mcVersion }: { folderPath
   }
   const ruleRow = (r: GameRule): React.ReactNode => {
     const l = QUICK_TEXT[shortName(r)] ?? labelOf(r.name)
-    const on = membersOf(r).every((x) => x.value === 'true') // 하나라도 꺼져 있으면 꺼진 것으로 보인다
+    const inverted = INVERTED.includes(shortName(r))
+    const on = membersOf(r).every((x) => x.value === (inverted ? 'false' : 'true')) // 하나라도 꺼져 있으면 꺼진 것으로 보인다
     return (
       <div className="setting-row" key={r.name}>
         <div className="setting-text">
@@ -111,7 +144,7 @@ export default function MapTab({ folderPath, serverOn, mcVersion }: { folderPath
           <div className="setting-desc">{l.desc}</div>
         </div>
         <label className="switch">
-          <input type="checkbox" checked={on} onChange={(e) => setRule(r, e.target.checked)} />
+          <input type="checkbox" checked={on} onChange={(e) => setRule(r, inverted ? !e.target.checked : e.target.checked)} />
           <span />
         </label>
       </div>
@@ -155,7 +188,7 @@ export default function MapTab({ folderPath, serverOn, mcVersion }: { folderPath
     setSaving(true)
     try {
       await window.api.saveSettings(folderPath, { properties: edits })
-      toast(serverOn ? '저장했어요. 서버를 다시 켜면 적용돼요' : '저장했어요')
+      toast(serverOn ? '저장했어요. 서버를 껐다 켜야 적용돼요' : '저장했어요')
       await load()
     } catch (e) {
       toast(cleanError(e), 'error')
@@ -179,73 +212,74 @@ export default function MapTab({ folderPath, serverOn, mcVersion }: { folderPath
       <div className="mods-col">
         <div className="installed-head">
           <h3>지금 월드</h3>
+          {saveButton(dirtyLeft)}
         </div>
-        <div className="mod-card small">
-          <span className="sw-badge" style={{ width: 40, height: 40, borderRadius: 12, color: '#5dbb63', background: '#5dbb6324' }}>
-            <Globe2 size={20} />
-          </span>
-          <div className="body">
-            <div className="t" style={{ fontSize: 14 }}>
-              {world?.name ?? '…'}
-            </div>
-            <div className="hint">{world ? (world.exists ? '월드 있음' : '아직 월드가 없어요. 서버를 처음 켜면 만들어져요') : ''}</div>
-          </div>
-        </div>
-
-        <div className="setting-row" style={{ marginTop: 10 }}>
-          <div className="setting-text">
-            <div className="setting-label">하드코어</div>
-            <div className="setting-desc">
-              {serverOn ? '서버를 끈 다음에 바꿀 수 있어요.' : '죽으면 다시 살아날 수 없고 관전 모드가 돼요. 난이도는 어려움으로 고정돼요.'}
+        <div className="mods-scroll">
+          <div className="mod-card small">
+            <span className="sw-badge" style={{ width: 40, height: 40, borderRadius: 12, color: '#5dbb63', background: '#5dbb6324' }}>
+              <Globe2 size={20} />
+            </span>
+            <div className="body">
+              <div className="t" style={{ fontSize: 14 }}>
+                {world?.name ?? '…'}
+              </div>
+              <div className="hint">{world ? (world.exists ? '월드 있음' : '아직 월드가 없어요. 서버를 처음 켜면 만들어져요') : ''}</div>
             </div>
           </div>
-          <label className="switch">
-            <input type="checkbox" checked={!!hardcore} disabled={hardcore == null || serverOn} onChange={(e) => toggleHardcore(e.target.checked)} />
-            <span />
-          </label>
-        </div>
 
-        <div className="setting-row">
-          <div className="setting-text">
-            <div className="setting-label">{world?.exists ? '월드 리셋' : '새 월드 설정'}</div>
-            <div className="setting-desc">시드·월드 종류·구조물로 새로 만들거나, 내 월드·zip, CurseForge 맵으로 바꿔요.</div>
+          <div className="setting-row" style={{ marginTop: 10 }}>
+            <div className="setting-text">
+              <div className="setting-label">하드코어</div>
+              <div className="setting-desc">
+                {serverOn ? '서버를 끈 다음에 바꿀 수 있어요.' : '죽으면 다시 살아날 수 없고 관전 모드가 돼요. 난이도는 어려움으로 고정돼요.'}
+              </div>
+            </div>
+            <label className="switch">
+              <input type="checkbox" checked={!!hardcore} disabled={hardcore == null || serverOn} onChange={(e) => toggleHardcore(e.target.checked)} />
+              <span />
+            </label>
           </div>
-          <button
-            className={`btn ${world?.exists ? 'danger' : ''}`}
-            onClick={() => setShowReset(true)}
-            disabled={serverOn || !world}
-            title={serverOn ? '서버를 끈 다음에 할 수 있어요' : undefined}
-          >
-            <RotateCcw size={16} />
-            {world?.exists ? '월드 리셋' : '설정하기'}
-          </button>
-        </div>
 
-        <div className="setting-row">
-          <div className="setting-text">
-            <div className="setting-label">게임 규칙</div>
-            <div className="setting-desc">죽어도 아이템 유지, 낙하 피해 등. 서버가 켜져 있을 때 바꿀 수 있어요.</div>
+          <div className="setting-row">
+            <div className="setting-text">
+              <div className="setting-label">{world?.exists ? '월드 리셋' : '새 월드 설정'}</div>
+              <div className="setting-desc">시드·월드 종류·구조물로 새로 만들거나, 내 월드·zip, CurseForge 맵으로 바꿔요.</div>
+            </div>
+            <button
+              className={`btn ${world?.exists ? 'danger' : ''}`}
+              onClick={() => setShowReset(true)}
+              disabled={serverOn || !world}
+              title={serverOn ? '서버를 끈 다음에 할 수 있어요' : undefined}
+            >
+              <RotateCcw size={16} />
+              {world?.exists ? '월드 리셋' : '설정하기'}
+            </button>
           </div>
-          <button className="btn" onClick={() => setShowRules(true)} disabled={!serverOn} title={serverOn ? undefined : '서버가 켜져 있을 때 할 수 있어요'}>
-            <ListChecks size={16} />
-            열기
-          </button>
+
+          {leftFields.map((f) => (
+            <FieldRow key={f.key} field={f} value={valueOf(f, props)} changed={f.key in edits} onChange={(v) => set(f.key, v)} />
+          ))}
+          {(!fileExists || fields.length === 0) && <p className="hint">서버를 한 번 끝까지 켜면 설정 항목이 생겨요.</p>}
+          {dirtyLeft && serverOn && <p className="hint">바뀐 설정은 서버를 껐다 켜야 적용돼요.</p>}
         </div>
-        {sideRules.map(ruleRow)}
-        {newer && serverOn && rules == null && <p className="hint">자주 쓰는 규칙을 불러오고 있어요…</p>}
       </div>
 
       <div className="mods-col">
         <div className="installed-head">
           <h3>월드 설정</h3>
-          {dirty && (
-            <button className="btn sm primary" onClick={save} disabled={saving}>
-              {saving ? <span className="spinner" /> : <Save size={15} />}
-              저장하기
-            </button>
-          )}
+          {saveButton(dirtyRight)}
         </div>
         <div className="mods-scroll">
+          <div className="setting-row">
+            <div className="setting-text">
+              <div className="setting-label">게임 규칙</div>
+              <div className="setting-desc">죽어도 아이템 유지, 낙하 피해 등. 서버가 켜져 있을 때 바꿀 수 있어요.</div>
+            </div>
+            <button className="btn" onClick={() => setShowRules(true)} disabled={!serverOn} title={serverOn ? undefined : '서버가 켜져 있을 때 할 수 있어요'}>
+              <ListChecks size={16} />
+              열기
+            </button>
+          </div>
           {topRules.map(ruleRow)}
           {legacyRow('pvp')}
           {mobKeys.length > 0 && (
@@ -262,13 +296,9 @@ export default function MapTab({ folderPath, serverOn, mcVersion }: { folderPath
           )}
           {legacyRow('enable-command-block')}
           {legacyRow('allow-nether')}
-          {fields
-            .filter((f) => !LEGACY_TOP.includes(f.key) && !MOB_KEYS.includes(f.key))
-            .map((f) => (
-              <FieldRow key={f.key} field={f} value={valueOf(f, props)} changed={f.key in edits} onChange={(v) => set(f.key, v)} />
-            ))}
-          {(!fileExists || fields.length === 0) && <p className="hint">서버를 한 번 끝까지 켜면 설정 항목이 생겨요.</p>}
-          {dirty && serverOn && <p className="hint">바뀐 설정은 서버를 다시 켜면 적용돼요.</p>}
+          {sideRules.map(ruleRow)}
+          {newer && serverOn && rules == null && <p className="hint">자주 쓰는 규칙을 불러오고 있어요…</p>}
+          {dirtyRight && serverOn && <p className="hint">바뀐 설정은 서버를 껐다 켜야 적용돼요.</p>}
         </div>
       </div>
 
