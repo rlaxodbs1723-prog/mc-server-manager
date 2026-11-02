@@ -20,6 +20,14 @@ const GAMEMODE: { value: BedrockManageInfo['gamemode']; label: string; emoji: st
 // 한 사람의 게임 모드는 관전도 고를 수 있다 (모두의 게임 모드·기본 게임 모드에는 없다)
 const PLAYER_GAMEMODE = [...GAMEMODE, { value: 'spectator' as const, label: '관전', emoji: '👻', desc: '벽을 통과하며 구경만 해요' }]
 
+// 배드락은 얼굴 그림을 구할 곳이 없어서, 이름마다 정해진 색의 이니셜로 구분한다 (같은 이름은 항상 같은 색)
+const AVATAR_COLORS = ['#3fc1a5', '#5b8def', '#e0709a', '#e8a33d', '#9b7bea', '#e86a5f', '#4cb4d8', '#8bc34a']
+function avatarColor(name: string): string {
+  let h = 0
+  for (const c of name) h = (h * 31 + c.codePointAt(0)!) >>> 0
+  return AVATAR_COLORS[h % AVATAR_COLORS.length]
+}
+
 function Card({ title, icon, children, extra }: { title: string; icon: ReactNode; children: ReactNode; extra?: ReactNode }) {
   return (
     <section className="manage-card">
@@ -109,7 +117,7 @@ export default function BedrockManageTab({ folderPath, running }: { folderPath: 
               <div className="player-list scroll">
                 {info.players.map((p) => (
                   <div className="player" key={p.name}>
-                    <span className="sw-badge" style={{ width: 40, height: 40, borderRadius: 12, fontSize: 16, color: '#3fc1a5', background: '#3fc1a524' }}>
+                    <span className="sw-badge" style={{ width: 40, height: 40, borderRadius: 12, fontSize: 16, color: avatarColor(p.name), background: `${avatarColor(p.name)}24` }}>
                       {[...p.name][0]?.toUpperCase()}
                     </span>
                     <div className="player-name" title={p.name}>

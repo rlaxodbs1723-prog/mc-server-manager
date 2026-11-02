@@ -1961,5 +1961,10 @@
  "포트 복사": "Copy port",
  "다시 확인": "Check again",
  "저장한 뒤 아래 \"다시 확인\"을 눌러요.": "After saving, press \"Check again\" below.",
- "playit 연결을 끊었어요. 다시 연결할 때 \"Agent limit reached\"가 나오면 playit.gg 사이트의 Agents에서 안 쓰는 항목을 지워 주세요.": "Disconnected from playit. If \"Agent limit reached\" appears when you reconnect, delete unused entries under Agents on the playit.gg site."
+ "playit 연결을 끊었어요. 다시 연결할 때 \"Agent limit reached\"가 나오면 playit.gg 사이트의 Agents에서 안 쓰는 항목을 지워 주세요.": "Disconnected from playit. If \"Agent limit reached\" appears when you reconnect, delete unused entries under Agents on the playit.gg site.",
+ "강제로 끌까요?": "Force stop?",
+ "지금은 월드를 저장하면서 끄는 중이에요. 강제로 끄면 저장하다 멈춰서 월드나 플레이어 파일이 깨질 수 있어요. 큰 월드는 저장에 시간이 걸리니, 가능하면 조금만 더 기다려 주세요.": "The server is saving the world while shutting down. Forcing it to stop can interrupt the save and corrupt the world or player files. Large worlds take time to save, so please wait a little longer if you can.",
+ "강제로 끄기": "Force stop",
+ "더 기다리기": "Keep waiting",
+ "공유기에서 포트가 열려 있는지 확인하는 중이에요 (최대 3분)…": "Checking whether the port is open on your router (up to 3 min)…"
 }

@@ -125,6 +125,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
   const [historyIndex, setHistoryIndex] = useState(-1)
   const [showEula, setShowEula] = useState(false)
   const [askDelete, setAskDelete] = useState(false)
+  const [askForce, setAskForce] = useState(false) // 끄는 중에 강제 종료를 눌렀을 때 확인
   const [askStop, setAskStop] = useState(false) // 접속한 사람이 있을 때 끌지 묻기
   const [naming, setNaming] = useState<'rename' | 'duplicate' | null>(null)
   const [showSettings, setShowSettings] = useState(false)
@@ -450,7 +451,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
             <Trash2 size={19} />
           </button>
           {state === 'stopping' && (
-            <button className="btn danger" onClick={() => window.api.stopServer(folderPath, true)} title="저장하지 않고 바로 꺼요">
+            <button className="btn danger" onClick={() => setAskForce(true)} title="저장하지 않고 바로 꺼요">
               <Zap size={16} />
               강제 종료
             </button>
@@ -698,6 +699,20 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
           danger
           onCancel={() => setAskStop(false)}
           onConfirm={() => stop(true)}
+        />
+      )}
+      {askForce && state === 'stopping' && (
+        <Confirm
+          title="강제로 끌까요?"
+          body="지금은 월드를 저장하면서 끄는 중이에요. 강제로 끄면 저장하다 멈춰서 월드나 플레이어 파일이 깨질 수 있어요. 큰 월드는 저장에 시간이 걸리니, 가능하면 조금만 더 기다려 주세요."
+          confirmText="강제로 끄기"
+          cancelText="더 기다리기"
+          danger
+          onCancel={() => setAskForce(false)}
+          onConfirm={() => {
+            setAskForce(false)
+            window.api.stopServer(folderPath, true)
+          }}
         />
       )}
       {askDelete && (

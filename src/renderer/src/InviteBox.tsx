@@ -28,6 +28,15 @@ export default function InviteBox({ folderPath, bedrock = false }: { folderPath:
     prevState.current = invite.state
   }, [invite.state])
 
+  // "준비 중"이 오래 걸리면(공유기가 자동으로 안 열려서 직접 연 포트인지 확인하는 중) 이유를 알려 준다
+  const [slow, setSlow] = useState(false)
+  useEffect(() => {
+    setSlow(false)
+    if (invite.state !== 'opening') return
+    const t = setTimeout(() => setSlow(true), 8000)
+    return () => clearTimeout(t)
+  }, [invite.state])
+
   async function check() {
     setChecking(true)
     try {
@@ -63,7 +72,7 @@ export default function InviteBox({ folderPath, bedrock = false }: { folderPath:
     return (
       <span className="invite-inline muted" title={lanHint}>
         <span className="spinner" />
-        접속 주소 준비 중…
+        {slow ? '공유기에서 포트가 열려 있는지 확인하는 중이에요 (최대 3분)…' : '접속 주소 준비 중…'}
       </span>
     )
 
