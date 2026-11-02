@@ -8,7 +8,7 @@ import { CreateEta } from './eta'
 import { listGameRules, setGameRule } from './gamerules'
 import { getHardcore, setHardcore } from './hardcore'
 import { getGameRuleLang } from './lang'
-import { checkReachable, closeAllPorts, getInvite, initInvite, useTunnel } from './invite'
+import { checkReachable, closeAllPorts, getInvite, initInvite, recheckInvite, useTunnel } from './invite'
 import { checkDomainName, claimDomain, getDomain, releaseDomain } from './domain'
 import { detectServer } from './importserver'
 import { addAddonFile, isBedrockFolder, latestBedrock, listAddons, removeAddon, setAddonEnabled } from './bedrock'
@@ -422,6 +422,7 @@ ipcMain.handle('getDomain', async (_event, folderPath: string) => {
 })
 ipcMain.handle('claimDomain', (_event, folderPath: string, name: string) => claimDomain(checkServerFolder(folderPath), String(name)))
 ipcMain.handle('getMemoryRange', () => memoryRange())
+ipcMain.handle('recheckInvite', (_event, folderPath: string) => recheckInvite(checkServerFolder(folderPath)))
 ipcMain.handle('useTunnel', (_event, folderPath: string) => useTunnel(checkServerFolder(folderPath)))
 ipcMain.handle('getStats', (_event, folderPath: string) => getStats(checkServerFolder(folderPath)))
 ipcMain.handle('getManageInfo', (_event, folderPath: string) => getManageInfo(checkServerFolder(folderPath)))

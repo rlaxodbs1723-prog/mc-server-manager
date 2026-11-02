@@ -26,8 +26,13 @@ function log(line: string): void {
     const file = path.join(app.getPath('userData'), 'update-log.txt')
     const old = fs.existsSync(file) ? fs.readFileSync(file, 'utf8').split('\n').slice(-199) : []
     fs.writeFileSync(file, [...old, `${new Date().toISOString()} [${app.getVersion()}] ${line}`].join('\n'))
-  } catch {
-    // 기록 못 해도 업데이트는 계속
+  } catch (e) {
+    // 기록 못 해도 업데이트는 계속. 왜 못 썼는지는 임시 폴더에 따로 남겨 둔다 (기록 파일이 안 써지는 원인 찾기용)
+    try {
+      fs.appendFileSync(path.join(app.getPath('temp'), 'mc-cubepanel-update-log-error.txt'), `${new Date().toISOString()} [${app.getVersion()}] ${String(e)}\n`)
+    } catch {
+      // 여기도 안 되면 포기
+    }
   }
 }
 

@@ -49,7 +49,7 @@ export interface BedrockUpdateInfo {
 export type BedrockAction =
   | { type: 'say'; text: string }
   | { type: 'kick' | 'op' | 'deop' | 'allow' | 'disallow' | 'kill'; name: string }
-  | { type: 'gamemode'; name: string; value: 'survival' | 'creative' | 'adventure' }
+  | { type: 'gamemode'; name: string; value: 'survival' | 'creative' | 'adventure' | 'spectator' }
   | { type: 'allowOn'; value: boolean }
   | { type: 'time'; value: 'day' | 'noon' | 'night' | 'midnight' }
   | { type: 'weather'; value: 'clear' | 'rain' | 'thunder' }
@@ -577,6 +577,8 @@ export interface Api {
   claimDomain: (folderPath: string, name: string) => Promise<string>
   // 서버 만들기 창의 메모리 슬라이더 범위
   getMemoryRange: () => Promise<{ minMb: number; maxMb: number; totalMb: number; defaultMb: number }>
+  // 접속 주소를 다시 만든다 (공유기에서 포트를 직접 연 뒤, 서버를 껐다 켜지 않고 다시 확인할 때)
+  recheckInvite: (folderPath: string) => Promise<void>
   // 공유기로 못 열 때 playit 터널로 연다 (처음이면 브라우저에서 승인)
   useTunnel: (folderPath: string) => Promise<void>
   // 켜진 서버의 CPU·메모리·TPS (꺼져 있으면 null)

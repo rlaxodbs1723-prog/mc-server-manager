@@ -1945,5 +1945,21 @@
  "터널로 연 배드락 서버는 접속을 확인할 수 없어요.": "Bedrock servers opened through a tunnel cannot be checked.",
  "밖에서도 접속돼요! (TCP 포트만 확인할 수 있어서, UDP 포트도 같이 열려 있어야 해요.) 플레이어에게 주소를 보내 주세요.": "Reachable from outside! (Only the TCP port can be checked, so the UDP port must be open too.) Send the address to your players.",
  "밖에서 접속되지 않아요. 공유기에서 TCP와 UDP 포트(서버 포트와 같은 번호)를 둘 다 열어야 해요. 윈도우 방화벽이 배드락 서버를 막고 있거나, 공유기가 두 개(공유기 뒤에 또 공유기)이거나, 통신사가 포트를 막았을 수도 있어요.": "Not reachable from outside. Open both the TCP and UDP port (same number as the server port) on your router. Windows Firewall may be blocking the Bedrock server, you may have two routers (one behind another), or your ISP may block the port.",
- "공유기에서 TCP와 UDP 포트(서버 포트와 같은 번호)가 둘 다 열려 있어야 해요. 위의 접속 확인 버튼으로 밖에서 접속되는지 볼 수 있어요(TCP만 확인돼요). 공유기가 두 개이면 터널로 열어야 해요.": "Both the TCP and UDP port (same number as the server port) must be open on your router. The check button above shows whether it is reachable from outside (only TCP is checked). With two routers, you need to use a tunnel."
+ "공유기에서 TCP와 UDP 포트(서버 포트와 같은 번호)가 둘 다 열려 있어야 해요. 위의 접속 확인 버튼으로 밖에서 접속되는지 볼 수 있어요(TCP만 확인돼요). 공유기가 두 개이면 터널로 열어야 해요.": "Both the TCP and UDP port (same number as the server port) must be open on your router. The check button above shows whether it is reachable from outside (only TCP is checked). With two routers, you need to use a tunnel.",
+ "배드락 서버는 터널로 열 수 없어요. 공유기에서 포트를 직접 열어 주세요.": "Bedrock servers cannot be opened through a tunnel. Please open the port on your router yourself.",
+ "공유기에서 TCP와 UDP 포트(서버 포트와 같은 번호)가 둘 다 열려 있어야 해요. 위의 접속 확인 버튼으로 밖에서 접속되는지 볼 수 있어요(TCP만 확인돼요). 자동으로 안 열리면 쓰는 통신사의 공유기 관리 화면에서 포트포워딩을 직접 해 주세요. 공유기가 두 개이면 두 곳 모두에서 열어야 해요.": "Both the TCP and UDP port (same number as the server port) must be open on your router. The check button above shows whether it is reachable from outside (only TCP is checked). If it does not open automatically, set up port forwarding yourself in your ISP's router settings. With two routers, open it on both.",
+ "해결법: 공유기에서 포트 직접 열기": "Fix: open the port on your router yourself",
+ "배드락 서버는 터널로 열 수 없어요. 쓰는 통신사(KT, SK브로드밴드, LG U+ 등)의 공유기 관리 화면에서 포트포워딩을 직접 해 주세요.": "Bedrock servers cannot be opened through a tunnel. Set up port forwarding yourself in your ISP's router settings (KT, SK Broadband, LG U+, etc.).",
+ "인터넷 주소창에 공유기 주소(보통 192.168.0.1 또는 192.168.1.1)를 입력해서 공유기 관리 화면에 들어가요. 주소와 비밀번호는 공유기 뒷면 스티커에 적혀 있어요.": "Enter your router's address (usually 192.168.0.1 or 192.168.1.1) in a browser to open the router settings. The address and password are on the sticker on the back of the router.",
+ "\"포트포워딩\", \"포트 포워드\", \"가상 서버\" 같은 메뉴를 찾아요. 이름은 통신사와 공유기 모델마다 달라요.": "Look for a menu called \"Port forwarding\", \"Port forward\" or \"Virtual server\". The name differs by ISP and router model.",
+ "TCP와 UDP를 둘 다, 포트 {0}번을 이 컴퓨터의 내부 주소{1}로 연결해요.": "Forward both TCP and UDP, port {0}, to this computer's internal address {1}.",
+ "저장한 뒤 서버를 껐다 켜고, 접속 확인 버튼을 눌러 봐요.": "Save, restart the server, then press the check button.",
+ "메뉴를 못 찾겠으면 \"통신사 이름 + 공유기 모델명 + 포트포워딩\"으로 검색하거나, 통신사 고객센터에 \"포트포워딩을 열어 달라\"고 요청하면 돼요.": "If you cannot find the menu, search for \"ISP name + router model + port forwarding\", or ask your ISP support to open port forwarding for you.",
+ "공유기가 두 개(통신사 공유기 뒤에 또 공유기)이면 두 공유기 모두에서 열어야 해요. 뒤쪽 공유기를 AP(브리지) 모드로 바꾸면 한 번만 하면 돼요.": "If you have two routers (another router behind the ISP router), open the port on both. Switching the second router to AP (bridge) mode means you only need to do it once.",
+ "포트를 복사했어요. 플레이어에게 보내 주세요!": "Copied the port. Send it to your players!",
+ "포트 :": "Port :",
+ "포트 복사": "Copy port",
+ "다시 확인": "Check again",
+ "저장한 뒤 아래 \"다시 확인\"을 눌러요.": "After saving, press \"Check again\" below.",
+ "playit 연결을 끊었어요. 다시 연결할 때 \"Agent limit reached\"가 나오면 playit.gg 사이트의 Agents에서 안 쓰는 항목을 지워 주세요.": "Disconnected from playit. If \"Agent limit reached\" appears when you reconnect, delete unused entries under Agents on the playit.gg site."
 }

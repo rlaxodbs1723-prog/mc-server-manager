@@ -55,7 +55,8 @@ async function open(folderPath: string, name: string): Promise<void> {
   if (!result.ok) {
     // 자동으로 못 열었어도 공유기에서 직접 포트를 열어 둔 사람이면 밖에서 접속된다. 확인되면 그 IP로 연다 (공유기가 두 겹이면 소용없다)
     // 확인은 서버가 켜질 때까지 기다려야 해서, 터널을 연결해 둔 사람은 기다리지 않고 바로 터널로 연다
-    const manualIp = result.reason === 'double-nat' || tunnelLinked() ? null : await manualAddress(folderPath, port, bedrock)
+    const useTunnelNow = tunnelLinked() && !bedrock // 배드락(새 방식)은 터널로 열 수 없다
+    const manualIp = result.reason === 'double-nat' || useTunnelNow ? null : await manualAddress(folderPath, port, bedrock)
     if (status.get(folderPath)?.state !== 'opening') return
     if (manualIp) {
       set(folderPath, { state: 'open', address: withPort(manualIp, port, bedrock), lan, port })
@@ -63,7 +64,7 @@ async function open(folderPath: string, name: string): Promise<void> {
       return
     }
     // 공유기로 못 열면, playit을 연결해 둔 사람은 터널로 연다
-    if (tunnelLinked()) return openViaTunnel(folderPath, port, lan, result.message)
+    if (useTunnelNow) return openViaTunnel(folderPath, port, lan, result.message)
     return set(folderPath, { state: 'failed', message: result.message, lan, port })
   }
   openedPorts.set(folderPath, port)
@@ -81,7 +82,7 @@ async function open(folderPath: string, name: string): Promise<void> {
   if (!result.externalIp) {
     const message = '포트는 열었지만 외부 주소를 알아내지 못했어요.'
     // 주소를 모르면 열어 둔 포트는 쓸 수 없으니 닫고, 터널이 연결돼 있으면 터널로 연다
-    if (tunnelLinked()) {
+    if (tunnelLinked() && !bedrock) {
       clearInterval(renewTimers.get(folderPath))
       renewTimers.delete(folderPath)
       openedPorts.delete(folderPath)
@@ -189,6 +190,7 @@ async function openViaTunnel(folderPath: string, port: number, lan: string[], up
 export async function useTunnel(folderPath: string): Promise<void> {
   const invite = getInvite(folderPath)
   if (invite.state !== 'failed') return
+  if (isBedrockFolder(folderPath)) throw new Error('배드락 서버는 터널로 열 수 없어요. 공유기에서 포트를 직접 열어 주세요.')
   await linkTunnel()
   if (getInvite(folderPath).state !== 'failed') return // 승인을 기다리는 사이 서버가 꺼졌거나 이미 열렸다
   await openViaTunnel(folderPath, invite.port, invite.lan, upnpCause.get(folderPath) ?? invite.message)
@@ -226,10 +228,20 @@ export async function closeAllPorts(): Promise<void> {
 }
 
 // 서버가 켜질 때 부르는 쪽(servers.ts)에서 이름을 넘겨주고, 꺼지는 건 이벤트로 감지한다
+const inviteNames = new Map<string, string>() // 다시 확인할 때 쓰려고 서버 이름을 기억해 둔다
 export function startInvite(folderPath: string, name: string): void {
+  inviteNames.set(folderPath, name)
   open(folderPath, name).catch((e) =>
     set(folderPath, { state: 'failed', message: String(e?.message ?? e), lan: [], port: serverPort(folderPath) })
   )
+}
+
+// 빨간 "밖에서 접속할 수 없어요" 상태에서 접속 주소를 처음부터 다시 만든다 (공유기에서 포트를 직접 연 사람이 서버를 껐다 켜지 않고 확인)
+export function recheckInvite(folderPath: string): void {
+  if (getInvite(folderPath).state !== 'failed') return
+  if (getState(folderPath) !== 'running') throw new Error('서버가 완전히 켜진 다음에 확인할 수 있어요.')
+  const name = inviteNames.get(folderPath)
+  if (name) startInvite(folderPath, name)
 }
 
 export function initInvite(send: (e: ServerEvent) => void): void {
@@ -258,7 +270,7 @@ export async function checkReachable(folderPath: string): Promise<{ ok: boolean;
     // 공유기 포트는 열렸는데 실제로는 막힌 경우: 빨간 표시로 바꿔서 터널로 열 수 있게 한다 (터널을 연결해 둔 사람은 바로 터널로)
     if (!invite.tunnel && getInvite(folderPath).state === 'open') {
       const port = serverPort(folderPath)
-      if (tunnelLinked()) void openViaTunnel(folderPath, port, invite.lan, message)
+      if (tunnelLinked() && !bedrock) void openViaTunnel(folderPath, port, invite.lan, message)
       else set(folderPath, { state: 'failed', message, lan: invite.lan, port })
     }
     return { ok: false, message }

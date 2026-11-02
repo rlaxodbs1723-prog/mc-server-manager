@@ -153,7 +153,7 @@ export default function AppSettingsDialog({ onClose }: { onClose: () => void }) 
                   onClick={async () => {
                     try {
                       await window.api.unlinkTunnel()
-                      toast('playit 연결을 끊었어요')
+                      toast('playit 연결을 끊었어요. 다시 연결할 때 "Agent limit reached"가 나오면 playit.gg 사이트의 Agents에서 안 쓰는 항목을 지워 주세요.')
                       load()
                     } catch (e) {
                       toast(cleanError(e), 'error')

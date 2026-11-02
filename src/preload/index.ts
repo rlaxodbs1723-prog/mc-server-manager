@@ -74,6 +74,7 @@ const api: Api = {
   getDomain: (folderPath) => ipcRenderer.invoke('getDomain', folderPath),
   claimDomain: (folderPath, name) => ipcRenderer.invoke('claimDomain', folderPath, name),
   getMemoryRange: () => ipcRenderer.invoke('getMemoryRange'),
+  recheckInvite: (folderPath) => ipcRenderer.invoke('recheckInvite', folderPath),
   useTunnel: (folderPath) => ipcRenderer.invoke('useTunnel', folderPath),
   getStats: (folderPath) => ipcRenderer.invoke('getStats', folderPath),
   getManageInfo: (folderPath) => ipcRenderer.invoke('getManageInfo', folderPath),

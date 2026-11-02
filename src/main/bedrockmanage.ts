@@ -11,6 +11,7 @@ import { getPlayers, getState, getXuid, quietQuery, sendCommand } from './runner
 const NAME = /^[A-Za-z0-9 _#.-]{1,32}$/
 const DIFFICULTIES = ['peaceful', 'easy', 'normal', 'hard']
 const GAMEMODES = ['survival', 'creative', 'adventure']
+const PLAYER_GAMEMODES = [...GAMEMODES, 'spectator'] // 한 사람의 모드는 관전도 된다 (기본 게임 모드·모두 바꾸기에는 없다)
 
 function checkName(name: string): string {
   const n = String(name ?? '').trim()
@@ -81,7 +82,7 @@ export function runBedrockAction(folderPath: string, action: BedrockAction): voi
     case 'kill':
       return killPlayer(folderPath, checkName(action.name))
     case 'gamemode':
-      if (!GAMEMODES.includes(action.value)) throw new Error('잘못된 게임 모드예요.')
+      if (!PLAYER_GAMEMODES.includes(action.value)) throw new Error('잘못된 게임 모드예요.')
       return sendCommand(folderPath, `gamemode ${action.value} "${checkName(action.name)}"`)
     case 'op':
     case 'deop':

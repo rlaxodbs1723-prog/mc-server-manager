@@ -17,6 +17,8 @@ const GAMEMODE: { value: BedrockManageInfo['gamemode']; label: string; emoji: st
   { value: 'creative', label: '크리에이티브', emoji: '🧱', desc: '블록 무한, 날 수 있어요' },
   { value: 'adventure', label: '모험', emoji: '🗺️', desc: '블록을 부술 수 없어요' }
 ]
+// 한 사람의 게임 모드는 관전도 고를 수 있다 (모두의 게임 모드·기본 게임 모드에는 없다)
+const PLAYER_GAMEMODE = [...GAMEMODE, { value: 'spectator' as const, label: '관전', emoji: '👻', desc: '벽을 통과하며 구경만 해요' }]
 
 function Card({ title, icon, children, extra }: { title: string; icon: ReactNode; children: ReactNode; extra?: ReactNode }) {
   return (
@@ -118,8 +120,8 @@ export default function BedrockManageTab({ folderPath, running }: { folderPath: 
                       <Select
                         value=""
                         placeholder="게임 모드"
-                        options={GAMEMODE}
-                        onChange={(v) => act({ type: 'gamemode', name: p.name, value: v as 'survival' | 'creative' | 'adventure' }, `${p.name}님을 ${GAMEMODE.find((g) => g.value === v)?.label} 모드로 바꿨어요`)}
+                        options={PLAYER_GAMEMODE}
+                        onChange={(v) => act({ type: 'gamemode', name: p.name, value: v as 'survival' | 'creative' | 'adventure' | 'spectator' }, `${p.name}님을 ${PLAYER_GAMEMODE.find((g) => g.value === v)?.label} 모드로 바꿨어요`)}
                       />
                     </div>
                     <button
