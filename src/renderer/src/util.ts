@@ -88,6 +88,8 @@ export function identifyWithRetry(ask: () => Promise<boolean | null>, onFound: (
 }
 
 // 다음에 켤 때도 기억할 값 (마지막으로 연 서버·탭 등). 저장소를 못 쓰면 기본값으로 동작한다
+export const IS_MAC = typeof navigator !== 'undefined' && navigator.userAgent.includes('Mac')
+
 export function readStored<T>(key: string, fallback: T): T {
   try {
     const v = localStorage.getItem(key)

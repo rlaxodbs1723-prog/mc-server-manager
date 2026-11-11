@@ -30,6 +30,7 @@ export default function WorldResetDialog({ folderPath, mcVersion, properties, wo
   const [seed, setSeed] = useState(properties['level-seed'] ?? '')
   const [levelType, setLevelType] = useState(properties['level-type'] || 'minecraft:normal')
   const [structures, setStructures] = useState(properties['generate-structures'] !== 'false')
+  const [keepDatapacks, setKeepDatapacks] = useState(true)
   const [busy, setBusy] = useState(false)
   const [importWorld, setImportWorld] = useState<SaveWorld | null>(null)
 
@@ -52,7 +53,7 @@ export default function WorldResetDialog({ folderPath, mcVersion, properties, wo
         toast(`${importWorld.name} 월드를 가져왔어요. 서버를 켜면 이 월드로 시작해요`)
         return onDone()
       }
-      if (worldExists) await runJob(folderPath, '월드 리셋', '리셋했어요', () => window.api.resetWorld(folderPath))
+      if (worldExists) await runJob(folderPath, '월드 리셋', '리셋했어요', () => window.api.resetWorld(folderPath, keepDatapacks))
       toast(worldExists ? '월드를 리셋했어요. 서버를 켜면 새 월드가 만들어져요' : '새 월드 설정을 저장했어요')
       onDone()
     } catch (e) {
@@ -72,6 +73,18 @@ export default function WorldResetDialog({ folderPath, mcVersion, properties, wo
 
       <WorldSource serverVersion={mcVersion} picked={importWorld} onChange={setImportWorld}>
       <div className="reset-fields">
+        {worldExists && (
+          <label className="reset-row">
+            <span>
+              <b>데이터팩 유지</b>
+              <span className="hint">지금 넣어 둔 데이터팩을 새 월드에도 그대로 넣어요</span>
+            </span>
+            <span className="switch">
+              <input type="checkbox" checked={keepDatapacks} onChange={(e) => setKeepDatapacks(e.target.checked)} />
+              <span />
+            </span>
+          </label>
+        )}
         <label className="reset-row">
           <span>
             <b>하드코어</b>

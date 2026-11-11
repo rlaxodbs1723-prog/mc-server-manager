@@ -21,6 +21,7 @@ interface Props {
 const compact = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}K` : String(n))
 
 export default function ModsTab({ folderPath, kind, serverOn }: Props) {
+  const part = kind.folder // 하이브리드 서버: 이 탭이 모드 쪽인지 플러그인 쪽인지 (요청마다 같이 보낸다)
   const toast = useToast()
   const { runJob } = useTasks() // 오래 걸리는 작업은 타이틀바 작업 목록에도 보여 준다
   const [query, setQuery] = useState('')
@@ -67,7 +68,7 @@ export default function ModsTab({ folderPath, kind, serverOn }: Props) {
   const refreshInstalled = useCallback(
     () =>
       window.api
-        .listMods(folderPath)
+        .listMods(folderPath, part)
         .then(setInstalled)
         .finally(() => setInstalledLoaded(true)),
     [folderPath]
@@ -82,7 +83,7 @@ export default function ModsTab({ folderPath, kind, serverOn }: Props) {
       setError('')
       try {
         // offset은 이미 불러온 페이지 수 (0이면 새로 찾기)
-        const res = await window.api.searchMods(folderPath, q, offset, site)
+        const res = await window.api.searchMods(folderPath, q, offset, site, part)
         if (my !== seq.current) return
         setPage(offset + 1)
         setMore(res.more)
@@ -156,7 +157,7 @@ export default function ModsTab({ folderPath, kind, serverOn }: Props) {
     refreshInstalled()
     if (!presetSearch.current) latest.current.runSearch('') // 켜기 전 점검에서 "찾기"로 왔으면 그 검색이 먼저
     return identifyWithRetry(
-      () => window.api.identifyMods(folderPath),
+      () => window.api.identifyMods(folderPath, part),
       () => {
         refreshInstalled()
         latest.current.runSearch(latest.current.query) // 보고 있던 검색 결과의 "설치됨" 표시만 갱신
@@ -168,7 +169,7 @@ export default function ModsTab({ folderPath, kind, serverOn }: Props) {
   async function install(hit: ModSearchHit) {
     setWorking(hit.projectId)
     try {
-      const r = await window.api.installMod(folderPath, hit.projectId)
+      const r = await window.api.installMod(folderPath, hit.projectId, part)
       toast(r.dependencies.length ? `${hit.title}와(과) 필요한 ${kind.kind} ${r.dependencies.length}개를 설치했어요` : `${hit.title}을(를) 설치했어요`)
       if (r.failed.length) toast(`일부 필수 ${josa(kind.kind, '을/를')} 설치하지 못했어요: ${r.failed.join(' / ')}`, 'error')
       setHits((list) => list.map((h) => (h.projectId === hit.projectId ? { ...h, installed: true } : h)))
@@ -185,7 +186,7 @@ export default function ModsTab({ folderPath, kind, serverOn }: Props) {
   function remove(mod: InstalledMod) {
     schedule(mod.fileName, `${mod.title}을(를) 지웠어요`, async () => {
       try {
-        const removed = await window.api.removeMod(folderPath, mod.fileName)
+        const removed = await window.api.removeMod(folderPath, mod.fileName, part)
         if (removed.length > 1) toast(`같이 설치됐던 ${removed.length - 1}개도 이제 필요 없어서 지웠어요`)
         await refreshInstalled()
         runSearch(query) // "설치됨" 표시 갱신
@@ -198,7 +199,7 @@ export default function ModsTab({ folderPath, kind, serverOn }: Props) {
   async function checkUpdates() {
     setChecking(true)
     try {
-      const u = await window.api.checkModUpdates(folderPath)
+      const u = await window.api.checkModUpdates(folderPath, part)
       setUpdates(u)
       const n = Object.keys(u).filter((f) => installed.some((m) => m.fileName === f)).length
       toast(n ? `새 버전이 있는 ${josa(kind.kind, '이/가')} ${n}개 있어요` : `모든 ${josa(kind.kind, '이/가')} 최신이에요`)
@@ -212,7 +213,7 @@ export default function ModsTab({ folderPath, kind, serverOn }: Props) {
   async function update(fileNames: string[]) {
     setWorking(fileNames.length === 1 ? fileNames[0] : 'update-all')
     try {
-      const r = await runJob(folderPath, fileNames.length === 1 ? `${kind.kind} 업데이트` : `${kind.kind} 모두 업데이트`, '업데이트했어요', () => window.api.updateMods(folderPath, fileNames))
+      const r = await runJob(folderPath, fileNames.length === 1 ? `${kind.kind} 업데이트` : `${kind.kind} 모두 업데이트`, '업데이트했어요', () => window.api.updateMods(folderPath, fileNames, part))
       if (r.installed.length) toast(`${r.installed.length}개를 업데이트했어요`)
       if (r.failed.length) toast(`업데이트하지 못한 것이 있어요: ${r.failed.join(' / ')}`, 'error')
       setUpdates((u) => {
@@ -231,7 +232,7 @@ export default function ModsTab({ folderPath, kind, serverOn }: Props) {
 
   async function toggle(mod: InstalledMod) {
     try {
-      await window.api.setModEnabled(folderPath, mod.fileName, !mod.enabled)
+      await window.api.setModEnabled(folderPath, mod.fileName, !mod.enabled, part)
       await refreshInstalled()
     } catch (e) {
       toast(cleanError(e), 'error')
@@ -247,7 +248,7 @@ export default function ModsTab({ folderPath, kind, serverOn }: Props) {
     const added: string[] = []
     for (const f of Array.from(files)) {
       try {
-        added.push(await window.api.addModFile(folderPath, f))
+        added.push(await window.api.addModFile(folderPath, f, part))
       } catch (e) {
         toast(files.length > 1 ? `${f.name}: ${cleanError(e)}` : cleanError(e), 'error')
       }
@@ -256,7 +257,7 @@ export default function ModsTab({ folderPath, kind, serverOn }: Props) {
     checkOffSuggestions() // 서버에 맞지 않아 보이는 것이 있으면 끌지 물어본다
     await refreshInstalled()
     // 넣은 파일이 어떤 모드인지 바로 알아본다 (찾으면 아이콘·이름이 생긴다)
-    if (await window.api.identifyMods(folderPath)) {
+    if (await window.api.identifyMods(folderPath, part)) {
       refreshInstalled()
       runSearch(query)
     }
@@ -462,8 +463,8 @@ export default function ModsTab({ folderPath, kind, serverOn }: Props) {
       {versionOf && (
         <ModVersionDialog
           title={versionOf.title}
-          load={() => window.api.modVersions(folderPath, versionOf.fileName)}
-          apply={async (id) => (await window.api.setModVersion(folderPath, versionOf.fileName, id)).failed}
+          load={() => window.api.modVersions(folderPath, versionOf.fileName, part)}
+          apply={async (id) => (await window.api.setModVersion(folderPath, versionOf.fileName, id, part)).failed}
           onClose={() => setVersionOf(null)}
           onDone={() => {
             setVersionOf(null)

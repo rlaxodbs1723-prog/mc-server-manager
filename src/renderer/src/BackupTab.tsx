@@ -21,9 +21,20 @@ export default function BackupTab({ folderPath, serverOn }: { folderPath: string
   const [restoring, setRestoring] = useState<BackupItem | null>(null)
   const [removing, setRemoving] = useState<BackupItem | null>(null)
   const [settings, setSettings] = useState<BackupSettings | null>(null)
+  const [startBackup, setStartBackup] = useState<boolean | null>(null) // 켜기 전에 자동 백업 (서버 설정의 자동 탭과 같은 값)
   useEffect(() => {
     window.api.getBackupSettings(folderPath).then(setSettings)
+    window.api.getSettings(folderPath).then((s) => setStartBackup(s.automation.startBackup), () => setStartBackup(null))
   }, [folderPath])
+  async function saveStartBackup(on: boolean) {
+    setStartBackup(on)
+    try {
+      await window.api.saveSettings(folderPath, { automation: { startBackup: on } })
+    } catch (e) {
+      setStartBackup(!on)
+      toast(cleanError(e), 'error')
+    }
+  }
   async function saveSettings(next: BackupSettings) {
     setSettings(next)
     try {
@@ -126,7 +137,18 @@ export default function BackupTab({ folderPath, serverOn }: { folderPath: string
             </div>
           </div>
         )}
-        <p className="hint">서버를 켤 때, 그리고 켜져 있는 동안 정한 간격마다 자동으로 백업해요. 오래된 자동 백업은 알아서 지워요.</p>
+        {startBackup !== null && (
+          <label className="reset-row">
+            <span>
+              <b>켜기 전에 자동 백업</b>
+              <span className="hint">월드가 커서 켜는 데 오래 걸리면 끌 수 있어요. 끄면 월드가 깨졌을 때 되돌릴 백업이 없을 수 있어요.</span>
+            </span>
+            <span className="switch">
+              <input type="checkbox" checked={startBackup} onChange={(e) => saveStartBackup(e.target.checked)} />
+              <span />
+            </span>
+          </label>
+        )}
       </section>
 
 

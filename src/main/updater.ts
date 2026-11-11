@@ -43,8 +43,39 @@ function set(next: UpdateState): void {
 
 export const getUpdateState = (): UpdateState => state
 
+// 맥: 서명이 없어 자동 설치를 못 한다. 대신 새 버전이 나왔는지만 확인해서 알려 주고, 받는 건 사용자가 직접 한다
+const isNewer = (latest: string, current: string): boolean => {
+  const a = latest.split('.').map((n) => parseInt(n, 10) || 0)
+  const b = current.split('.').map((n) => parseInt(n, 10) || 0)
+  for (let i = 0; i < 3; i++) if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) > (b[i] ?? 0)
+  return false
+}
+
+function initManualUpdateCheck(): void {
+  const check = async (): Promise<void> => {
+    try {
+      const res = await fetch('https://api.github.com/repos/rlaxodbs1723-prog/mc-server-manager/releases/latest', {
+        headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'MC-CubePanel' },
+        signal: AbortSignal.timeout(15_000)
+      })
+      if (!res.ok) return
+      const tag = String(((await res.json()) as { tag_name?: string }).tag_name ?? '').replace(/^v/, '')
+      if (/^d+.d+.d+$/.test(tag) && isNewer(tag, app.getVersion()) && !(state.state === 'manual' && state.version === tag)) {
+        log(`새 버전 ${tag} 있음 (맥: 직접 받기)`)
+        set({ state: 'manual', version: tag })
+        notify('새 버전이 나왔어요', `새 버전 ${tag}이 나왔어요. 앱 오른쪽 위 "새 버전 받기"를 눌러 받아 주세요.`)
+      }
+    } catch {
+      // 인터넷이 안 되면 다음에 다시 확인한다
+    }
+  }
+  setTimeout(() => void check(), 10_000)
+  setInterval(() => void check(), CHECK_EVERY_MS).unref()
+}
+
 export function initUpdater(): void {
   if (!app.isPackaged) return
+  if (process.platform === 'darwin') return initManualUpdateCheck()
   log('앱 시작')
   // 업데이트 라이브러리가 남기는 기록도 같은 파일에 (오류 원인 찾기용)
   autoUpdater.logger = { info: (m: unknown) => log(`· ${m}`), warn: (m: unknown) => log(`경고: ${m}`), error: (m: unknown) => log(`오류: ${m}`), debug: () => undefined }

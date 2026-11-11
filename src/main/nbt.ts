@@ -1,4 +1,4 @@
-// 마인크래프트 NBT 형식 읽기/쓰기 (level.dat 등). gzip으로 압축된 빅엔디언 이진 형식이다.
+// 마인크래프트 NBT 형식 읽기/쓰기 (level.dat 등). 자바는 gzip으로 압축된 빅엔디언, 배드락은 압축 없는 리틀엔디언이다.
 // 월드 파일을 망가뜨리지 않도록 이름·문자열은 받은 바이트 그대로(Buffer) 들고 있다가 그대로 다시 쓴다.
 import zlib from 'zlib'
 
@@ -20,15 +20,18 @@ export type Tag =
 
 class Reader {
   pos = 0
-  constructor(private buf: Buffer) {}
+  constructor(
+    private buf: Buffer,
+    private le = false // 배드락: 리틀엔디언
+  ) {}
   u8 = () => this.buf.readUInt8(this.pos++)
   i8 = () => this.buf.readInt8(this.pos++)
-  i16 = () => ((this.pos += 2), this.buf.readInt16BE(this.pos - 2))
-  u16 = () => ((this.pos += 2), this.buf.readUInt16BE(this.pos - 2))
-  i32 = () => ((this.pos += 4), this.buf.readInt32BE(this.pos - 4))
-  i64 = () => ((this.pos += 8), this.buf.readBigInt64BE(this.pos - 8))
-  f32 = () => ((this.pos += 4), this.buf.readFloatBE(this.pos - 4))
-  f64 = () => ((this.pos += 8), this.buf.readDoubleBE(this.pos - 8))
+  i16 = () => ((this.pos += 2), this.le ? this.buf.readInt16LE(this.pos - 2) : this.buf.readInt16BE(this.pos - 2))
+  u16 = () => ((this.pos += 2), this.le ? this.buf.readUInt16LE(this.pos - 2) : this.buf.readUInt16BE(this.pos - 2))
+  i32 = () => ((this.pos += 4), this.le ? this.buf.readInt32LE(this.pos - 4) : this.buf.readInt32BE(this.pos - 4))
+  i64 = () => ((this.pos += 8), this.le ? this.buf.readBigInt64LE(this.pos - 8) : this.buf.readBigInt64BE(this.pos - 8))
+  f32 = () => ((this.pos += 4), this.le ? this.buf.readFloatLE(this.pos - 4) : this.buf.readFloatBE(this.pos - 4))
+  f64 = () => ((this.pos += 8), this.le ? this.buf.readDoubleLE(this.pos - 8) : this.buf.readDoubleBE(this.pos - 8))
   bytes = (n: number) => ((this.pos += n), Buffer.from(this.buf.subarray(this.pos - n, this.pos)))
   str = () => this.bytes(this.u16())
 
@@ -78,6 +81,7 @@ class Reader {
 }
 
 class Writer {
+  constructor(private le = false) {}
   private chunks: Buffer[] = []
   private push(b: Buffer): void {
     this.chunks.push(b)
@@ -88,17 +92,17 @@ class Writer {
     this.push(b)
   }
   u8 = (v: number) => this.num(1, (b) => b.writeUInt8(v))
-  i32 = (v: number) => this.num(4, (b) => b.writeInt32BE(v))
-  str = (s: Buffer) => (this.num(2, (b) => b.writeUInt16BE(s.length)), this.push(s))
+  i32 = (v: number) => this.num(4, (b) => (this.le ? b.writeInt32LE(v) : b.writeInt32BE(v)))
+  str = (s: Buffer) => (this.num(2, (b) => (this.le ? b.writeUInt16LE(s.length) : b.writeUInt16BE(s.length))), this.push(s))
 
   payload(t: Tag): void {
     switch (t.type) {
       case 1: return this.num(1, (b) => b.writeInt8(t.value))
-      case 2: return this.num(2, (b) => b.writeInt16BE(t.value))
+      case 2: return this.num(2, (b) => (this.le ? b.writeInt16LE(t.value) : b.writeInt16BE(t.value)))
       case 3: return this.i32(t.value)
-      case 4: return this.num(8, (b) => b.writeBigInt64BE(t.value))
-      case 5: return this.num(4, (b) => b.writeFloatBE(t.value))
-      case 6: return this.num(8, (b) => b.writeDoubleBE(t.value))
+      case 4: return this.num(8, (b) => (this.le ? b.writeBigInt64LE(t.value) : b.writeBigInt64BE(t.value)))
+      case 5: return this.num(4, (b) => (this.le ? b.writeFloatLE(t.value) : b.writeFloatBE(t.value)))
+      case 6: return this.num(8, (b) => (this.le ? b.writeDoubleLE(t.value) : b.writeDoubleBE(t.value)))
       case 7: return (this.i32(t.value.length), this.push(t.value))
       case 8: return this.str(t.value)
       case 9:
@@ -119,7 +123,7 @@ class Writer {
         return
       case 12:
         this.i32(t.value.length)
-        for (const v of t.value) this.num(8, (b) => b.writeBigInt64BE(v))
+        for (const v of t.value) this.num(8, (b) => (this.le ? b.writeBigInt64LE(v) : b.writeBigInt64BE(v)))
         return
     }
   }
@@ -148,6 +152,35 @@ export function serializeNbt({ rootName, root, gzipped }: NbtFile): Buffer {
   w.payload(root)
   const raw = w.result()
   return gzipped ? zlib.gzipSync(raw) : raw
+}
+
+// 배드락 level.dat: 앞 8바이트(저장 형식 번호, 뒤 내용의 길이, 둘 다 리틀엔디언 4바이트) + 압축 없는 리틀엔디언 NBT
+export interface BedrockLevelDat {
+  version: number
+  rootName: Buffer
+  root: Tag & { type: 10 }
+}
+
+export function parseBedrockLevelDat(file: Buffer): BedrockLevelDat {
+  if (file.length < 9) throw new Error('배드락 level.dat 형식이 아니에요.')
+  const version = file.readInt32LE(0)
+  const length = file.readInt32LE(4)
+  const r = new Reader(file.subarray(8, 8 + length), true)
+  if (r.u8() !== TAG.Compound) throw new Error('배드락 level.dat 형식이 아니에요.')
+  const rootName = r.str()
+  return { version, rootName, root: r.payload(TAG.Compound) as Tag & { type: 10 } }
+}
+
+export function serializeBedrockLevelDat({ version, rootName, root }: BedrockLevelDat): Buffer {
+  const w = new Writer(true)
+  w.u8(TAG.Compound)
+  w.str(rootName)
+  w.payload(root)
+  const body = w.result()
+  const head = Buffer.alloc(8)
+  head.writeInt32LE(version, 0)
+  head.writeInt32LE(body.length, 4)
+  return Buffer.concat([head, body])
 }
 
 // 컴파운드 안에서 이름으로 찾기

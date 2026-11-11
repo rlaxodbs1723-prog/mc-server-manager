@@ -22,7 +22,12 @@ function sampler(folderPath: string, pid: number): Sampler {
   if (old && old.pid === pid) return old
   old?.proc.kill()
   const script = `while ($true) { $p = Get-Process -Id ${pid} -ErrorAction SilentlyContinue; if (-not $p) { break }; [Console]::Out.WriteLine("$($p.TotalProcessorTime.TotalMilliseconds) $($p.WorkingSet64)"); Start-Sleep -Seconds 2 }`
-  const proc = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], { windowsHide: true })
+  // 맥·리눅스: ps로 CPU 누적 시간(ms)과 메모리(바이트)를 같은 모양으로 2초마다 출력한다
+  const unixScript = `while kill -0 ${pid} 2>/dev/null; do ps -o cputime=,rss= -p ${pid} | awk '{n=split($1,a,":"); if(n==3){ms=(a[1]*3600+a[2]*60+a[3])*1000}else if(n==2){ms=(a[1]*60+a[2])*1000}else{ms=a[1]*1000}; print ms, $2*1024}'; sleep 2; done`
+  const proc =
+    process.platform === 'win32'
+      ? spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], { windowsHide: true })
+      : spawn('/bin/sh', ['-c', unixScript])
   const s: Sampler = { pid, proc, cpu: null, memMb: null, touched: Date.now() }
   let rest = ''
   proc.stdout.on('data', (chunk: Buffer) => {
@@ -79,7 +84,7 @@ export function tpsCommand(folderPath: string): string | null {
   const info = readServerInfo(folderPath)
   const sw = info.software ?? 'vanilla'
   if (sw === 'bedrock') return null
-  if (sw === 'paper' || sw === 'purpur') return 'tps'
+  if (sw === 'paper' || sw === 'purpur' || sw === 'arclight') return 'tps' // Arclight는 Spigot 기반이라 Spigot의 tps가 있다
   if (sw === 'forge') return 'forge tps'
   if (sw === 'neoforge') return 'neoforge tps'
   return before1203(info.mcVersion) ? null : 'tick query'

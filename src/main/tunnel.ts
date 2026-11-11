@@ -79,6 +79,7 @@ export async function prepareClaim(): Promise<string | null> {
 
 // 브라우저에서 승인 받기: 코드를 만들고 승인 페이지를 연 뒤, 승인될 때까지 기다렸다가 키를 받아 저장한다
 export async function linkTunnel(): Promise<void> {
+  if (process.platform !== 'win32') throw new Error('터널 기능은 아직 Windows에서만 지원해요.')
   if (tunnelLinked()) return
   if (FAKE_LINK) {
     claimUrl = FAKE_URL
@@ -169,6 +170,7 @@ const localPortOf = (t: RunData['tunnels'][number]): number => Number(t.agent_co
 
 // 이 서버 포트로 이어지는 터널을 찾거나 만들고, 에이전트를 켜서 접속 주소를 돌려준다
 export async function openTunnel(folderPath: string, port: number, udp = false): Promise<string> {
+  if (process.platform !== 'win32') throw new Error('터널 기능은 아직 Windows에서만 지원해요.')
   try {
     return await openTunnelWith(folderPath, port, udp)
   } catch (e) {

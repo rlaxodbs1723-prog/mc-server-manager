@@ -1,11 +1,12 @@
 // 서버에 모드(Fabric/Quilt/Forge/NeoForge) 또는 플러그인(Paper/Purpur)을 Modrinth에서 받아 설치한다.
 // 무엇을 왜 설치했는지는 서버 폴더의 .server-manager-mods.json에 적어 둔다. (필수 모드를 같이 지우기 위해)
+import { AsyncLocalStorage } from 'async_hooks'
 import crypto from 'crypto'
 import { app, dialog, shell, type BrowserWindow } from 'electron'
 import yazl from 'yazl'
 import fs from 'fs'
 import path from 'path'
-import type { InstallResult, InstalledMod, OffSuggestion, ModKindInfo, ModSearchHit, ModVersionItem, Software } from '../shared-types'
+import type { InstallResult, InstalledMod, OffSuggestion, ModKindInfo, ModPart, ModSearchHit, ModVersionItem, Software } from '../shared-types'
 import { nameKey, type SearchSite } from '../shared-types'
 import { checkJars, localInfo, type OffReason } from './clientjar'
 import { downloadFile } from './download'
@@ -176,9 +177,21 @@ interface Spec extends ModKindInfo {
   loaders: string[] // Modrinth 로더 이름. 하나라도 맞으면 설치할 수 있다
 }
 
-// 서버 종류에 맞는 폴더와 검색 조건. 바닐라는 null
-function specOf(software: Software): Spec | null {
+// Arclight(하이브리드) 파일 이름의 앞부분이 밑바탕 로더다 ("neoforge-1.21.1-1.0.1-…" → neoforge)
+export const arclightLoader = (loaderVersion?: string): 'neoforge' | 'fabric' | 'forge' =>
+  (/^(neoforge|fabric|forge)-/.exec(loaderVersion ?? '')?.[1] as 'neoforge' | 'fabric' | 'forge' | undefined) ?? 'neoforge'
+
+// 하이브리드 서버는 모드와 플러그인을 둘 다 쓴다. 화면의 어느 탭(모드/플러그인)에서 부른 일인지를 요청마다 들고 다닌다
+const partStore = new AsyncLocalStorage<ModPart>()
+export const inPart = <T>(part: ModPart | undefined, fn: () => T): T => (part === 'mods' || part === 'plugins' ? partStore.run(part, fn) : fn())
+
+// 서버 종류에 맞는 폴더와 검색 조건. 바닐라는 null. part: 하이브리드 서버에서 모드 쪽/플러그인 쪽 (없으면 모드)
+function specOf(software: Software, part?: ModPart, loaderVersion?: string): Spec | null {
   switch (software) {
+    case 'arclight':
+      // Arclight는 Spigot 기반이라 플러그인은 Spigot·Bukkit용을 쓴다. 모드는 밑바탕 로더(NeoForge·Fabric·Forge)용
+      if (part === 'plugins') return { kind: '플러그인', folder: 'plugins', projectType: 'plugin', loaders: ['spigot', 'bukkit'] }
+      return { kind: '모드', folder: 'mods', projectType: 'mod', loaders: [arclightLoader(loaderVersion)] }
     case 'fabric':
       return { kind: '모드', folder: 'mods', projectType: 'mod', loaders: ['fabric'] }
     case 'quilt':
@@ -198,7 +211,7 @@ function specOf(software: Software): Spec | null {
 
 function load(folderPath: string) {
   const server = readServerInfo(folderPath)
-  const spec = specOf(server.software ?? 'vanilla')
+  const spec = specOf(server.software ?? 'vanilla', partStore.getStore(), server.loaderVersion)
   if (!spec) throw new Error('Vanilla 서버에는 모드나 플러그인을 설치할 수 없어요. Fabric·Paper 같은 서버를 새로 만들어 주세요.')
   return { server, spec, dir: path.join(folderPath, spec.folder) }
 }
@@ -206,6 +219,16 @@ function load(folderPath: string) {
 export function modKind(folderPath: string): ModKindInfo | null {
   const spec = specOf(readServerInfo(folderPath).software ?? 'vanilla')
   return spec && { kind: spec.kind, folder: spec.folder }
+}
+
+// 이 서버의 모드·플러그인 탭들 (하이브리드는 모드와 플러그인 둘)
+export function modKinds(folderPath: string): ModKindInfo[] {
+  const info = readServerInfo(folderPath)
+  if (info.software === 'arclight') {
+    return (['mods', 'plugins'] as const).map((p) => specOf('arclight', p, info.loaderVersion)!).map((s) => ({ kind: s.kind, folder: s.folder }))
+  }
+  const one = modKind(folderPath)
+  return one ? [one] : []
 }
 
 // ---------- 설치 기록 ----------

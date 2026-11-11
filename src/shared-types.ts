@@ -9,9 +9,15 @@ export interface McVersion {
   releaseTime: string
 }
 
-export type Software = 'vanilla' | 'paper' | 'purpur' | 'fabric' | 'quilt' | 'forge' | 'neoforge' | 'bedrock'
+export type Software = 'vanilla' | 'paper' | 'purpur' | 'fabric' | 'quilt' | 'forge' | 'neoforge' | 'arclight' | 'bedrock'
 
 // 화면에 보여 줄 이름과 설명 (만들기 화면의 순서이기도 하다)
+// Arclight 로더 버전("neoforge-1.21.1-1.0.1-8ec9529")을 화면에 보일 모양으로 ("NeoForge · 1.0.1-8ec9529")
+export function arclightLabel(id: string): string {
+  const m = /^(neoforge|fabric|forge)-\d+(?:\.\d+)+-(.+)$/.exec(id)
+  return m ? `${{ neoforge: 'NeoForge', fabric: 'Fabric', forge: 'Forge' }[m[1]]} · ${m[2]}` : id
+}
+
 export const SOFTWARE_INFO: Record<Software, { label: string; kind: string; description: string }> = {
   vanilla: { label: 'Vanilla', kind: '기본', description: '모드·플러그인 없는 공식 서버' },
   paper: { label: 'Paper', kind: '플러그인', description: '가장 많이 쓰는 플러그인 서버. Spigot·Bukkit 플러그인도 돌아가요' },
@@ -20,6 +26,7 @@ export const SOFTWARE_INFO: Record<Software, { label: string; kind: string; desc
   quilt: { label: 'Quilt', kind: '모드', description: 'Fabric 호환 모드 로더' },
   forge: { label: 'Forge', kind: '모드', description: '오래되고 모드가 많은 모드 로더' },
   neoforge: { label: 'NeoForge', kind: '모드', description: 'Forge에서 갈라져 나온 최신 모드 로더' },
+  arclight: { label: 'Arclight', kind: '모드+플러그인', description: '모드(NeoForge·Fabric·Forge)와 플러그인(Spigot·Bukkit)을 같이 쓰는 하이브리드 서버' },
   bedrock: { label: 'Bedrock', kind: '배드락', description: '폰·콘솔·윈도우 배드락 에디션용 공식 서버. 애드온 사용' }
 }
 
@@ -137,7 +144,8 @@ export interface ServerInfo {
 // 목록에 보여 줄 때 붙는 현재 상태
 // Modrinth·CurseForge가 지금 응답하는지
 // 자동 업데이트 상태 (설치 파일로 설치한 앱에서만)
-export type UpdateState = { state: 'none' } | { state: 'downloading'; version: string; percent: number } | { state: 'ready'; version: string }
+// manual: 맥처럼 자동 설치를 못 하는 곳에서 새 버전이 나왔을 때 (직접 받아 설치해야 한다)
+export type UpdateState = { state: 'none' } | { state: 'downloading'; version: string; percent: number } | { state: 'ready'; version: string } | { state: 'manual'; version: string }
 
 export interface SiteStatus {
   modrinth: boolean
@@ -162,13 +170,19 @@ export interface ServerListItem extends ServerInfo {
   lastBackupAt: number | null
 }
 
+// 배드락 실험적 기능 하나 (id: level.dat의 experiments 안 이름, 예: gametest = 베타 API)
+export interface BedrockExperiment {
+  id: string
+  on: boolean
+}
+
 export type ServerState = 'stopped' | 'starting' | 'running' | 'stopping'
 
 // 플레이어 초대(공유기 포트 자동 열기) 상태. lan은 같은 공유기 안에서 쓰는 주소들
 export type InviteStatus =
   | { state: 'off' }
   | { state: 'opening'; lan: string[] }
-  | { state: 'open'; address: string; lan: string[]; port: number; tunnel?: boolean; domain?: string } // tunnel: playit 터널 주소 / port: 이 컴퓨터에서 서버가 쓰는 포트 / domain: 이름 주소(이름.cubepanel.kr)
+  | { state: 'open'; address: string; lan: string[]; port: number; tunnel?: boolean; domain?: string; domainError?: string } // tunnel: playit 터널 주소 / port: 이 컴퓨터에서 서버가 쓰는 포트 / domain: 이름 주소(이름.cubepanel.kr) / domainError: 이름 주소를 만들어 뒀는데 갱신하지 못한 이유
   | { state: 'failed'; message: string; lan: string[]; port: number }
 
 export type ServerEvent =
@@ -348,8 +362,9 @@ export interface ServerAutomation {
   emptyStopMin: number // 아무도 없이 이만큼(분) 지나면 끄기. 0이면 안 함
   welcome: string // 들어온 사람에게 보낼 말. {name}은 닉네임으로 바뀐다. 빈 문자열이면 안 함
   autoSaveMin: number // 사람이 있는 동안 이만큼(분)마다 월드를 저장한다 (튕겨도 덜 되돌아가게). 0이면 안 함
+  startBackup: boolean // 켜기 전에 월드를 자동으로 백업한다 (지난 백업 뒤에 바뀌었을 때만)
 }
-export const DEFAULT_AUTOMATION: ServerAutomation = { autoStart: false, dailyRestart: '', emptyStopMin: 0, welcome: '', autoSaveMin: 0 }
+export const DEFAULT_AUTOMATION: ServerAutomation = { autoStart: false, dailyRestart: '', emptyStopMin: 0, welcome: '', autoSaveMin: 0, startBackup: true }
 
 // Paper·Purpur 전용 설정 (bukkit.yml · spigot.yml · config/paper-world-defaults.yml). 처음 켠 뒤에 파일이 생긴다
 export interface PaperField {
@@ -422,6 +437,9 @@ export interface SaveSettings {
 
 // ---------- 모드 / 플러그인 ----------
 export type Side = 'required' | 'optional' | 'unsupported' | 'unknown'
+
+// 하이브리드 서버(모드+플러그인)에서 어느 쪽인지
+export type ModPart = 'mods' | 'plugins'
 
 export interface ModKindInfo {
   kind: '모드' | '플러그인'
@@ -502,6 +520,7 @@ export interface Progress {
 
 export interface Api {
   getVersions: (includeSnapshots: boolean) => Promise<McVersion[]>
+  arclightMcVersions: () => Promise<string[]> // Arclight(하이브리드)가 지원하는 마인크래프트 버전
   // 바닐라가 아닌 종류의 로더/빌드 버전 목록. 지원하지 않는 마인크래프트 버전이면 빈 배열
   getLoaderVersions: (software: Software, mcVersion: string) => Promise<LoaderVersion[]>
   // taskId: 진행 상황(onCreateProgress)을 어느 만들기 작업의 것인지 구분하는 번호
@@ -552,7 +571,7 @@ export interface Api {
   // 바깥 인터넷에서 이 서버에 접속되는지 확인한다
   checkReachable: (folderPath: string) => Promise<{ ok: boolean; message: string }>
   // 이름 주소: 서버를 만들기 전에 이 이름을 쓸 수 있는지 (true면 비어 있음)
-  checkDomainName: (name: string) => Promise<boolean>
+  checkDomainName: (name: string) => Promise<'free' | 'taken' | 'full'>
   // 배드락 서버: 받을 수 있는 최신 버전, 애드온 관리
   getBedrockVersion: () => Promise<string>
   listAddons: (folderPath: string) => Promise<InstalledAddon[]>
@@ -566,6 +585,9 @@ export interface Api {
   importBedrockWorldFile: (folderPath: string, file: File) => Promise<void> // 끌어다 놓은 .mcworld/.zip 파일
   checkBedrockUpdate: (folderPath: string) => Promise<BedrockUpdateInfo>
   updateBedrock: (folderPath: string) => Promise<ServerInfo>
+  getBedrockExperiments: (folderPath: string) => Promise<{ ready: boolean; items: BedrockExperiment[]; hardcore: boolean }>
+  setBedrockHardcore: (folderPath: string, on: boolean) => Promise<void>
+  setBedrockExperiment: (folderPath: string, id: string, on: boolean) => Promise<void>
   getBedrockManage: (folderPath: string) => Promise<BedrockManageInfo>
   getBedrockLoopback: () => Promise<BedrockLoopbackState>
   allowBedrockLoopback: () => Promise<BedrockLoopbackState> // 관리자 확인 창이 뜬다
@@ -574,7 +596,10 @@ export interface Api {
   pickServerFolder: () => Promise<string | null>
   detectServer: (folderPath: string) => Promise<DetectedServer>
   getDomain: (folderPath: string) => Promise<{ name: string; host: string } | null>
+  peekDomain: (folderPath: string) => Promise<{ name: string; host: string } | null> // 저장된 이름 주소만 읽는다 (다시 만들기 시도 없이)
   claimDomain: (folderPath: string, name: string) => Promise<string>
+  releaseDomain: (folderPath: string) => Promise<void>
+  openReleasePage: () => Promise<void>
   // 서버 만들기 창의 메모리 슬라이더 범위
   getMemoryRange: () => Promise<{ minMb: number; maxMb: number; totalMb: number; defaultMb: number }>
   // 접속 주소를 다시 만든다 (공유기에서 포트를 직접 연 뒤, 서버를 껐다 켜지 않고 다시 확인할 때)
@@ -604,7 +629,7 @@ export interface Api {
   onVersionProgress: (fn: (p: Progress) => void) => () => void
   saveSettings: (folderPath: string, settings: SaveSettings) => Promise<void>
   // 월드 폴더를 휴지통으로 보낸다. 다음에 켜면 지금 설정으로 새 월드가 만들어진다
-  resetWorld: (folderPath: string) => Promise<void>
+  resetWorld: (folderPath: string, keepPacks?: boolean) => Promise<void> // keepPacks: 데이터팩(자바)·애드온 연결(배드락)을 새 월드에 남긴다 (기본 true)
   // 월드 백업: 켜져 있어도 만들 수 있고, 복원은 꺼져 있을 때만
   listBackups: (folderPath: string) => Promise<BackupItem[]>
   createBackup: (folderPath: string) => Promise<BackupItem>
@@ -679,14 +704,15 @@ export interface Api {
   removeWhitelist: (folderPath: string, name: string) => Promise<void>
   // 모드/플러그인 (바닐라 서버면 modKind가 null)
   modKind: (folderPath: string) => Promise<ModKindInfo | null>
+  modKinds: (folderPath: string) => Promise<ModKindInfo[]>
   // Modrinth와 CurseForge를 같이 찾는다. page는 0부터
-  searchMods: (folderPath: string, query: string, page?: number, site?: SearchSite) => Promise<{ total: number; more: boolean; hits: ModSearchHit[] }>
-  installMod: (folderPath: string, projectId: string) => Promise<InstallResult>
-  listMods: (folderPath: string) => Promise<InstalledMod[]>
+  searchMods: (folderPath: string, query: string, page?: number, site?: SearchSite, part?: ModPart) => Promise<{ total: number; more: boolean; hits: ModSearchHit[] }>
+  installMod: (folderPath: string, projectId: string, part?: ModPart) => Promise<InstallResult>
+  listMods: (folderPath: string, part?: ModPart) => Promise<InstalledMod[]>
   // 서버에 맞지 않아 보이는 모드 (끌지 물어본다). 고른 것만 끄고, 나머지는 다시 묻지 않는다
   offSuggestions: (folderPath: string) => Promise<OffSuggestion[]>
   applyOffSuggestions: (folderPath: string, fileNames: string[]) => Promise<void>
-  identifyMods: (folderPath: string) => Promise<boolean | null> // null: 인터넷·사이트 오류로 알아보지 못함
+  identifyMods: (folderPath: string, part?: ModPart) => Promise<boolean | null> // null: 인터넷·사이트 오류로 알아보지 못함
   // 플레이어용 모드팩(.mrpack)을 저장하고 경로를 돌려준다 (취소하면 null)
   exportClientPack: (folderPath: string, format: 'mrpack' | 'zip') => Promise<string | null>
   // 데이터팩 (켜진 서버면 바꾼 뒤 reload로 바로 적용)
@@ -699,17 +725,17 @@ export interface Api {
   addDatapackFile: (folderPath: string, file: File) => Promise<string>
   datapackVersions: (folderPath: string, name: string) => Promise<ModVersionItem[]>
   setDatapackVersion: (folderPath: string, name: string, versionId: string) => Promise<void>
-  removeMod: (folderPath: string, fileName: string) => Promise<string[]>
+  removeMod: (folderPath: string, fileName: string, part?: ModPart) => Promise<string[]>
   // 끌어다 놓은 jar를 mods(plugins) 폴더에 넣는다
-  addModFile: (folderPath: string, file: File) => Promise<string>
+  addModFile: (folderPath: string, file: File, part?: ModPart) => Promise<string>
   // 이 서버에 맞는 버전 목록과 버전 바꾸기
-  modVersions: (folderPath: string, fileName: string) => Promise<ModVersionItem[]>
-  setModVersion: (folderPath: string, fileName: string, versionId: string) => Promise<InstallResult>
+  modVersions: (folderPath: string, fileName: string, part?: ModPart) => Promise<ModVersionItem[]>
+  setModVersion: (folderPath: string, fileName: string, versionId: string, part?: ModPart) => Promise<InstallResult>
   // 앱으로 설치한 것 중 새 버전이 있는 것 (파일 이름 -> 새 버전)
-  checkModUpdates: (folderPath: string) => Promise<Record<string, string>>
+  checkModUpdates: (folderPath: string, part?: ModPart) => Promise<Record<string, string>>
   // fileNames가 비면 전부 업데이트
-  updateMods: (folderPath: string, fileNames: string[]) => Promise<InstallResult>
-  setModEnabled: (folderPath: string, fileName: string, enabled: boolean) => Promise<void>
+  updateMods: (folderPath: string, fileNames: string[], part?: ModPart) => Promise<InstallResult>
+  setModEnabled: (folderPath: string, fileName: string, enabled: boolean, part?: ModPart) => Promise<void>
   copyText: (text: string) => Promise<void>
   // 구독 함수들은 해제 함수를 돌려준다
   onProgress: (fn: (p: Progress) => void) => () => void

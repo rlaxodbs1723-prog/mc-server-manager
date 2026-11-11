@@ -3,7 +3,7 @@
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import { sameMod } from '../src/shared-types'
+import { arclightLabel, sameMod } from '../src/shared-types'
 import { preferCurseForge } from '../src/main/merge'
 import { readYamlValue, writeYamlValue } from '../src/main/yamlvalue'
 import { readProperties, writeProperties } from '../src/main/properties'
@@ -40,6 +40,8 @@ import { langFromLocale, translator } from '../src/i18n'
 import { tr as mainTr } from '../src/main/i18n'
 import { BUG_MAX_BYTES, bugFileInfo, bugMessage, sendBugReport } from '../src/main/bugreport'
 import { d1Store, handleDomain } from '../relay/domain.mjs'
+import { child, parseBedrockLevelDat, serializeBedrockLevelDat } from '../src/main/nbt'
+import { getBedrockExperiments, setBedrockExperiment, setBedrockHardcore } from '../src/main/bedrockexperiments'
 import { DatabaseSync } from 'node:sqlite'
 import { checkImportFolder, detectServer } from '../src/main/importserver'
 import { addAddonFile, bedrockProps, bedrockTellraw, checkAddons, listAddons, nethernetUdpPorts, removeAddon, setAddonEnabled } from '../src/main/bedrock'
@@ -575,7 +577,50 @@ async function domainChecks(): Promise<void> {
     expect(((await res.json()) as { error?: string }).error === 'full' && busy.records.length === 200, '켜 둔 서버의 기록을 지웠거나 가득 참 안내가 없어요')
   })
 
-  await check('이름 주소(D1 예약): D1이 없던 때 만든 옛 기록은 소식이 끊기면 예약으로 옮겨 두고 치운다', async () => {
+  await check('이름 주소(D1 예약): 가장 오래된 "켜짐" 예약들의 DNS 기록이 이미 없어도 그 뒤의 오래된 기록을 치워 자리를 만든다', async () => {
+    const t0 = Date.UTC(2026, 10, 11)
+    const HOUR = 3600_000
+    const st = memoryStore()
+    const tagFor = async (key: string): Promise<string> => {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`cubepanel-domain:${key}`))
+      return 'cp:' + [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32)
+    }
+    const owner = await tagFor(K1)
+    const seed: FakeRecord[] = Array.from({ length: 100 }, (_, i) => ({ id: `s${i}`, type: 'TXT', name: `site${i}.cubepanel.kr`, content: 'x' }))
+    // 가장 오래된 40개: "켜짐"으로 남았지만 DNS 기록은 없다. 그 뒤 60개: 소식이 끊겼고 DNS 기록이 있다. 마지막 40개: 방금까지 켜져 있다 → 기록 200개
+    for (let i = 0; i < 40; i++) st.rows.set(`ghost${i}`, { name: `ghost${i}`, owner, ip: '8.8.8.8', port: 25565, bedrock: false, target: '', online: true, lastSeen: t0 - (400 - i) * HOUR, created: t0 - 500 * HOUR })
+    for (let i = 0; i < 100; i++) {
+      const dead = i < 60
+      seed.push({ id: `n${i}`, type: 'A', name: `srv${i}.cubepanel.kr`, content: '8.8.8.8', comment: owner })
+      st.rows.set(`srv${i}`, { name: `srv${i}`, owner, ip: '8.8.8.8', port: 25565, bedrock: false, target: '', online: true, lastSeen: t0 - (dead ? 100 + i : 1) * HOUR, created: t0 - 500 * HOUR })
+    }
+    const cf = fakeCloudflare(seed)
+    const res = await handleDomain(new Request('https://x/api/domain', { method: 'POST', headers: { 'cf-connecting-ip': '9.9.9.9' }, body: JSON.stringify({ action: 'claim', name: 'newcomer', key: K2 }) }), env, cf.fetch, t0, st)
+    const out = (await res.json()) as { ok?: boolean; error?: string }
+    expect(out.ok === true, `자리를 못 만들었어요: ${JSON.stringify(out)}`)
+    expect([...st.rows.values()].filter((r) => r.name.startsWith('ghost') && r.online).length === 0, 'DNS 기록 없는 "켜짐" 예약이 그대로 남았어요')
+    expect(cf.records.filter((r) => r.name.startsWith('site')).length === 100, '사이트 기록을 지웠어요')
+    expect(cf.records.filter((r) => /^srv(6\d|[7-9]\d)\./.test(r.name)).length === 40, '켜 둔 서버의 기록을 지웠어요')
+  })
+
+  await check('이름 주소(D1 예약): 이름 확인에서 자리가 없으면 full로 알리고, 자리가 있으면 알리지 않는다', async () => {
+    const t0 = Date.UTC(2026, 10, 11)
+    const HOUR = 3600_000
+    const owner = 'cp:' + 'c'.repeat(32)
+    const seed: FakeRecord[] = Array.from({ length: 200 }, (_, i) => ({ id: `b${i}`, type: 'A', name: `b${i}.cubepanel.kr`, content: '8.8.8.8', comment: owner }))
+    const st = memoryStore()
+    for (let i = 0; i < 200; i++) st.rows.set(`b${i}`, { name: `b${i}`, owner, ip: '8.8.8.8', port: 25565, bedrock: false, target: '', online: true, lastSeen: t0 - HOUR, created: t0 - HOUR })
+    const ask = async (records: FakeRecord[], store: ReturnType<typeof memoryStore>) => {
+      const res = await handleDomain(new Request('https://x/api/domain', { method: 'POST', headers: { 'cf-connecting-ip': '9.9.9.9' }, body: JSON.stringify({ action: 'check', name: 'freshname' }) }), env, fakeCloudflare(records).fetch, t0, store)
+      return (await res.json()) as { ok?: boolean; free?: boolean; full?: boolean }
+    }
+    const full = await ask(seed, st)
+    expect(full.free === true && full.full === true, `가득 찼는데 알리지 않았어요: ${JSON.stringify(full)}`)
+    const roomy = await ask(seed.slice(0, 50), memoryStore())
+    expect(roomy.free === true && roomy.full === undefined, `자리가 있는데 가득 찼다고 했어요: ${JSON.stringify(roomy)}`)
+  })
+
+  await check('이름 주소(D1 예약): D1이 없던 때 만든 옛 기록은 소식이 끊기면 예약으로 옮겨두고 치운다', async () => {
     const t0 = Date.UTC(2026, 9, 17)
     const DAY = 86400_000
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`cubepanel-domain:${K1}`))
@@ -655,6 +700,45 @@ async function domainChecks(): Promise<void> {
 
 // ---------- 배드락 서버: 애드온·설정 ----------
 async function bedrockChecks(): Promise<void> {
+  await check('배드락 실험적 기능: level.dat(리틀엔디언·8바이트 머리)를 그대로 읽고 쓰고, 베타 API를 켜고 끈다', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcsm-bexp-'))
+    fs.writeFileSync(path.join(dir, 'server.properties'), 'level-name=W\n')
+    const world = path.join(dir, 'worlds', 'W')
+    fs.mkdirSync(world, { recursive: true })
+    const s = (t: string) => Buffer.from(t)
+    const original = serializeBedrockLevelDat({
+      version: 10,
+      rootName: s(''),
+      root: {
+        type: 10,
+        value: [
+          [s('LevelName'), { type: 8, value: s('월드') }],
+          [s('RandomSeed'), { type: 4, value: -123456789012345n }],
+          [s('experiments'), { type: 10, value: [[s('experiments_ever_used'), { type: 1, value: 0 }], [s('saved_with_toggled_experiments'), { type: 1, value: 0 }]] }]
+        ]
+      }
+    })
+    expect(serializeBedrockLevelDat(parseBedrockLevelDat(original)).equals(original), '다시 썼더니 원래와 달라요')
+    expect(original.readInt32LE(0) === 10 && original.readInt32LE(4) === original.length - 8, '머리 8바이트가 틀려요')
+    const file = path.join(world, 'level.dat')
+    fs.writeFileSync(file, original)
+    const before = getBedrockExperiments(dir)
+    expect(before.ready && before.items.some((x) => x.id === 'gametest' && !x.on), '베타 API가 꺼진 것으로 안 보여요')
+    expect(!before.items.some((x) => x.id === 'experiments_ever_used'), '표시용 값이 목록에 나왔어요')
+    setBedrockExperiment(dir, 'gametest', true)
+    expect(getBedrockExperiments(dir).items.find((x) => x.id === 'gametest')?.on === true, '베타 API가 안 켜졌어요')
+    expect(fs.readFileSync(`${file}.cubepanel-bak`).equals(original), '원래 파일을 남겨 두지 않았어요')
+    const after = parseBedrockLevelDat(fs.readFileSync(file))
+    expect((child(after.root, 'LevelName') as { value: Buffer }).value.toString('utf8') === '월드' && (child(after.root, 'RandomSeed') as { value: bigint }).value === -123456789012345n, '다른 값이 바뀌었어요')
+    setBedrockExperiment(dir, 'gametest', false)
+    expect(getBedrockExperiments(dir).items.find((x) => x.id === 'gametest')?.on === false, '베타 API가 안 꺼졌어요')
+    expect(await throws(async () => setBedrockExperiment(dir, '../x', true)), '이상한 이름을 받아들였어요')
+    expect(getBedrockExperiments(dir).hardcore === false, '하드코어가 켜진 것으로 보여요')
+    setBedrockHardcore(dir, true)
+    expect(getBedrockExperiments(dir).hardcore === true, '하드코어가 안 켜졌어요')
+    expect(getBedrockExperiments(dir).items.find((x) => x.id === 'gametest')?.on === false, '하드코어를 켜다 실험 기능이 바뀌었어요')
+    fs.rmSync(dir, { recursive: true, force: true })
+  })
   const base = fs.mkdtempSync(path.join(os.tmpdir(), 'mcsm-bedrock-'))
   const folder = path.join(base, 'bds')
   fs.mkdirSync(path.join(folder, 'behavior_packs', 'vanilla'), { recursive: true })
@@ -870,8 +954,23 @@ async function importChecks(): Promise<void> {
     expect(purpur2.software === 'purpur', `이름이 바뀐 Purpur를 Paper로 봤어요: ${JSON.stringify(purpur2)}`)
     const vanilla = await d(mk('vanilla', { 'server.jar': await jarWithVersion('1.19.4'), 'server.properties': 'level-name=map\n', 'map/level.dat': 'x' }))
     expect(vanilla.software === 'vanilla' && vanilla.mcVersion === '1.19.4' && vanilla.hasWorld, `바닐라: ${JSON.stringify(vanilla)}`)
+    // Arclight(하이브리드): 밑바탕 NeoForge 라이브러리가 있어도 Arclight로 본다
+    const arc = await d(mk('arclight', { 'arclight-fabric-1.21.1-1.0.1-8ec9529.jar': 'x', 'libraries/net/neoforged/neoforge/21.1.50/win_args.txt': 'x' }))
+    expect(arc.software === 'arclight' && arc.mcVersion === '1.21.1' && arc.loaderVersion === 'fabric-1.21.1-1.0.1-8ec9529', `Arclight: ${JSON.stringify(arc)}`)
     const logOnly = await d(mk('logonly', { 'custom.jar': 'x', 'logs/latest.log': '[12:00:00] [main/INFO]: Starting minecraft server version 1.18.2\n' }))
     expect(logOnly.software === null && logOnly.mcVersion === '1.18.2', `로그: ${JSON.stringify(logOnly)}`)
+  })
+
+  await check('하이브리드(Arclight): 모드 탭과 플러그인 탭이 둘 다 있고, 각 탭은 자기 폴더(mods·plugins)만 본다', async () => {
+    const dir = mk('arc-tabs', { 'server-manager.json': JSON.stringify({ name: 'h', software: 'arclight', mcVersion: '1.21.1', loaderVersion: 'fabric-1.21.1-1.0.1-x' }), 'mods/a-mod.jar': 'x', 'plugins/b-plugin.jar': 'x' })
+    const kinds = mods.modKinds(dir)
+    expect(kinds.length === 2 && kinds[0].folder === 'mods' && kinds[1].folder === 'plugins', `탭: ${JSON.stringify(kinds)}`)
+    const inMods = mods.inPart('mods', () => mods.list(dir)).map((m) => m.fileName)
+    const inPlugins = mods.inPart('plugins', () => mods.list(dir)).map((m) => m.fileName)
+    expect(inMods.includes('a-mod.jar') && !inMods.includes('b-plugin.jar'), `모드 탭: ${inMods}`)
+    expect(inPlugins.includes('b-plugin.jar') && !inPlugins.includes('a-mod.jar'), `플러그인 탭: ${inPlugins}`)
+    expect(mods.arclightLoader('fabric-1.21.1-1.0.1-x') === 'fabric' && mods.arclightLoader(undefined) === 'neoforge', '밑바탕 로더를 잘못 읽었어요')
+    expect(arclightLabel('neoforge-1.21.1-1.0.1-8ec9529') === 'NeoForge · 1.0.1-8ec9529', `이름표: ${arclightLabel('neoforge-1.21.1-1.0.1-8ec9529')}`)
   })
 
   await check('가져오기: 고를 수 없는 폴더는 막기 (없는 폴더·드라이브·앱 폴더 안팎·서버가 아닌 폴더)', async () => {
@@ -1218,9 +1317,16 @@ async function real(): Promise<void> {
     expect(fs.readdirSync(path.join(copy.folderPath, 'mods')).some((f) => /lithium/i.test(f)), '모드가 복사되지 않았어요')
     expect(!fs.existsSync(path.join(copy.folderPath, 'world', 'session.lock')), 'session.lock이 복사됐어요')
   })
-  await check('월드 새로 만들기 (먼저 백업)', async () => {
+  await check('월드 새로 만들기 (먼저 백업, 데이터팩은 새 월드에 남긴다)', async () => {
+    fs.mkdirSync(path.join(folder, 'world', 'datapacks'), { recursive: true })
+    fs.writeFileSync(path.join(folder, 'world', 'datapacks', 'my-pack.zip'), 'x')
+    fs.mkdirSync(path.join(folder, 'world', 'datapacks-disabled'), { recursive: true })
+    fs.writeFileSync(path.join(folder, 'world', 'datapacks-disabled', 'off-pack.zip'), 'y')
     await resetWorld(folder)
-    expect(!fs.existsSync(path.join(folder, 'world')), '월드가 남아 있어요')
+    expect(!fs.existsSync(path.join(folder, 'world', 'level.dat')), '월드가 남아 있어요')
+    expect(fs.existsSync(path.join(folder, 'world', 'datapacks', 'my-pack.zip')), '켜 둔 데이터팩이 사라졌어요')
+    expect(fs.existsSync(path.join(folder, 'world', 'datapacks-disabled', 'off-pack.zip')), '꺼 둔 데이터팩이 사라졌어요')
+    expect(!fs.existsSync(path.join(folder, '.reset-keep-datapacks')), '임시 폴더가 남았어요')
     expect(listBackups(folder).some((b) => b.note === '월드 리셋 전'), '"월드 리셋 전" 백업이 없어요')
   })
   const NEXT = '1.21.4'

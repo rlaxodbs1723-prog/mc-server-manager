@@ -27,7 +27,7 @@ export default function ImportServerDialog({
   const [loader, setLoader] = useState(detected.loaderVersion ?? '')
   const [versions, setVersions] = useState<McVersion[]>([])
   const [loaders, setLoaders] = useState<LoaderVersion[] | null>(null)
-  const [domain, setDomain] = useState<{ domainName?: string; blocked: boolean }>({ blocked: true })
+  const [domain, setDomain] = useState<{ domainName?: string; blocked: boolean }>({ blocked: false })
   const [memoryMb, setMemoryMb] = useState<number | undefined>(undefined)
 
   const taken = new Set([...existingNames, ...tasks.filter((t) => t.status === 'running').map((t) => t.options?.name ?? '')].map(norm))

@@ -6,13 +6,14 @@ import ModpackDialog from './ModpackDialog'
 import SetupWizard from './SetupWizard'
 import { FolderInput, Package } from 'lucide-react'
 import { SoftwareBadge, useToast } from './ui'
-import { cleanError } from './util'
+import { cleanError, IS_MAC } from './util'
 
 // 만들기 화면에서 묶어 보여 줄 순서
 const GROUPS: { label: string; items: Software[] }[] = [
-  { label: '기본', items: ['vanilla', 'bedrock'] },
+  { label: '기본', items: IS_MAC ? ['vanilla'] : ['vanilla', 'bedrock'] }, // 배드락 서버 프로그램은 맥용이 없다
   { label: '플러그인 서버', items: ['paper', 'purpur'] },
-  { label: '모드 서버', items: ['fabric', 'quilt', 'forge', 'neoforge'] }
+  { label: '모드 서버', items: ['fabric', 'quilt', 'forge', 'neoforge'] },
+  { label: '하이브리드 (모드+플러그인)', items: ['arclight'] }
 ]
 
 interface Props {

@@ -1,7 +1,7 @@
 import { AlertCircle, FolderInput, ImagePlus } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useMouseBack } from './mouseback'
-import { SOFTWARE_INFO, type LoaderVersion, type McVersion, type SaveWorld, type Software } from '../../shared-types'
+import { arclightLabel, SOFTWARE_INFO, type LoaderVersion, type McVersion, type SaveWorld, type Software } from '../../shared-types'
 import Select from './Select'
 import { DomainField, MemoryField } from './AddressMemory'
 import { WorldSource } from './ImportWorldDialog'
@@ -76,7 +76,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
   const [hardcore, setHardcore] = useState(false)
   const [difficulty, setDifficulty] = useState('easy') // 배드락
   const [bedrockWorld, setBedrockWorld] = useState<string | null>(null) // 배드락: 가져올 .mcworld 파일
-  const [domain, setDomain] = useState<{ domainName?: string; blocked: boolean }>({ blocked: true }) // 서버 주소 이름
+  const [domain, setDomain] = useState<{ domainName?: string; blocked: boolean }>({ blocked: false }) // 서버 주소 이름 (비워 두면 숫자 주소만)
   const [memoryMb, setMemoryMb] = useState<number | undefined>(undefined)
 
   const { tasks, startCreate } = useTasks()
@@ -97,9 +97,10 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
         .catch((e) => setLoadError(cleanError(e)))
       return
     }
-    window.api
-      .getVersions(includeSnapshots)
-      .then((list) => {
+    Promise.all([window.api.getVersions(includeSnapshots), software === 'arclight' ? window.api.arclightMcVersions() : null])
+      .then(([all, arclight]) => {
+        // Arclight는 만든 버전만 고를 수 있다 (목록에 없는 새 버전이면 그대로 넣는다)
+        const list = arclight ? arclight.map((id) => all.find((v) => v.id === id) ?? { id, type: 'release' as const, url: '', releaseTime: '' }) : all
         setVersions(list)
         setVersion((v) => (list.some((x) => x.id === v) ? v : (list[0]?.id ?? '')))
       })
@@ -288,8 +289,8 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
                     searchPlaceholder="버전 검색"
                     options={(loaderVersions ?? []).map((l, i) => ({
                       value: l.version,
-                      label: isBuild ? `#${l.version}` : l.version,
-                      tag: !l.stable ? '베타' : i === 0 ? '추천' : undefined
+                      label: isBuild ? `#${l.version}` : software === 'arclight' ? arclightLabel(l.version) : l.version,
+                      tag: !l.stable ? (software === 'arclight' ? '시험판' : '베타') : i === 0 ? '추천' : undefined
                     }))}
                   />
                 </div>

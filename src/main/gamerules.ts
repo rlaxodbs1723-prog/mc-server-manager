@@ -71,9 +71,9 @@ export function setGameRule(folderPath: string, name: string, value: string): vo
   if (!NAME.test(name)) throw new Error('잘못된 게임 규칙 이름이에요.')
   if (!/^(true|false|-?\d{1,9})$/.test(value)) throw new Error('잘못된 값이에요.')
   sendCommand(folderPath, `gamerule ${name} ${value}`)
-  // Paper·Purpur는 게임 규칙이 월드(오버월드·네더·엔드)마다 따로라서, 콘솔로 바꾸면 오버월드만 바뀐다. 네더·엔드에도 같이 건다
+  // Paper·Purpur·Arclight(Bukkit 기반)는 게임 규칙이 월드(오버월드·네더·엔드)마다 따로라서, 콘솔로 바꾸면 오버월드만 바뀐다. 네더·엔드에도 같이 건다
   const software = readServerInfo(folderPath).software
-  if (software === 'paper' || software === 'purpur') {
+  if (software === 'paper' || software === 'purpur' || software === 'arclight') {
     for (const dim of ['the_nether', 'the_end']) sendCommand(folderPath, `execute in minecraft:${dim} run gamerule ${name} ${value}`)
   }
 }

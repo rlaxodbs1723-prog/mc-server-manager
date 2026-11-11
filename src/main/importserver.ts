@@ -149,7 +149,13 @@ export async function detectServer(dir: string, serversRoot: string): Promise<De
   const purpur = jars.map((j) => /^purpur[-_]?(\d+\.\d+(?:\.\d+)?)[-_](\d+)\.jar$/i.exec(j)).find(Boolean)
   const paperJar = jars.map((j) => /^paper[-_]?(\d+\.\d+(?:\.\d+)?)[-_](\d+)\.jar$/i.exec(j)).find(Boolean)
 
-  if (neo) {
+  // Arclight(하이브리드): 파일 이름에 로더·마인크래프트 버전이 들어 있다 (밑바탕 NeoForge·Forge 라이브러리도 있어서 먼저 본다)
+  const arclight = jars.map((j) => /^arclight-(neoforge|fabric|forge)-(\d+(?:\.\d+)+)-(.+)\.jar$/i.exec(j)).find(Boolean)
+  if (arclight || has('arclight.jar')) {
+    software = 'arclight'
+    mcVersion = arclight?.[2] ?? null
+    loaderVersion = arclight ? `${arclight[1].toLowerCase()}-${arclight[2]}-${arclight[3]}` : null
+  } else if (neo) {
     software = 'neoforge'
     loaderVersion = neo
     mcVersion = mcFromNeoForge(neo)

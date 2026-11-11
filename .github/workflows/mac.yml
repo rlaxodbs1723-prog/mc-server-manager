@@ -1,0 +1,38 @@
+# 맥 설치 파일(dmg)을 깃허브의 맥 컴퓨터에서 만든다. 손으로 실행할 때만 돈다 (Actions 탭 → Build macOS → Run workflow)
+# 태그(예: v1.1.4)를 넣으면 만든 dmg를 그 릴리스에 올린다. 비워 두면 Actions 결과 파일로만 남는다
+name: Build macOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '릴리스에 올릴 태그 (예: v1.1.4). 비워 두면 올리지 않아요'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  mac:
+    runs-on: macos-14 # Apple 칩(arm64)
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run dist:mac
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MC-CubePanel-mac-arm64
+          path: dist/*.dmg
+      - name: 릴리스에 올리기
+        if: ${{ inputs.tag != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ inputs.tag }}" dist/*.dmg --clobber

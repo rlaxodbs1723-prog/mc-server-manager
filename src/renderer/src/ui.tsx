@@ -15,6 +15,7 @@ const SW_COLOR: Record<Software, string> = {
   quilt: '#c490ff',
   forge: '#f29a55',
   neoforge: '#ff7a45',
+  arclight: '#f5c542',
   bedrock: '#3fc1a5'
 }
 

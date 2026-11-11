@@ -4,7 +4,7 @@ import AppSettingsDialog from './AppSettingsDialog'
 import BugReportDialog from './BugReportDialog'
 import type { SiteStatus, UpdateState } from '../../shared-types'
 import { Confirm, useToast } from './ui'
-import { cleanError } from './util'
+import { cleanError, IS_MAC } from './util'
 import { useEffect, useState } from 'react'
 import { TaskButton } from './tasks'
 import InboxButton from './Inbox'
@@ -25,6 +25,7 @@ export default function TitleBar() {
     return window.api.onUpdate((u) => {
       // 버튼만 생기면 못 보고 지나치기 쉬워서, 준비된 순간에 한 번 알려 준다
       if (u.state === 'ready') toast(`새 버전 ${u.version}이 준비됐어요. 오른쪽 위 "업데이트"를 누르면 설치돼요.`)
+      if (u.state === 'manual') toast(`새 버전 ${u.version}이 나왔어요. 오른쪽 위 "새 버전 받기"를 눌러 받아 주세요.`)
       setUpdate(u)
     })
   }, [])
@@ -47,7 +48,7 @@ export default function TitleBar() {
   }, [])
 
   return (
-    <header className="titlebar" onDoubleClick={() => window.api.windowControl('maximize')}>
+    <header className={`titlebar${IS_MAC ? ' mac' : ''}`} onDoubleClick={() => window.api.windowControl('maximize')}>
       <div className="brand">
         {/* 앱 아이콘과 같은 그림 (build-tools/icon.svg) */}
         <svg className="logo" viewBox="0 0 128 128" aria-hidden="true">
@@ -66,6 +67,17 @@ export default function TitleBar() {
           <WifiOff size={13} />
           {down} 연결 안 됨
         </span>
+      )}
+      {update.state === 'manual' && (
+        <button
+          className="update-btn"
+          onDoubleClick={(e) => e.stopPropagation()}
+          title={`새 버전 ${update.version}이 나왔어요. 누르면 다운로드 페이지가 열려요. 받아서 앱을 덮어 설치해 주세요.`}
+          onClick={() => window.api.openReleasePage().catch((e) => toast(cleanError(e), 'error'))}
+        >
+          <Download size={14} />
+          새 버전 받기
+        </button>
       )}
       {update.state === 'ready' && (
         <button
@@ -128,17 +140,19 @@ export default function TitleBar() {
           </div>,
           document.body
         )}
-      <div className="win-buttons" onDoubleClick={(e) => e.stopPropagation()}>
-        <button onClick={() => window.api.windowControl('minimize')} aria-label="최소화">
-          <Minus size={16} />
-        </button>
-        <button onClick={() => window.api.windowControl('maximize')} aria-label={maximized ? '이전 크기로' : '최대화'}>
-          {maximized ? <Copy size={13} style={{ transform: 'scaleX(-1)' }} /> : <Square size={13} />}
-        </button>
-        <button className="close" onClick={() => window.api.windowControl('close')} aria-label="닫기">
-          <X size={17} />
-        </button>
-      </div>
+      {!IS_MAC && (
+        <div className="win-buttons" onDoubleClick={(e) => e.stopPropagation()}>
+          <button onClick={() => window.api.windowControl('minimize')} aria-label="최소화">
+            <Minus size={16} />
+          </button>
+          <button onClick={() => window.api.windowControl('maximize')} aria-label={maximized ? '이전 크기로' : '최대화'}>
+            {maximized ? <Copy size={13} style={{ transform: 'scaleX(-1)' }} /> : <Square size={13} />}
+          </button>
+          <button className="close" onClick={() => window.api.windowControl('close')} aria-label="닫기">
+            <X size={17} />
+          </button>
+        </div>
+      )}
     </header>
   )
 }

@@ -34,7 +34,7 @@ import { notify } from './notify'
 import { analyzeCrash, analyzeJoinFailure } from './crash'
 import { suggestFromCrash } from './mods'
 import { readYamlValue, writeYamlValue } from './yamlvalue'
-import { appLog, emitEvent, getPlayers, getStartedAt, getState, serverPort, isEulaAccepted, onCrash, onJoinError, onServerEvent, startServer } from './runner'
+import { appLog, emitEvent, getPlayers, getStartedAt, getState, serverPort, isEulaAccepted, onCrash, onJoinError, onServerEvent, onWorldError, startServer } from './runner'
 
 const INFO_FILE = 'server-manager.json' // 서버 폴더마다 앱이 쓰는 정보 파일
 const CREATING_FILE = '.creating' // 만드는 중 표시. 다 만들면 지운다 (앱이 도중에 꺼지면 남는다)
@@ -252,7 +252,10 @@ export async function createServer(
   report: (p: Progress) => void
 ): Promise<ServerInfo> {
   if (options.importFrom) return importExisting(options, report)
-  if (options.software === 'bedrock') return createBedrock(options, report)
+  if (options.software === 'bedrock') {
+    if (process.platform !== 'win32') throw new Error('배드락 서버는 Windows에서만 만들 수 있어요.')
+    return createBedrock(options, report)
+  }
   const { name, software, mcVersion, loaderVersion, properties, importWorldFrom, modpackId, iconFrom, memoryMb } = options
   if (!SOFTWARE_INFO[software]) throw new Error('지원하지 않는 서버 종류예요.')
   if (software !== 'vanilla' && !loaderVersion) throw new Error(`${SOFTWARE_INFO[software].label} 버전을 골라 주세요.`)
@@ -506,13 +509,13 @@ export async function startServerAt(folderPath: string, report: (p: Progress) =>
     if (props['transport'] !== 'nethernet') writeProperties(folderPath, { transport: 'nethernet' })
     writeProperties(folderPath, { 'server-udp-ports': udpPorts }, true)
     if (props['server-portv6'] !== (props['server-port'] ?? '19132')) writeProperties(folderPath, { 'server-portv6': props['server-port'] ?? '19132' }) // IPv6 포트도 같은 번호로 (localhost는 IPv6로 먼저 접속한다)
-    await autoBackupBeforeStart(folderPath)
+    if (readServerInfo(folderPath).automation?.startBackup !== false) await autoBackupBeforeStart(folderPath) // 설정에서 끌 수 있다
     await startServer(folderPath, { java: path.join(folderPath, BEDROCK_EXE), args: [], bedrock: true })
     startInvite(folderPath, readServerInfo(folderPath).name)
     return
   }
   const { info, java } = await javaFor(folderPath, report) // 보통은 이미 받아 둬서 바로 끝난다
-  await autoBackupBeforeStart(folderPath) // 켜기 전에 월드를 자동으로 백업해 둔다
+  if (info.automation?.startBackup !== false) await autoBackupBeforeStart(folderPath) // 켜기 전에 월드를 자동으로 백업해 둔다 (설정에서 끌 수 있다)
   applyDefaultsOnce(info) // 기본값이 생기기 전에 만든 서버도 한 번 맞춰 준다
   const mem = info.memoryMb ?? 2048
   // 최적화를 켜면 처음부터 메모리를 다 잡고(Xms=Xmx) Aikar's flags로 멈춤(렉)을 줄인다
@@ -544,7 +547,8 @@ export function setServerOrder(folderPaths: string[]): void {
 
 // 모드·플러그인 수 (모드를 못 쓰는 서버면 null)
 function countMods(folderPath: string, software: Software): number | null {
-  const folder = ['fabric', 'quilt', 'forge', 'neoforge'].includes(software) ? 'mods' : ['paper', 'purpur'].includes(software) ? 'plugins' : null
+  // 하이브리드(Arclight)는 모드 수를 센다 (목록 줄이 짧아서 하나만 보여 준다)
+  const folder = ['fabric', 'quilt', 'forge', 'neoforge', 'arclight'].includes(software) ? 'mods' : ['paper', 'purpur'].includes(software) ? 'plugins' : null
   if (!folder) return null
   try {
     // 모드 탭 숫자와 같게: 꺼 둔 것도 세고, 앱이 알아서 까는 기본 모드(Fabric API 등)는 뺀다
@@ -684,7 +688,8 @@ function cleanAutomation(a: ServerAutomation): ServerAutomation {
     dailyRestart: /^([01]\d|2[0-3]):[0-5]\d$/.test(a.dailyRestart) ? a.dailyRestart : '',
     emptyStopMin: Math.max(0, Math.min(24 * 60, Math.round(Number(a.emptyStopMin) || 0))),
     welcome: String(a.welcome ?? '').replace(/[\r\n]+/g, ' ').slice(0, 200),
-    autoSaveMin: Math.max(0, Math.min(60, Math.round(Number(a.autoSaveMin) || 0)))
+    autoSaveMin: Math.max(0, Math.min(60, Math.round(Number(a.autoSaveMin) || 0))),
+    startBackup: a.startBackup !== false // 예전 서버(값 없음)는 켜 둔 것으로 본다
   }
 }
 
@@ -698,13 +703,38 @@ function worldFolders(folderPath: string): string[] {
     .filter((p) => p.startsWith(folderPath + path.sep) && fs.existsSync(p))
 }
 
-export const worldExists = (folderPath: string): boolean => worldFolders(folderPath).length > 0
+// level.dat가 있어야 월드가 있는 것이다 (리셋 뒤에는 데이터팩·애드온 연결만 든 빈 월드 폴더가 남는다)
+export const worldExists = (folderPath: string): boolean => worldFolders(folderPath).some((p) => fs.existsSync(path.join(p, 'level.dat')))
 
-export async function resetWorld(folderPath: string): Promise<void> {
+export async function resetWorld(folderPath: string, keepPacks = true): Promise<void> {
   if (getState(folderPath) !== 'stopped') throw new Error('서버를 끈 다음에 월드를 새로 만들 수 있어요.')
   // 휴지통만 믿지 않고 먼저 백업해 둔다 (큰 폴더는 휴지통에 안 들어갈 수 있다)
   if (worldExists(folderPath)) await createBackup(folderPath, false, '월드 리셋 전')
+  // 데이터팩(자바: world/datapacks)과 애드온 연결(배드락: 월드 안 world_behavior_packs.json 등)은 월드 폴더 안에 있어서 월드와 같이 지워진다.
+  // 잠깐 빼 두었다가 새 월드 자리에 다시 넣는다 (다음에 켤 때 새 월드가 이것들을 넣은 채로 만들어진다. 지형 데이터팩도 처음부터 적용된다)
+  const bedrock = isBedrockFolder(folderPath)
+  const world = !keepPacks ? null : bedrock ? bedrockWorldDir(folderPath) : path.join(folderPath, readProperties(folderPath)['level-name'] || 'world')
+  const keep = path.join(folderPath, '.reset-keep-packs')
+  const packDirs = bedrock ? ['world_behavior_packs.json', 'world_resource_packs.json'] : ['datapacks', 'datapacks-disabled']
+  fs.rmSync(keep, { recursive: true, force: true })
+  if (world) {
+    for (const sub of packDirs) {
+      const from = path.join(world, sub)
+      if (!fs.existsSync(from) || (fs.statSync(from).isDirectory() && !fs.readdirSync(from).length)) continue
+      fs.mkdirSync(keep, { recursive: true })
+      await fs.promises.cp(from, path.join(keep, sub), { recursive: true })
+    }
+  }
   for (const dir of worldFolders(folderPath)) await shell.trashItem(dir)
+  if (world && fs.existsSync(keep)) {
+    for (const sub of packDirs) {
+      const saved = path.join(keep, sub)
+      if (!fs.existsSync(saved)) continue
+      fs.mkdirSync(world, { recursive: true })
+      fs.renameSync(saved, path.join(world, sub))
+    }
+    fs.rmSync(keep, { recursive: true, force: true })
+  }
 }
 
 const serverName = (folderPath: string): string => {
@@ -741,6 +771,13 @@ onJoinError((folderPath, log) => {
   f.cause.split('\n').forEach((l) => appLog(folderPath, `[앱]   ${l}`))
   appLog(folderPath, `[앱]   해결: ${f.fix ?? '모드 탭에서 위 모드를 끄고 서버를 다시 켜 보세요. 모드 업데이트 확인도 해 보세요.'}`)
   notify(`${serverName(folderPath)}: 플레이어가 들어오지 못했어요`, f.suspects.length ? `${f.suspects.map((s) => s.title).join(', ')} 모드가 오류를 내요.` : f.title)
+})
+
+// 켜진 채로 월드 파일을 못 읽는 오류 (땅이 안 불러와져 끝없이 떨어지는 등): 콘솔과 알림으로 백업 되돌리기를 안내한다
+onWorldError((folderPath) => {
+  appLog(folderPath, '[앱] 월드 파일이 손상됐을 수 있어요. 일부 땅을 불러오지 못하고 있어요.')
+  appLog(folderPath, '[앱]   해결: 서버를 끄고 백업 탭에서 최근 백업으로 되돌려 주세요. (켤 때마다 자동으로 백업해 둬요)')
+  notify(`${serverName(folderPath)}: 월드 파일이 손상됐을 수 있어요`, '땅이 안 불러와지거나 끝없이 떨어지면 서버를 끄고 백업 탭에서 최근 백업으로 되돌려 주세요.')
 })
 
 onCrash(async (folderPath, { log, startedAt, wasRunning }) => {
@@ -802,7 +839,7 @@ export function renameServer(folderPath: string, name: string): void {
   fs.writeFileSync(path.join(folderPath, INFO_FILE), JSON.stringify(info, null, 2))
 }
 
-const SKIP_ON_COPY = new Set(['logs', 'crash-reports', CREATING_FILE, 'session.lock'])
+const SKIP_ON_COPY = new Set(['logs', 'crash-reports', CREATING_FILE, 'session.lock', '.server-manager-running'])
 
 export async function duplicateServer(folderPath: string, name: string): Promise<ServerInfo> {
   if (getState(folderPath) !== 'stopped') throw new Error('서버를 끈 다음에 복제할 수 있어요.')

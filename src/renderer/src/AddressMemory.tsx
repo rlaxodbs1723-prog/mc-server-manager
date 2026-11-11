@@ -4,12 +4,12 @@ const BASE = 'cubepanel.kr'
 const NAME_RE = /^[a-z0-9][a-z0-9-]{1,18}[a-z0-9]$/
 
 export interface AddressMemoryValue {
-  domainName?: string // 이름 주소로 쓸 이름 (비어 있으면 서버를 만들 수 없다)
+  domainName?: string // 이름 주소로 쓸 이름 (비워 두면 이름 주소 없이 숫자 주소만 쓴다)
   memoryMb?: number
-  blocked: boolean // 이름이 비었거나 이미 쓰는 이름이라 이대로는 만들 수 없다
+  blocked: boolean // 이름을 잘못 썼거나 이미 쓰는 이름이라 이대로는 만들 수 없다 (비워 두는 건 괜찮다)
 }
 
-type Check = 'idle' | 'checking' | 'free' | 'taken' | 'error'
+type Check = 'idle' | 'checking' | 'free' | 'taken' | 'full' | 'error'
 
 const gb = (mb: number): string => `${(mb / 1024).toFixed(mb % 1024 ? 1 : 0)}GB`
 
@@ -28,7 +28,7 @@ export function DomainField({ onChange }: { onChange: (v: { domainName?: string;
     const t = setTimeout(() => {
       window.api
         .checkDomainName(n)
-        .then((free) => id === seq.current && setCheck(free ? 'free' : 'taken'))
+        .then((r) => id === seq.current && setCheck(r))
         .catch(() => id === seq.current && setCheck('error'))
     }, 500)
     return () => clearTimeout(t)
@@ -36,7 +36,9 @@ export function DomainField({ onChange }: { onChange: (v: { domainName?: string;
 
   const valid = NAME_RE.test(name.trim())
   useEffect(() => {
-    onChange({ domainName: valid ? name.trim() : undefined, blocked: !valid || check === 'taken' || check === 'checking' })
+    // 비워 두면 이름 주소 없이 만든다 (공유기 포트를 직접 열고 내 도메인을 쓰는 사람 등). 쓴 이름이 틀렸거나 남의 것이면 막는다
+    const empty = name.trim() === ''
+    onChange({ domainName: valid ? name.trim() : undefined, blocked: !empty && (!valid || check === 'taken' || check === 'checking') })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name, valid, check])
 
@@ -44,11 +46,11 @@ export function DomainField({ onChange }: { onChange: (v: { domainName?: string;
     <div>
       <div className="label">서버 주소 이름</div>
       <div className="domain-row">
-        <input className="input" value={name} maxLength={20} onChange={(e) => setName(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} />
+        <input className="input" value={name} maxLength={20} placeholder="비워 두면 IP 주소가 나와요" onChange={(e) => setName(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} />
         <span className="domain-suffix">{`.${BASE}`}</span>
       </div>
       {name.trim() !== '' && (
-        <p className={`hint ${!valid || check === 'taken' || check === 'error' ? 'name-bad' : check === 'free' ? 'name-ok' : ''}`}>
+        <p className={`hint ${!valid || check === 'taken' || check === 'error' || check === 'full' ? 'name-bad' : check === 'free' ? 'name-ok' : ''}`}>
           {!valid
             ? '영어 소문자, 숫자, 하이픈(-) 3~20자. 하이픈은 처음과 끝에 사용 불가'
             : check === 'checking'
@@ -57,7 +59,9 @@ export function DomainField({ onChange }: { onChange: (v: { domainName?: string;
                 ? '사용 가능한 이름'
                 : check === 'taken'
                   ? '이미 사용 중인 이름'
-                  : check === 'error'
+                  : check === 'full'
+                    ? '지금은 새 주소를 만들 수 없음. 서버를 켤 때 다시 시도하니 그대로 진행해도 됨'
+                    : check === 'error'
                     ? '확인하지 못함. 서버를 만든 뒤 다시 확인'
                     : ''}
         </p>
@@ -106,6 +110,7 @@ export function MemoryField({ onChange }: { onChange: (memoryMb: number | undefi
         <span>{gb(range.minMb)}</span>
         <span>{gb(range.maxMb)}</span>
       </div>
+      {memory < 2048 && <p className="warn-text mem-warn">⚠ 2GB보다 적으면 서버가 자주 멈출 수 있음. 플러그인·모드 서버는 4GB 이상 권장</p>}
       {range.totalMb - memory < 4096 && (
         <p className="warn-text mem-warn">{`⚠ 컴퓨터에 ${gb(Math.max(0, range.totalMb - memory))}만 남음. 같은 컴퓨터에서 게임도 하면 버벅일 수 있음`}</p>
       )}
@@ -115,7 +120,7 @@ export function MemoryField({ onChange }: { onChange: (memoryMb: number | undefi
 
 // 주소 이름과 메모리를 한 곳에 같이 보여 주는 묶음 (모드팩 만들기 창이 쓴다)
 export default function AddressMemory({ onChange }: { onChange: (v: AddressMemoryValue) => void }) {
-  const [d, setD] = useState<{ domainName?: string; blocked: boolean }>({ blocked: true })
+  const [d, setD] = useState<{ domainName?: string; blocked: boolean }>({ blocked: false })
   const [memoryMb, setMemoryMb] = useState<number | undefined>(undefined)
   useEffect(() => {
     onChange({ ...d, memoryMb })

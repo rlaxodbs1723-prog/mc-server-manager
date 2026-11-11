@@ -13,7 +13,9 @@ import BackupTab from './BackupTab'
 import FilesTab from './FilesTab'
 import DatapacksTab from './DatapacksTab'
 import ModsTab from './ModsTab'
+import { versionLabel } from './VersionSection'
 import AddonsTab from './AddonsTab'
+import BedrockWorldTab from './BedrockWorldTab'
 import BedrockLoopbackNotice from './BedrockLoopbackNotice'
 import BedrockManageTab from './BedrockManageTab'
 import BedrockSettingsDialog from './BedrockSettingsDialog'
@@ -132,12 +134,13 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
   const [progress, setProgress] = useState<Progress | null>(null)
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState('')
-  const [tab, setTab] = useStored<'console' | 'manage' | 'chat' | 'mods' | 'datapacks' | 'addons' | 'resources' | 'scripts' | 'maps' | 'backup' | 'files'>(`tab:${folderPath}`, 'console') // 서버마다 마지막 탭을 기억한다
+  const [tab, setTab] = useStored<'console' | 'manage' | 'chat' | 'mods' | 'plugins' | 'datapacks' | 'addons' | 'resources' | 'scripts' | 'maps' | 'backup' | 'files'>(`tab:${folderPath}`, 'console') // 서버마다 마지막 탭을 기억한다
   const [bedrockUpdate, setBedrockUpdate] = useState<BedrockUpdateInfo | null>(null)
   const bedrock = software === 'bedrock' // 배드락은 관리·채팅·데이터팩·모드 탭 대신 애드온 탭을 쓴다
   const BEDROCK_PACK_TABS = ['addons', 'resources', 'scripts', 'maps'] // 배드락: 애드온·리소스 팩·스크립트·맵을 탭으로 나눈다
   const shownTab = bedrock ? (['console', 'manage', ...BEDROCK_PACK_TABS, 'backup', 'files'].includes(tab) ? tab : 'console') : ['addons', 'resources', 'scripts'].includes(tab) ? 'console' : tab
-  const [modKind, setModKind] = useState<ModKindInfo | null>(null) // 바닐라면 null → 모드 탭 없음
+  const [modKinds, setModKinds] = useState<ModKindInfo[]>([]) // 바닐라면 비어 있음 → 모드 탭 없음. 하이브리드(Arclight)는 모드·플러그인 둘
+  const modKind = modKinds[0] ?? null
   const consoleRef = useRef<HTMLPreElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const [search, setSearch] = useState('')
@@ -152,7 +155,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
   const resumeStart = useRef(false) // 켜기 전 점검에서 끌지 묻는 창을 띄웠으면, 답한 뒤 이어서 켠다
 
   useEffect(() => {
-    window.api.modKind(folderPath).then(setModKind)
+    window.api.modKinds(folderPath).then(setModKinds)
   }, [folderPath])
 
   // 배드락은 게임이 먼저 올라가면 접속이 안 되므로 새 서버 버전이 있는지 알아 둔다 (서버가 바뀌거나 업데이트되면 다시 본다)
@@ -415,9 +418,10 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
               <span className={`dot ${state}`} />
               {STATE_LABEL[state]}
             </span>
-            <span>
+            {/* 자리가 모자라면 이 글자가 줄어든다 (접속 주소 칸은 안 줄어든다). 전체는 마우스를 올리면 보인다 */}
+            <span className="sw-ver" title={`${SOFTWARE_INFO[software].label} ${server.mcVersion}${server.loaderVersion ? ` · ${versionLabel(software, server.loaderVersion)}` : ''}`}>
               {SOFTWARE_INFO[software].label} {server.mcVersion}
-              {server.loaderVersion ? ` · ${server.loaderVersion}` : ''}
+              {server.loaderVersion ? ` · ${versionLabel(software, server.loaderVersion)}` : ''}
             </span>
             <InviteBox folderPath={folderPath} bedrock={bedrock} />
             {bedrock && bedrockUpdate?.available && (
@@ -506,11 +510,15 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
               {label}
             </button>
           ))}
-        {modKind && (
-          <button className={tab === 'mods' ? 'active' : ''} onClick={() => setTab('mods')}>
-            {modKind.kind}
-          </button>
-        )}
+        {/* 첫째 탭은 늘 'mods' (플러그인 서버도 이 탭이 플러그인 탭이다). 하이브리드의 둘째(플러그인)는 'plugins' */}
+        {modKinds.map((k, i) => {
+          const id = i === 0 ? 'mods' : 'plugins'
+          return (
+            <button key={id} className={tab === id ? 'active' : ''} onClick={() => setTab(id)}>
+              {k.kind}
+            </button>
+          )
+        })}
         {!bedrock && (
           <button className={tab === 'datapacks' ? 'active' : ''} onClick={() => setTab('datapacks')}>
             데이터팩
@@ -524,8 +532,10 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
         </button>
       </nav>
 
-      {bedrock && BEDROCK_PACK_TABS.includes(shownTab) ? (
-        <AddonsTab key={shownTab} folderPath={folderPath} serverOn={on} kind={shownTab === 'resources' ? 'resource' : shownTab === 'scripts' ? 'script' : shownTab === 'maps' ? 'map' : 'addon'} />
+      {bedrock && shownTab === 'maps' ? (
+        <BedrockWorldTab folderPath={folderPath} serverOn={on} />
+      ) : bedrock && BEDROCK_PACK_TABS.includes(shownTab) ? (
+        <AddonsTab key={shownTab} folderPath={folderPath} serverOn={on} kind={shownTab === 'resources' ? 'resource' : shownTab === 'scripts' ? 'script' : 'addon'} />
       ) : shownTab === 'maps' ? (
         <MapTab folderPath={folderPath} serverOn={on} mcVersion={server.mcVersion} />
       ) : shownTab === 'datapacks' ? (
@@ -539,7 +549,9 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
       ) : shownTab === 'manage' ? (
         bedrock ? <BedrockManageTab folderPath={folderPath} running={state === 'running'} /> : <ManageTab folderPath={folderPath} running={state === 'running'} />
       ) : tab === 'mods' && modKind ? (
-        <ModsTab folderPath={folderPath} kind={modKind} serverOn={on} />
+        <ModsTab key="mods" folderPath={folderPath} kind={modKind} serverOn={on} />
+      ) : tab === 'plugins' && modKinds[1] ? (
+        <ModsTab key="plugins" folderPath={folderPath} kind={modKinds[1]} serverOn={on} />
       ) : (
         <div className="console-card">
           {log.length > 0 && (

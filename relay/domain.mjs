@@ -1,6 +1,6 @@
 // 이름 주소 중계: 앱이 "내서버" 같은 이름을 정하면 Cloudflare DNS에 내서버.<DOMAIN_BASE> 기록을 만들어 준다.
 // 환경 변수: CF_DNS_TOKEN(DNS 편집 권한만 있는 Cloudflare 키), CF_ZONE_ID(도메인의 구역 번호), DOMAIN_BASE(기본 cubepanel.kr)
-//   선택: DNS_LIMIT(영역의 기록 개수 한도, 기본 200), STALE_ONLINE_HOURS(켜 둔 채로 이만큼 소식이 없으면 기록을 치운다, 기본 12)
+//   선택: DNS_LIMIT(영역의 기록 개수 한도, 기본 200), STALE_ONLINE_HOURS(켜 둔 채로 이만큼 소식이 없으면 기록을 치운다, 기본 3)
 // 연결(binding): DB = Cloudflare D1 데이터베이스. 없으면 예전 방식(DNS 기록의 메모로만 주인을 가림)으로 동작한다
 //
 // 구조
@@ -23,7 +23,9 @@ const RESERVED = new Set([
 const TUNNEL_HOST_RE = /^([a-z0-9-]+\.)+(joinmc\.link|ply\.gg|playit\.gg|playit\.cloud)$/ // 터널로 보낼 때 허용하는 주소 (남의 사이트로 보내지 못하게)
 const DEFAULT_LIMIT = 200 // 무료 요금제의 영역당 DNS 기록 개수 (사이트 자체 기록도 포함)
 const IDLE_DAYS = 30 // 켜지 않은 채 이만큼 지나면 이름 예약이 풀린다
-const DEFAULT_ONLINE_STALE_HOURS = 12
+const DEFAULT_ONLINE_STALE_HOURS = 3 // 앱은 서버가 켜진 동안 20분마다 소식을 보내므로 3시간이면 충분하다
+const MAX_STALE_ROWS = 300 // 소식이 끊긴 서버를 한 번에 살펴보는 수 (DNS 기록이 이미 없는 행이 앞을 막아도 뒤의 것까지 닿게)
+const MAX_ORPHAN_FIX = 100 // DNS 기록이 이미 없는데 "켜짐"으로 남은 예약을 한 번에 고치는 수
 const BEAT_MS = 15 * 60_000 // 이 안에 다시 불린 서버는 D1에 또 쓰지 않는다 (앱이 주기적으로 부른다)
 const MAX_SWEEP_DELETES = 12 // 한 번에 치우는 기록 수 (요청 하나가 쓸 수 있는 외부 요청 수를 넘지 않게)
 const MAX_SWEEP_PAGES = 6
@@ -173,7 +175,8 @@ export async function handleDomain(req, env, doFetch = fetch, now = Date.now(), 
 
   // 켜 둔 채로 소식이 끊긴 기록을 치워 자리를 만든다. 치운 기록 수를 돌려준다. 이름 예약은 지우지 않는다 (서버를 켜면 다시 만든다)
   async function sweep(needed) {
-    const staleRows = new Map((await store.staleOnline(now - onlineStaleMs, MAX_SWEEP_DELETES)).map((r) => [r.name, r]))
+    // 소식이 끊긴 서버를 넉넉히 가져온다. 가장 오래된 몇 개의 DNS 기록이 이미 없어도 그 뒤의 것까지 치울 수 있어야 한다
+    const staleRows = new Map((await store.staleOnline(now - onlineStaleMs, MAX_STALE_ROWS)).map((r) => [r.name, r]))
     const ours = []
     for (let page = 1; page <= MAX_SWEEP_PAGES; page++) {
       const list = (await cf('GET', `?comment.startswith=cp:&per_page=100&page=${page}`)).result ?? []
@@ -188,6 +191,16 @@ export async function handleDomain(req, env, doFetch = fetch, now = Date.now(), 
       g.records.push(r)
       g.used = Math.max(g.used, lastUsed(r))
       groups.set(n, g)
+    }
+    // "켜짐"으로 남았는데 DNS 기록은 이미 없는 예약은 꺼짐으로 고쳐 둔다 (그대로 두면 계속 후보로 남는다)
+    const haveRecords = new Set([...groups.keys()].map((n) => n.replace(`.${base}`, '')))
+    let fixed = 0
+    for (const short of staleRows.keys()) {
+      if (fixed >= MAX_ORPHAN_FIX) break
+      if (haveRecords.has(short) || `${short}.${base}` === host) continue
+      await store.markOffline(short)
+      staleRows.delete(short)
+      fixed++
     }
     // D1에 예약이 없는 옛 기록은 마지막으로 쓴 때로 판단한다
     const reserved = await store.existing([...groups.keys()].map((n) => n.replace(`.${base}`, '')))
@@ -235,7 +248,11 @@ export async function handleDomain(req, env, doFetch = fetch, now = Date.now(), 
       row = null
     }
     // 쓸 수 있는 이름인지만 알려 준다 (서버를 만들기 전에 미리 보여 주려고). 아무것도 쓰지 않는다
-    if (action === 'check') return json({ ok: true, free: !row && have.length === 0 })
+    // 이름이 비어 있어도 DNS 기록을 만들 자리가 없으면 full로 알린다 (확인에서는 "사용 가능"인데 만들 때 거절되는 일이 없게)
+    if (action === 'check') {
+      const free = !row && have.length === 0
+      return json({ ok: true, free, ...(free && !(await hasRoom(1)) && { full: true }) })
+    }
 
     // 이 이름의 주인: D1의 예약, 없으면 DNS 기록의 메모(예전 방식). 우리가 만들지 않은 기록이 있으면 남의 이름이다
     let owner = row?.owner ?? null

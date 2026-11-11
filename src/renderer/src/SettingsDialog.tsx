@@ -50,16 +50,7 @@ const SECTIONS: Section[] = [
     fields: [
       { key: 'motd', label: '서버 설명', desc: '마인크래프트 서버 목록에서 서버 이름 아래에 보이는 문구예요. §a 같은 색 코드도 쓸 수 있어요.', type: 'text', def: 'A Minecraft Server', placeholder: '우리들의 서버' },
       { key: 'allow-flight', label: '비행 허용', desc: '비행 기능이 있는 모드·플러그인을 쓸 때 켜 주세요. 끄면 날아다니는 사람을 서버가 내보내요.', type: 'bool', def: false },
-      { key: 'announce-player-achievements', label: '업적 알림', desc: '업적을 달성하면 채팅에 알려 줘요.', type: 'bool', def: true, legacy: true },
-      {
-        key: 'op-permission-level', label: '관리자 권한 단계', desc: '관리자(OP)가 쓸 수 있는 명령어 범위예요. 보통 4(전부)로 두면 돼요.', type: 'select', def: '4',
-        options: [
-          { value: '1', label: '1 · 스폰 보호 무시' },
-          { value: '2', label: '2 · 치트 명령어' },
-          { value: '3', label: '3 · 플레이어 관리' },
-          { value: '4', label: '4 · 전부 (서버 끄기 포함)' }
-        ]
-      }
+      { key: 'announce-player-achievements', label: '업적 알림', desc: '업적을 달성하면 채팅에 알려 줘요.', type: 'bool', def: true, legacy: true }
     ]
   },
   {
@@ -321,6 +312,12 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
           <span>{gb(settings.minMemoryMb)}</span>
           <span>{gb(settings.maxMemoryMb)}</span>
         </div>
+        {/* 너무 적으면 청크를 못 불러와 서버가 먹통이 되고 핑이 튄다 (1GB로 페이퍼를 돌리다 멈춘 제보) */}
+        {software !== 'bedrock' && mem < 2048 && (
+          <p className="warn-text mem-warn">
+            {software === 'vanilla' ? '⚠ 2GB보다 적으면 서버가 자주 멈출 수 있어요. 2GB 이상을 권장해요.' : '⚠ 2GB보다 적으면 서버가 자주 멈출 수 있어요. 플러그인·모드 서버는 4GB 이상을 권장해요.'}
+          </p>
+        )}
         {(() => {
           // 윈도우와 다른 프로그램(마인크래프트 게임 등)이 쓸 몫이 4GB보다 적게 남으면 경고한다
           const left = settings.totalMemoryMb - mem
@@ -696,6 +693,16 @@ function AutomationRows({ value: a, changed, port, portClash, onGoPort, onChange
             checked={a.autoStart}
             onChange={(e) => (e.target.checked && portClash.length ? setClash(true) : onChange({ autoStart: e.target.checked }))}
           />
+          <span />
+        </label>
+      </div>
+      <div className={`setting-row ${'startBackup' in changed ? 'changed' : ''}`}>
+        <div className="setting-text">
+          <div className="setting-label">켜기 전에 자동 백업</div>
+          <div className="setting-desc">서버를 켤 때마다 지난번 이후 바뀐 월드를 백업해 둬요. 월드가 커서 켜는 데 오래 걸리면 끌 수 있어요. 끄면 월드가 깨졌을 때 되돌릴 백업이 없을 수 있어요.</div>
+        </div>
+        <label className="switch">
+          <input type="checkbox" checked={a.startBackup} onChange={(e) => onChange({ startBackup: e.target.checked })} />
           <span />
         </label>
       </div>

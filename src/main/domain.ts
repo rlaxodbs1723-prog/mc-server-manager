@@ -75,11 +75,12 @@ async function call(body: Record<string, unknown>, timeoutMs = 15000): Promise<{
   return out
 }
 
-// 서버를 만들기 전에 이 이름을 쓸 수 있는지 확인한다 (쓸 수 있으면 true). 아무것도 만들지 않는다
-export async function checkDomainName(rawName: string): Promise<boolean> {
+// 서버를 만들기 전에 이 이름을 쓸 수 있는지 확인한다. 'free' 쓸 수 있음, 'taken' 이미 쓰는 이름, 'full' 이름은 비었지만 지금은 새 주소를 만들 자리가 없음. 아무것도 만들지 않는다
+export async function checkDomainName(rawName: string): Promise<'free' | 'taken' | 'full'> {
   const name = cleanDomainName(rawName)
-  const out = (await call({ action: 'check', name })) as { free?: boolean }
-  return out.free === true
+  const out = (await call({ action: 'check', name })) as { free?: boolean; full?: boolean }
+  if (out.free !== true) return 'taken'
+  return out.full === true ? 'full' : 'free'
 }
 
 export function getDomain(folderPath: string): { name: string; host: string } | null {
@@ -104,6 +105,7 @@ export async function releaseDomain(folderPath: string): Promise<void> {
   if (!d) return
   await call({ action: 'release', name: d.name, key: d.key })
   patchServerInfo(folderPath, { domain: undefined })
+  problems.delete(folderPath)
 }
 
 // 터널 주소("xxx.joinmc.link" 또는 "xxx.ply.gg:12345")에서 접속할 호스트와 포트를 알아낸다.
@@ -133,11 +135,18 @@ export async function setDomainOffline(folderPath: string): Promise<void> {
   }
 }
 
+// 가장 최근 갱신이 실패했으면 그 이유 (접속 주소 옆에 보여 주려고). 성공하면 지운다
+const problems = new Map<string, string>()
+export const domainProblem = (folderPath: string): string | undefined => problems.get(folderPath)
+
 // 서버를 켤 때: 이름 주소가 있으면 현재 IP·포트로 갱신하고 주소(host)를 돌려준다. 없거나 실패하면 null (서버 열기에는 영향이 없다)
 // tunnelAddress가 있으면 IP 대신 그 터널로 이어 준다
 export async function refreshDomain(folderPath: string, tunnelAddress?: string): Promise<string | null> {
   const d = readServerInfo(folderPath).domain
-  if (!d) return null
+  if (!d) {
+    problems.delete(folderPath)
+    return null
+  }
   try {
     const bedrock = isBedrock(folderPath)
     // 배드락은 터널 주소로 이름을 이어 줄 수 없다 (SRV를 못 읽는다)
@@ -148,8 +157,10 @@ export async function refreshDomain(folderPath: string, tunnelAddress?: string):
         ? { action: 'claim', name: d.name, key: d.key, port: t.port, target: t.target }
         : { action: 'claim', name: d.name, key: d.key, port: serverPort(folderPath), ...(bedrock && { bedrock: true }) }
     )
+    problems.delete(folderPath)
     return out.host ?? `${d.name}.${DOMAIN_BASE}`
-  } catch {
+  } catch (e) {
+    problems.set(folderPath, e instanceof Error ? e.message : String(e))
     return null
   }
 }

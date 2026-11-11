@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { SOFTWARE_INFO, type LoaderVersion, type McVersion, type Software } from '../../shared-types'
+import { arclightLabel, SOFTWARE_INFO, type LoaderVersion, type McVersion, type Software } from '../../shared-types'
 import Select from './Select'
 import { cleanError } from './util'
 
@@ -21,7 +21,8 @@ interface Props {
 }
 
 const MODDED: Software[] = ['fabric', 'quilt', 'forge', 'neoforge']
-export const versionLabel = (software: Software, v?: string): string => (v ? (software === 'paper' || software === 'purpur' ? `#${v}` : v) : '')
+export const versionLabel = (software: Software, v?: string): string =>
+  v ? (software === 'paper' || software === 'purpur' ? `#${v}` : software === 'arclight' ? arclightLabel(v) : v) : ''
 
 // 서버 설정 > 버전: 같은 서버 종류 안에서 마인크래프트 버전과 로더(빌드) 버전을 고른다
 export default function VersionSection({ serverOn, software, mcVersion, loaderVersion, picked, onPick }: Props) {
@@ -34,9 +35,14 @@ export default function VersionSection({ serverOn, software, mcVersion, loaderVe
   const [error, setError] = useState('')
 
   useEffect(() => {
-    window.api
-      .getVersions(true)
-      .then((list) => setVersions(list.filter((v) => v.type === 'release' || v.id === mcVersion)))
+    Promise.all([window.api.getVersions(true), software === 'arclight' ? window.api.arclightMcVersions() : null])
+      .then(([list, arclight]) =>
+        setVersions(
+          arclight
+            ? [...new Set([...arclight, mcVersion])].map((id) => list.find((v) => v.id === id) ?? { id, type: 'release' as const, url: '', releaseTime: '' })
+            : list.filter((v) => v.type === 'release' || v.id === mcVersion)
+        )
+      )
       .catch((e) => setError(`버전 목록을 불러오지 못했어요. (${cleanError(e)})`))
   }, [mcVersion])
 
@@ -54,8 +60,11 @@ export default function VersionSection({ serverOn, software, mcVersion, loaderVe
     setLoaders(null)
     window.api
       .getLoaderVersions(software, version)
-      .then((list) => {
+      .then((all) => {
         if (!alive) return
+        // Arclight는 밑바탕 로더(NeoForge·Fabric·Forge)를 바꾸면 깔아 둔 모드가 맞지 않아서, 같은 로더의 빌드만 보여 준다
+        const base = software === 'arclight' ? /^(neoforge|fabric|forge)-/.exec(loaderVersion ?? '')?.[1] : null
+        const list = base ? all.filter((l) => l.version.startsWith(`${base}-`)) : all
         setLoaders(list)
         const keep = list.some((l) => l.version === loader) ? loader : version === mcVersion && loaderVersion && list.some((l) => l.version === loaderVersion) ? loaderVersion : (list[0]?.version ?? '')
         report(version, keep, list.length > 0)

@@ -20,6 +20,8 @@ export function sameNameOtherSite(installed: { projectId: string; title: string 
 }
 
 const PAGE = 20
+const CF_GRACE_MS = 3000 // Modrinth 결과가 온 뒤 CurseForge를 더 기다리는 시간
+const PREFER_GRACE_MS = 1500 // 양쪽에 다 있는 모드의 최신 비교를 기다리는 시간
 
 export async function mergedSearch<T extends { title: string; author?: string }>(
   page: number,
@@ -36,7 +38,17 @@ export async function mergedSearch<T extends { title: string; author?: string }>
   if (!useMr && !useCf) throw new Error('CurseForge API 키가 없어서 CurseForge에서 찾을 수 없어요.')
   const none = Promise.resolve({ total: 0, hits: [] as T[] })
   // 한쪽이 안 되면 다른 쪽 결과만 보여 준다. 둘 다 안 될 때만 오류
-  const [mr, cr] = await Promise.allSettled([useMr ? fromModrinth() : none, useCf ? fromCurseForge() : none])
+  const settle = <R>(p: Promise<R>): Promise<PromiseSettledResult<R>> =>
+    p.then((value) => ({ status: 'fulfilled' as const, value }), (reason) => ({ status: 'rejected' as const, reason }))
+  const mrP = settle(useMr ? fromModrinth() : none)
+  const cfP = settle(useCf ? fromCurseForge() : none)
+  const mr = await mrP
+  // CurseForge는 한 번에 몇~십몇 초씩 걸릴 때가 있다. Modrinth 결과가 왔으면 조금만 더 기다리고, 늦으면 Modrinth 결과부터 보여 준다
+  // (CurseForge만 찾거나 Modrinth가 실패했으면 끝까지 기다린다)
+  const cr =
+    useMr && useCf && mr.status === 'fulfilled'
+      ? await Promise.race([cfP, new Promise<PromiseSettledResult<{ total: number; hits: T[] }>>((r) => setTimeout(() => r({ status: 'rejected', reason: new Error('slow') }), CF_GRACE_MS))])
+      : await cfP
   if (mr.status === 'rejected' && (cr.status === 'rejected' || !useCf)) throw mr.reason
   if (cr.status === 'rejected' && !useMr) throw cr.reason
   const m = mr.status === 'fulfilled' ? mr.value : { total: 0, hits: [] as T[] }
@@ -47,7 +59,9 @@ export async function mergedSearch<T extends { title: string; author?: string }>
     m.hits.map(async (x) => {
       const twin = c.hits.find((h) => sameMod(x, h))
       if (!twin || !preferCf) return null
-      return (await preferCf(x, twin).catch(() => false)) ? twin : null
+      // 어느 쪽이 최신인지 묻는 것도 CurseForge가 늦으면 기다리지 않는다 (모르면 Modrinth 쪽)
+      const prefer = await Promise.race([preferCf(x, twin).catch(() => false), new Promise<boolean>((r) => setTimeout(() => r(false), PREFER_GRACE_MS))])
+      return prefer ? twin : null
     })
   )
   const hits: (T & { source: 'modrinth' | 'curseforge' })[] = []

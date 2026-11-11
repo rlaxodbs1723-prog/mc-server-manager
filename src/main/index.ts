@@ -3,23 +3,24 @@ import { getUpdateState, initUpdater, installUpdateNow } from './updater'
 import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, Notification, screen, shell, Tray } from 'electron'
 import fs from 'fs'
 import { join, resolve, sep } from 'path'
-import { EULA_URL, friendlyError, SOFTWARE_INFO, type BedrockAction, type BedrockKind, type CreateServerOptions, type BackupSettings, type ManageAction, type ModpackBrowseOptions, type SearchSite, type MapSort, type Progress, type SaveSettings, type ServerEvent, type Software } from '../shared-types'
+import { EULA_URL, friendlyError, SOFTWARE_INFO, type BedrockAction, type BedrockKind, type CreateServerOptions, type BackupSettings, type ManageAction, type ModPart, type ModpackBrowseOptions, type SearchSite, type MapSort, type Progress, type SaveSettings, type ServerEvent, type Software } from '../shared-types'
 import { CreateEta } from './eta'
 import { listGameRules, setGameRule } from './gamerules'
 import { getHardcore, setHardcore } from './hardcore'
 import { getGameRuleLang } from './lang'
-import { checkReachable, closeAllPorts, getInvite, initInvite, recheckInvite, useTunnel } from './invite'
+import { applyDomain, checkReachable, closeAllPorts, getInvite, initInvite, recheckInvite, setInviteDomain, useTunnel } from './invite'
 import { checkDomainName, claimDomain, getDomain, releaseDomain } from './domain'
 import { detectServer } from './importserver'
 import { addAddonFile, isBedrockFolder, latestBedrock, listAddons, removeAddon, setAddonEnabled } from './bedrock'
 import { allowLoopback, getLoopbackState } from './bedrockloopback'
 import { getBedrockManage, runBedrockAction } from './bedrockmanage'
+import { getBedrockExperiments, setBedrockExperiment, setBedrockHardcore } from './bedrockexperiments'
 import { checkBedrockUpdate, importBedrockWorld, installBedrockHit, updateBedrock } from './bedrockops'
 import { searchBedrockStore } from './curseforge'
 import { track as trackUsage } from './usage'
 import { getClaimUrl, openClaimPage, prepareClaim, tunnelLinked, unlinkTunnel } from './tunnel'
 import { getInbox } from './inbox'
-import { getLoaderVersions } from './loaders'
+import { arclightMcVersions, getLoaderVersions } from './loaders'
 import * as mods from './mods'
 import { CancelledError, cancelTask, runCancellable, throwIfCancelled } from './cancel'
 import { notify } from './notify'
@@ -153,11 +154,13 @@ function createWindow(): void {
     ...at,
     minWidth,
     minHeight,
-    frame: false,
+    // 맥은 기본 신호등 버튼을 쓰고(왼쪽 위), 윈도우는 앱이 직접 그린 버튼을 쓴다
+    frame: process.platform === 'darwin',
+    ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset' as const, trafficLightPosition: { x: 16, y: 14 } } : {}),
     show: false,
     backgroundColor: '#101013', // 화면이 뜨기 전 번쩍이는 흰 화면 방지
     title: 'MC CubePanel',
-    icon: resourcePath('icon.ico'),
+    icon: resourcePath(process.platform === 'win32' ? 'icon.ico' : 'icon.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -220,6 +223,7 @@ function checkServerFolder(folderPath: string): string {
 }
 
 ipcMain.handle('getVersions', (_event, includeSnapshots: boolean) => getVersions(includeSnapshots))
+ipcMain.handle('arclightMcVersions', () => arclightMcVersions())
 
 ipcMain.handle('getLoaderVersions', (_event, software: Software, mcVersion: string) => {
   if (software === 'vanilla' || !SOFTWARE_INFO[software]) return []
@@ -397,6 +401,11 @@ ipcMain.handle('updateBedrock', (event, folderPath: string) => {
 })
 ipcMain.handle('getBedrockLoopback', () => getLoopbackState())
 ipcMain.handle('allowBedrockLoopback', () => allowLoopback())
+ipcMain.handle('getBedrockExperiments', (_event, folderPath: string) => getBedrockExperiments(checkServerFolder(folderPath)))
+ipcMain.handle('setBedrockHardcore', (_event, folderPath: string, on: boolean) => setBedrockHardcore(checkServerFolder(folderPath), !!on))
+ipcMain.handle('setBedrockExperiment', (_event, folderPath: string, id: string, on: boolean) =>
+  setBedrockExperiment(checkServerFolder(folderPath), String(id), !!on)
+)
 ipcMain.handle('getBedrockManage', (_event, folderPath: string) => getBedrockManage(checkServerFolder(folderPath)))
 ipcMain.handle('bedrockAction', (_event, folderPath: string, action: BedrockAction) => runBedrockAction(checkServerFolder(folderPath), action))
 ipcMain.handle('pickServerFolder', async (event) => {
@@ -406,6 +415,7 @@ ipcMain.handle('pickServerFolder', async (event) => {
   return res.canceled || !res.filePaths[0] ? null : res.filePaths[0]
 })
 ipcMain.handle('detectServer', (_event, folderPath: string) => detectServer(String(folderPath), serversRoot()))
+ipcMain.handle('peekDomain', (_event, folderPath: string) => getDomain(checkServerFolder(folderPath)))
 ipcMain.handle('getDomain', async (_event, folderPath: string) => {
   const target = checkServerFolder(folderPath)
   const have = getDomain(target)
@@ -420,7 +430,20 @@ ipcMain.handle('getDomain', async (_event, folderPath: string) => {
     return null
   }
 })
-ipcMain.handle('claimDomain', (_event, folderPath: string, name: string) => claimDomain(checkServerFolder(folderPath), String(name)))
+ipcMain.handle('claimDomain', async (_event, folderPath: string, name: string) => {
+  const target = checkServerFolder(folderPath)
+  const host = await claimDomain(target, String(name))
+  applyDomain(target) // 켜져 있으면 접속 주소를 바로 새 이름으로
+  return host
+})
+// 맥: 새 버전을 직접 받는 페이지 (주소는 이 하나만 연다)
+ipcMain.handle('openReleasePage', () => shell.openExternal('https://github.com/rlaxodbs1723-prog/mc-server-manager/releases/latest'))
+ipcMain.handle('releaseDomain', async (_event, folderPath: string) => {
+  const target = checkServerFolder(folderPath)
+  await releaseDomain(target)
+  patchServerInfo(target, { domainWish: undefined }) // 만들다 만 이름 소원도 같이 비운다
+  setInviteDomain(target, undefined) // 접속 주소를 IP로 되돌린다
+})
 ipcMain.handle('getMemoryRange', () => memoryRange())
 ipcMain.handle('recheckInvite', (_event, folderPath: string) => recheckInvite(checkServerFolder(folderPath)))
 ipcMain.handle('useTunnel', (_event, folderPath: string) => useTunnel(checkServerFolder(folderPath)))
@@ -447,9 +470,9 @@ ipcMain.handle('saveSettings', (_event, folderPath: string, settings: SaveSettin
 )
 ipcMain.handle('getHardcore', (_event, folderPath: string) => getHardcore(checkServerFolder(folderPath)))
 ipcMain.handle('setHardcore', (_event, folderPath: string, on: boolean) => setHardcore(checkServerFolder(folderPath), !!on))
-ipcMain.handle('resetWorld', (_event, folderPath: string) => {
+ipcMain.handle('resetWorld', (_event, folderPath: string, keepPacks?: boolean) => {
   const target = checkServerFolder(folderPath)
-  return withLock(target, '월드 리셋', () => resetWorld(target))
+  return withLock(target, '월드 리셋', () => resetWorld(target, keepPacks !== false))
 })
 ipcMain.handle('listBackups', (_event, folderPath: string) => listBackups(checkServerFolder(folderPath)))
 ipcMain.handle('createBackup', (_event, folderPath: string) => {
@@ -561,12 +584,13 @@ ipcMain.handle('removeWhitelist', (_event, folderPath: string, name: string) =>
   whitelist.removeWhitelist(checkServerFolder(folderPath), String(name))
 )
 ipcMain.handle('modKind', (_event, folderPath: string) => mods.modKind(checkServerFolder(folderPath)))
-ipcMain.handle('searchMods', (_event, folderPath: string, query: string, page?: number, site?: string) =>
-  mods.search(checkServerFolder(folderPath), String(query ?? ''), Number(page) || 0, siteOf(site))
+ipcMain.handle('modKinds', (_event, folderPath: string) => mods.modKinds(checkServerFolder(folderPath)))
+ipcMain.handle('searchMods', (_event, folderPath: string, query: string, page?: number, site?: string, part?: ModPart) =>
+  mods.inPart(part, () => mods.search(checkServerFolder(folderPath), String(query ?? ''), Number(page) || 0, siteOf(site)))
 )
-ipcMain.handle('installMod', (_event, folderPath: string, projectId: string) => {
+ipcMain.handle('installMod', (_event, folderPath: string, projectId: string, part?: ModPart) => {
   const target = checkServerFolder(folderPath)
-  return withLock(target, '모드 설치', () => mods.install(target, String(projectId)))
+  return withLock(target, '모드 설치', () => mods.inPart(part, () => mods.install(target, String(projectId))))
 })
 ipcMain.handle('listDatapacks', (_event, folderPath: string) => datapacks.list(checkServerFolder(folderPath)))
 ipcMain.handle('identifyDatapacks', (_event, folderPath: string) => datapacks.identify(checkServerFolder(folderPath)).catch(() => null))
@@ -583,33 +607,39 @@ ipcMain.handle('setDatapackVersion', (_event, folderPath: string, name: string, 
 )
 ipcMain.handle('removeDatapack', (_event, folderPath: string, name: string) => datapacks.remove(checkServerFolder(folderPath), String(name)))
 ipcMain.handle('addDatapackFile', (_event, folderPath: string, file: string) => datapacks.addFile(checkServerFolder(folderPath), String(file)))
-ipcMain.handle('modVersions', (_event, folderPath: string, fileName: string) => mods.versionsOf(checkServerFolder(folderPath), String(fileName)))
-ipcMain.handle('setModVersion', (_event, folderPath: string, fileName: string, versionId: string) => {
+ipcMain.handle('modVersions', (_event, folderPath: string, fileName: string, part?: ModPart) =>
+  mods.inPart(part, () => mods.versionsOf(checkServerFolder(folderPath), String(fileName)))
+)
+ipcMain.handle('setModVersion', (_event, folderPath: string, fileName: string, versionId: string, part?: ModPart) => {
   const target = checkServerFolder(folderPath)
-  return withLock(target, '모드 버전 바꾸기', () => mods.setVersion(target, String(fileName), String(versionId)))
+  return withLock(target, '모드 버전 바꾸기', () => mods.inPart(part, () => mods.setVersion(target, String(fileName), String(versionId))))
 })
-ipcMain.handle('addModFile', (_event, folderPath: string, file: string) => mods.addFile(checkServerFolder(folderPath), String(file)))
+ipcMain.handle('addModFile', (_event, folderPath: string, file: string, part?: ModPart) =>
+  mods.inPart(part, () => mods.addFile(checkServerFolder(folderPath), String(file)))
+)
 ipcMain.handle('exportClientPack', (event, folderPath: string, format: string) =>
   mods.exportClientPack(checkServerFolder(folderPath), format === 'zip' ? 'zip' : 'mrpack', BrowserWindow.fromWebContents(event.sender))
 )
-ipcMain.handle('listMods', (_event, folderPath: string) => mods.list(checkServerFolder(folderPath)))
+ipcMain.handle('listMods', (_event, folderPath: string, part?: ModPart) => mods.inPart(part, () => mods.list(checkServerFolder(folderPath))))
 ipcMain.handle('offSuggestions', (_event, folderPath: string) => mods.offSuggestions(checkServerFolder(folderPath)))
 ipcMain.handle('applyOffSuggestions', (_event, folderPath: string, fileNames: string[]) => {
   const target = checkServerFolder(folderPath)
   return withLock(target, '모드 끄기', () => mods.applyOffSuggestions(target, Array.isArray(fileNames) ? fileNames.map(String) : []))
 })
 // 기록 없는 모드를 Modrinth에서 알아본다 (새로 알아낸 게 있으면 true → 화면이 목록을 다시 읽는다)
-ipcMain.handle('identifyMods', (_event, folderPath: string) => mods.identify(checkServerFolder(folderPath)).catch(() => null))
-ipcMain.handle('checkModUpdates', (_event, folderPath: string) => mods.checkUpdates(checkServerFolder(folderPath)))
-ipcMain.handle('updateMods', (_event, folderPath: string, fileNames: string[]) => {
-  const target = checkServerFolder(folderPath)
-  return withLock(target, '모드 업데이트', () => mods.updateMods(target, Array.isArray(fileNames) ? fileNames.map(String) : []))
-})
-ipcMain.handle('removeMod', (_event, folderPath: string, fileName: string) =>
-  mods.remove(checkServerFolder(folderPath), String(fileName))
+ipcMain.handle('identifyMods', (_event, folderPath: string, part?: ModPart) =>
+  mods.inPart(part, () => mods.identify(checkServerFolder(folderPath))).catch(() => null)
 )
-ipcMain.handle('setModEnabled', (_event, folderPath: string, fileName: string, enabled: boolean) =>
-  mods.setEnabled(checkServerFolder(folderPath), String(fileName), !!enabled)
+ipcMain.handle('checkModUpdates', (_event, folderPath: string, part?: ModPart) => mods.inPart(part, () => mods.checkUpdates(checkServerFolder(folderPath))))
+ipcMain.handle('updateMods', (_event, folderPath: string, fileNames: string[], part?: ModPart) => {
+  const target = checkServerFolder(folderPath)
+  return withLock(target, '모드 업데이트', () => mods.inPart(part, () => mods.updateMods(target, Array.isArray(fileNames) ? fileNames.map(String) : [])))
+})
+ipcMain.handle('removeMod', (_event, folderPath: string, fileName: string, part?: ModPart) =>
+  mods.inPart(part, () => mods.remove(checkServerFolder(folderPath), String(fileName)))
+)
+ipcMain.handle('setModEnabled', (_event, folderPath: string, fileName: string, enabled: boolean, part?: ModPart) =>
+  mods.inPart(part, () => mods.setEnabled(checkServerFolder(folderPath), String(fileName), !!enabled))
 )
 
 ipcMain.handle('copyText', (_event, text: string) => clipboard.writeText(String(text)))
@@ -682,7 +712,16 @@ app.whenReady().then(() => {
   initUpdater() // 새 버전 확인 (설치한 앱에서만)
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    else showWindow()
   })
+})
+
+// 맥: Cmd+Q나 Dock의 "종료"도 켜진 서버가 있으면 확인을 받는다
+app.on('before-quit', (event) => {
+  if (process.platform === 'darwin' && !quitting) {
+    event.preventDefault()
+    requestQuit()
+  }
 })
 
 app.on('window-all-closed', () => {

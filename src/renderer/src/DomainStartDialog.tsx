@@ -45,7 +45,7 @@ export default function DomainStartDialog({
         <button className="btn" onClick={onSkip} disabled={busy}>
           건너뛰고 켜기
         </button>
-        <button className="btn primary" onClick={save} disabled={busy || domain.blocked}>
+        <button className="btn primary" onClick={save} disabled={busy || domain.blocked || !domain.domainName}>
           {busy && <span className="spinner" />}
           이름 정하고 켜기
         </button>

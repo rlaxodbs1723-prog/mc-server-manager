@@ -4,10 +4,11 @@ import fs from 'fs'
 import path from 'path'
 import type { Difficulty, GameMode, ManageAction, ManageInfo } from '../shared-types'
 import { readProperties, writeProperties } from './properties'
-import { getPlayers, getState, sendCommand } from './runner'
+import { getPlayers, getState, sendCommand, syncPlayers } from './runner'
 import { readServerInfo } from './servers'
 
-const PLAYER_NAME = /^[A-Za-z0-9_]{3,16}$/
+// Geyser(배드락 친구) 이름은 앞에 점·별이 붙는다. @a 같은 선택자나 공백은 막는다 (명령어에 그대로 들어간다)
+const PLAYER_NAME = /^[.*]?[A-Za-z0-9_]{1,16}$/
 const DIFFICULTIES: Difficulty[] = ['peaceful', 'easy', 'normal', 'hard']
 const GAMEMODES: GameMode[] = ['survival', 'creative', 'adventure', 'spectator']
 
@@ -20,7 +21,8 @@ function readNames(folderPath: string, file: string): string[] {
   }
 }
 
-export function getManageInfo(folderPath: string): ManageInfo {
+export async function getManageInfo(folderPath: string): Promise<ManageInfo> {
+  await syncPlayers(folderPath) // 로그로 놓친 접속자가 있으면 먼저 바로잡는다
   const ops = new Set(readNames(folderPath, 'ops.json').map((n) => n.toLowerCase()))
   const props = readProperties(folderPath)
   const difficulty = DIFFICULTIES.find((d) => d === props.difficulty) ?? 'easy'

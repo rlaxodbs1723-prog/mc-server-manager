@@ -1,4 +1,4 @@
-// 바닐라가 아닌 서버 종류: 모드 로더(Fabric / Quilt / Forge / NeoForge)와 플러그인 서버(Paper / Purpur)
+// 바닐라가 아닌 서버 종류: 모드 로더(Fabric / Quilt / Forge / NeoForge), 플러그인 서버(Paper / Purpur), 하이브리드(Arclight)
 // 각 종류의 "빌드 버전" 목록과 서버 설치를 맡는다.
 import fs from 'fs'
 import { CancelledError, isCancelled, throwIfCancelled, watchProcess } from './cancel'
@@ -15,6 +15,8 @@ const QUILT_INSTALLER_MAVEN = 'https://maven.quiltmc.org/repository/release/org/
 const FORGE_MAVEN = 'https://maven.minecraftforge.net/net/minecraftforge/forge'
 const NEOFORGE_MAVEN = 'https://maven.neoforged.net/releases/net/neoforged/neoforge'
 const NEOFORGE_VERSIONS_API = 'https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge'
+// Arclight는 다운로드 API가 따로 없어서 깃허브 릴리스 목록을 쓴다 (파일 이름에 로더·마인크래프트 버전이 들어 있다)
+const ARCLIGHT_RELEASES = 'https://api.github.com/repos/IzzelAliz/Arclight/releases?per_page=100'
 const CACHE_TTL_MS = 10 * 60 * 1000
 
 export type Loader = Exclude<Software, 'vanilla'>
@@ -66,6 +68,41 @@ function neoforgePrefix(mcVersion: string): string {
   return `${mcVersion}.`
 }
 
+// ---------- Arclight ----------
+// 파일 하나가 "arclight-{로더}-{마인크래프트 버전}-{빌드}.jar". 앱은 "{로더}-{마인크래프트 버전}-{빌드}"를 로더 버전으로 적어 둔다
+// (밑바탕 로더를 이 이름에서 알아낸다: 모드 탭이 어느 로더용 모드를 찾을지 정한다)
+interface ArclightBuild {
+  id: string // neoforge-1.21.1-1.0.1-8ec9529
+  loader: 'neoforge' | 'fabric' | 'forge'
+  mcVersion: string
+  stable: boolean // 깃허브에서 정식 릴리스(시험판이 아님)
+  url: string
+  size: number
+}
+const ARCLIGHT_FILE = /^arclight-(neoforge|fabric|forge)-(\d+(?:\.\d+)+)-(.+)\.jar$/
+const LOADER_ORDER = ['neoforge', 'fabric', 'forge']
+
+async function arclightBuilds(): Promise<ArclightBuild[]> {
+  const releases =
+    (await json<{ prerelease: boolean; draft: boolean; assets: { name: string; browser_download_url: string; size: number }[] }[]>(ARCLIGHT_RELEASES)) ?? []
+  const out: ArclightBuild[] = []
+  for (const r of releases) {
+    if (r.draft) continue
+    for (const a of r.assets ?? []) {
+      const m = ARCLIGHT_FILE.exec(a.name)
+      // 다운로드 주소는 깃허브 릴리스 파일만 받는다 (목록이 이상하게 와도 엉뚱한 곳에서 받지 않게)
+      if (!m || !/^https:\/\/github\.com\/IzzelAliz\/Arclight\/releases\/download\//.test(a.browser_download_url)) continue
+      out.push({ id: `${m[1]}-${m[2]}-${m[3]}`, loader: m[1] as ArclightBuild['loader'], mcVersion: m[2], stable: !r.prerelease, url: a.browser_download_url, size: a.size })
+    }
+  }
+  return out
+}
+
+// Arclight가 지원하는 마인크래프트 버전 (최신순)
+export async function arclightMcVersions(): Promise<string[]> {
+  return [...new Set((await arclightBuilds()).map((b) => b.mcVersion))].sort(compareDesc)
+}
+
 // 해당 마인크래프트 버전에서 쓸 수 있는 로더 버전 (안정 버전 먼저, 각각 최신순). 지원하지 않으면 빈 배열.
 export async function getLoaderVersions(loader: Loader, mcVersion: string): Promise<LoaderVersion[]> {
   let list: LoaderVersion[] = []
@@ -84,6 +121,13 @@ export async function getLoaderVersions(loader: Loader, mcVersion: string): Prom
       version: e.loader.version,
       stable: e.loader.stable ?? !isUnstable(e.loader.version)
     }))
+  } else if (loader === 'arclight') {
+    // 정식이 먼저, 그다음 로더 순서(NeoForge → Fabric → Forge). 같은 로더 안에서는 목록 순서(최신이 먼저)
+    const builds = (await arclightBuilds()).filter((b) => b.mcVersion === mcVersion)
+    return builds
+      .map((b, i) => ({ b, i }))
+      .sort((x, y) => Number(y.b.stable) - Number(x.b.stable) || LOADER_ORDER.indexOf(x.b.loader) - LOADER_ORDER.indexOf(y.b.loader) || x.i - y.i)
+      .map(({ b }) => ({ version: b.id, stable: b.stable }))
   } else if (loader === 'forge') {
     list = (await mavenVersions(FORGE_MAVEN))
       .filter((v) => v.startsWith(`${mcVersion}-`))
@@ -174,6 +218,17 @@ export async function installLoader(
     return
   }
 
+  if (loader === 'arclight') {
+    const build = (await arclightBuilds()).find((b) => b.id === loaderVersion)
+    if (!build) throw new Error(`Arclight ${loaderVersion}을(를) 찾지 못했어요.`)
+    const msg = 'Arclight 서버 파일을 받고 있어요'
+    report(msg, 'loader')
+    await downloadReplacing({ url: build.url, dest: path.join(dir, 'arclight.jar'), onBytes: (d, t) => report(msg, 'loader', d, t) })
+    // 깃허브가 알려 준 크기와 다르면 받다 만 파일이다
+    if (build.size && fs.statSync(path.join(dir, 'arclight.jar')).size !== build.size) throw new Error('Arclight 서버 파일을 다 받지 못했어요. 다시 시도해 주세요.')
+    return
+  }
+
   if (loader === 'purpur') {
     const msg = 'Purpur 서버 파일을 받고 있어요'
     report(msg, 'loader')
@@ -241,6 +296,13 @@ export async function installLoader(
 export function launchTarget(software: Software, dir: string, mcVersion?: string, loaderVersion?: string): string[] {
   if (software === 'vanilla' || software === 'paper' || software === 'purpur') {
     return ['-jar', 'server.jar']
+  }
+  // Arclight: 처음 켤 때 필요한 라이브러리를 스스로 받는다 (첫 실행은 오래 걸린다)
+  if (software === 'arclight') {
+    // 앱이 만든 서버는 arclight.jar, 가져온 서버는 원래 이름(arclight-neoforge-….jar)일 수 있다
+    const jar = fs.existsSync(path.join(dir, 'arclight.jar')) ? 'arclight.jar' : fs.readdirSync(dir).find((f) => /^arclight.*\.jar$/i.test(f))
+    if (!jar) throw new Error('Arclight 서버 파일을 찾지 못했어요. 서버를 다시 만들어 주세요.')
+    return ['-jar', jar]
   }
   if (software === 'fabric') return ['-jar', 'fabric-server-launch.jar']
   if (software === 'quilt') return ['-jar', 'quilt-server-launch.jar']

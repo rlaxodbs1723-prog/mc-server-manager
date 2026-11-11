@@ -20,11 +20,16 @@ interface Running {
   bedrock: boolean // 배드락 서버 (로그 모양이 다르다)
   xuids: Map<string, string> // 배드락: 접속자 이름 → Xbox 번호 (관리자 권한은 이 번호로 적힌다)
   failTimer?: ReturnType<typeof setTimeout> // 켜지다 실패했는데 프로그램이 안 꺼질 때 끄는 타이머
+  worldErrorShown?: boolean // 이번에 켠 동안 월드 파일 오류를 이미 알렸다
 }
 
 // "[..INFO]: Steve joined the game" / "left the game". 26.x부터는 "]: System chat: Steve joined the game"처럼 찍힌다.
 // 채팅(<이름> ...)으로 흉내 낼 수 없게 "]: " (또는 "System chat: ") 바로 뒤의 이름만 본다
-const JOIN_LEFT = /\]: (?:System chat: )?([A-Za-z0-9_]{3,16}) (joined|left) the game$/
+// 이름: Geyser(배드락 친구)로 들어온 사람은 ".Steve"처럼 앞에 점·별이 붙는다. 이름을 바꾼 사람은 뒤에 "(formerly known as …)"가 붙는다
+const JOIN_LEFT = /\]: (?:System chat: )?([.*]?[A-Za-z0-9_]{1,16})(?: \(formerly known as \S+\))? (joined|left) the game$/
+// 플러그인이 입장·퇴장 메시지를 바꾸거나 숨겨도 서버가 늘 찍는 줄: "Steve[/1.2.3.4:5678] logged in with entity id …" / "Steve lost connection: …"
+const LOGGED_IN = /\]: ([.*]?[A-Za-z0-9_]{1,16})\[[^\]]*\] logged in with entity id /
+const LOST_CONNECTION = /\]: ([.*]?[A-Za-z0-9_]{1,16}) lost connection: /
 // 배드락 서버: "Player connected: Steve, xuid: 123" / "Player disconnected: Steve, xuid: 123" (이름에 공백이 있을 수 있다)
 const BEDROCK_JOIN_LEFT = /Player (connected|disconnected): (.+?), xuid: (\d*)/
 const stripColors =(s: string): string => s.replace(/\x1b\[[0-9;]*m/g, '').replace(/§./g, '')
@@ -107,19 +112,35 @@ function pushLog(folderPath: string, line: string): void {
       }, 4000)
     }
     const clean = stripColors(line).trimEnd()
+    if (!r.bedrock && r.state === 'running' && !r.worldErrorShown && WORLD_ERROR.test(clean)) {
+      r.worldErrorShown = true
+      setTimeout(() => running.get(folderPath) === r && worldErrorHandler?.(folderPath), 1500).unref()
+    }
     if (!r.bedrock && JOIN_ERROR.test(clean) && Date.now() - (lastJoinError.get(folderPath) ?? 0) > 30_000) {
       lastJoinError.set(folderPath, Date.now())
       setTimeout(() => running.get(folderPath) === r && joinErrorHandler?.(folderPath, r.log), 1500).unref()
     }
     const m = r.bedrock ? BEDROCK_JOIN_LEFT.exec(clean) : JOIN_LEFT.exec(clean)
-    if (m) {
-      const [who, joined] = r.bedrock ? [m[2], m[1] === 'connected'] : [m[1], m[2] === 'joined']
+    const login = r.bedrock || m ? null : LOGGED_IN.exec(clean)
+    const lost = r.bedrock || m || login ? null : LOST_CONNECTION.exec(clean)
+    const seen: [string, boolean] | null = m
+      ? r.bedrock
+        ? [m[2], m[1] === 'connected']
+        : [m[1], m[2] === 'joined']
+      : login
+        ? [login[1], true]
+        : lost
+          ? [lost[1], false]
+          : null
+    // 한 사람이 들어오고 나갈 때 두 줄씩 찍히므로(logged in → joined, lost connection → left) 바뀐 게 있을 때만 알린다
+    if (seen && seen[1] !== r.players.has(seen[0])) {
+      const [who, joined] = seen
       if (joined) {
         r.players.add(who)
-        if (r.bedrock && m[3]) r.xuids.set(who, m[3])
+        if (r.bedrock && m?.[3]) r.xuids.set(who, m[3])
       } else r.players.delete(who)
       emit({ type: 'players', folderPath, players: [...r.players] })
-    }
+    } else if (seen && seen[1] && r.bedrock && m?.[3]) r.xuids.set(seen[0], m[3])
   }
   emit({ type: 'log', folderPath, line })
 }
@@ -128,6 +149,22 @@ export const getState = (folderPath: string): ServerState => running.get(folderP
 export const getStartedAt = (folderPath: string): number | null => running.get(folderPath)?.startedAt ?? null
 export const getPid = (folderPath: string): number | undefined => running.get(folderPath)?.proc.pid
 export const getPlayers = (folderPath: string): string[] => [...(running.get(folderPath)?.players ?? [])]
+
+// 로그로 놓친 접속자를 바로잡는다 (자바만): 서버에 list를 몰래 물어서 지금 접속 중인 사람으로 맞춘다.
+// 플러그인이 list를 바꿔 놓았을 수 있어 minecraft:list(원래 명령)로 묻는다. 답을 못 알아들으면 아무것도 안 바꾼다
+const LIST_ANSWER = /There are (\d+) (?:of a max of |\/ ?)\d+ players online:(.*)$/
+export async function syncPlayers(folderPath: string): Promise<void> {
+  const r = running.get(folderPath)
+  if (!r || r.bedrock || r.state !== 'running') return
+  const lines = await quietQuery(folderPath, ['minecraft:list'], (l) => LIST_ANSWER.test(stripColors(l)), { idleMs: 300, maxMs: 3000 }).catch(() => [] as string[])
+  const m = lines.map((l) => LIST_ANSWER.exec(stripColors(l).trimEnd())).find((x) => x)
+  if (!m || running.get(folderPath) !== r) return
+  const names = m[2].split(',').map((s) => s.trim()).filter(Boolean)
+  if (names.length !== Number(m[1])) return // 옛 버전처럼 이름이 다음 줄에 오는 등 알아듣지 못한 답
+  if (names.length === r.players.size && names.every((n) => r.players.has(n))) return
+  r.players = new Set(names)
+  emit({ type: 'players', folderPath, players: [...r.players] })
+}
 export const getXuid = (folderPath: string, name: string): string | undefined => running.get(folderPath)?.xuids.get(name)
 
 // 켜져 있으면 이번 실행의 로그, 꺼져 있으면 마지막 실행 로그(앱을 켠 뒤에 켰던 서버) 또는 logs/latest.log 뒷부분
@@ -206,6 +243,18 @@ export const onJoinError = (fn: (folderPath: string, log: string[]) => void): vo
 }
 const lastJoinError = new Map<string, number>()
 
+// 켜진 채로 월드(청크·지역) 파일을 못 읽는 오류: 서버는 안 꺼지는데 그 자리 땅이 안 불러와져 플레이어가 끝없이 떨어진다.
+// 컴퓨터가 갑자기 꺼지거나 강제로 끈 뒤에 흔하다. 한 번 켤 때 한 번만 알린다
+// ("Chunk file at … is in the wrong location"은 서버가 알아서 옮기는 정상 경고라 넣지 않는다)
+export const WORLD_ERROR = /Couldn't load chunk|Failed to read chunk|Exception reading [^\n]*(?:\.mca|region)|(?:chunk|region)[^\n]*corrupt|corrupt[^\n]*(?:chunk|region)|Not in GZIP format|Unexpected end of ZLIB input stream/i
+let worldErrorHandler: ((folderPath: string) => void) | null = null
+export const onWorldError = (fn: (folderPath: string) => void): void => {
+  worldErrorHandler = fn
+}
+
+// 켜져 있는 동안 서버 폴더에 남겨 두는 표시. 정상으로 꺼지면 지운다. 다음에 켤 때 남아 있으면 지난번에 갑자기 꺼진 것이다 (컴퓨터 강제 종료 등)
+const RUNNING_MARK = '.server-manager-running'
+
 // 앱이 콘솔에 남기는 안내 줄 ([앱] …). 화면에 보내고, 다른 서버를 보다 돌아와도 보이게 로그에도 남긴다
 export function appLog(folderPath: string, line: string): void {
   const text = line.startsWith('[앱]') ? line : `[앱] ${line}`
@@ -237,10 +286,21 @@ export async function startServer(folderPath: string, { java, args, bedrock = fa
   // 언어도 영어로 고정한다. Fabric 등이 오류를 한국어로 번역하면 튕김 분석이 문장을 알아보지 못한다
   const encoding = bedrock ? [] : ['-Dfile.encoding=UTF-8', '-Dstdout.encoding=UTF-8', '-Dstderr.encoding=UTF-8', '-Duser.language=en', '-Duser.country=US']
   const fullArgs = [...encoding, ...args]
+  const mark = path.join(folderPath, RUNNING_MARK)
+  const uncleanLast = fs.existsSync(mark)
   const proc = spawn(java, fullArgs, { cwd: folderPath, windowsHide: true })
   running.set(folderPath, { proc, startedAt: Date.now(), state: 'starting', log: [], players: new Set(), bedrock, xuids: new Map() })
   setState(folderPath, 'starting')
   pushLog(folderPath, bedrock ? '> bedrock_server' : `> java ${args.join(' ')}`)
+  if (uncleanLast) {
+    appLog(folderPath, '[앱] 지난번에 서버가 제대로 꺼지지 않았어요 (컴퓨터가 갑자기 꺼졌거나 앱이 강제로 닫혔어요).')
+    appLog(folderPath, '[앱]   땅이 안 불러와지거나 끝없이 떨어지면 월드 파일이 깨진 거예요. 서버를 끄고 백업 탭에서 최근 백업으로 되돌려 주세요.')
+  }
+  try {
+    fs.writeFileSync(mark, String(Date.now()))
+  } catch {
+    // 표시를 못 남겨도 서버는 켠다
+  }
 
   // 한글(3바이트)이 두 조각에 걸쳐 오면 조각마다 글자로 바꿀 때 깨진다. StringDecoder가 모자란 바이트를 다음 조각까지 기다려 준다
   const lineFeeder = (): { feed: (chunk: Buffer) => void; flush: () => void } => {
@@ -277,6 +337,7 @@ export async function startServer(folderPath: string, { java, args, bedrock = fa
     const crashed = !requested && (code !== 0 || r?.state === 'starting')
     pushLog(folderPath, crashed ? `[앱] 서버가 비정상 종료됐어요. (코드 ${code})` : `[앱] 서버가 꺼졌어요. (코드 ${code})`)
     if (r) lastLog.set(folderPath, r.log)
+    fs.rmSync(path.join(folderPath, RUNNING_MARK), { force: true }) // 프로그램이 끝까지 꺼졌다 (튕겼어도 그 원인은 따로 알린다)
     running.delete(folderPath)
     setState(folderPath, 'stopped')
     emit({ type: 'players', folderPath, players: [] })

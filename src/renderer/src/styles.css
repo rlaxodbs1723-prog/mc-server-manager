@@ -175,6 +175,7 @@ button:disabled { cursor: default; }
   -webkit-app-region: drag;
   flex-shrink: 0;
 }
+.titlebar.mac { padding-left: 84px; padding-right: 8px; } /* 신호등 버튼 자리 */
 .titlebar .brand { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--text-2); }
 .titlebar .brand .logo { width: 20px; height: 20px; display: block; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08); border-radius: 5px; }
 .win-buttons { display: flex; height: 100%; }
@@ -568,8 +569,10 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .warn-text { color: var(--warning); font-size: 14px; }
 .server-head .subline { min-width: 0; flex-wrap: nowrap; }
 .server-head .subline > span { white-space: nowrap; }
+.server-head .subline > .sw-ver { min-width: 0; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; }
+.server-head .subline > .invite-inline, .server-head .subline > .pill { flex-shrink: 0; }
 .invite-inline { display: inline-flex; align-items: center; gap: 2px; min-width: 0; padding: 2px 4px 2px 10px; border-radius: 8px; background: var(--primary-soft); color: var(--primary); font-size: 13px; }
-.invite-inline b { font-weight: 700; margin-right: 4px; overflow: hidden; text-overflow: ellipsis; user-select: text; }
+.invite-inline b { font-weight: 700; margin-right: 4px; overflow: hidden; text-overflow: ellipsis; user-select: text; flex-shrink: 0; } /* 자리가 모자라면 주소 대신 옆의 버전 글자가 줄어든다 */
 .invite-inline button { display: grid; place-items: center; width: 24px; height: 24px; border: 0; border-radius: 6px; background: none; color: inherit; cursor: pointer; flex-shrink: 0; }
 .invite-inline button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.08); }
 .invite-inline .spinner { width: 12px; height: 12px; }

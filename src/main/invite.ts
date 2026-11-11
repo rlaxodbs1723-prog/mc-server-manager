@@ -5,7 +5,7 @@ import { HEADERS } from './download'
 import { closePort, isPrivate, localIPv4, openPort, publicIpFromWeb } from './upnp'
 import { isBedrockFolder } from './bedrock'
 import { readProperties } from './properties'
-import { refreshDomain, setDomainOffline } from './domain'
+import { domainProblem, refreshDomain, setDomainOffline } from './domain'
 import { closeAllTunnels, closeTunnel, linkTunnel, openTunnel, tunnelLinked } from './tunnel'
 
 const status = new Map<string, InviteStatus>() // 서버 폴더 -> 초대 상태
@@ -150,8 +150,17 @@ export function setInviteDomain(folderPath: string, host: string | undefined): v
   if (cur?.state !== 'open') return
   const { domain: _old, ...rest } = cur
   void _old
-  set(folderPath, host ? { ...rest, domain: host } : rest)
+  const problem = host ? undefined : domainProblem(folderPath) // 이름 주소가 있는데 못 갱신했으면 이유를 같이 보여 준다
+  set(folderPath, host ? { ...rest, domain: host } : problem ? { ...rest, domainError: problem } : rest)
   if (host) startDomainBeat(folderPath)
+}
+
+// 이름 주소를 정하거나 바꾼 직후: 열려 있는 서버의 접속 주소를 바로 이름 주소로 바꿔 보여 준다 (없앴으면 IP 주소로 되돌린다)
+export function applyDomain(folderPath: string): void {
+  const cur = status.get(folderPath)
+  if (cur?.state !== 'open') return
+  const bedrock = isBedrockFolder(folderPath)
+  void refreshDomain(folderPath, cur.tunnel ? cur.address : undefined).then((host) => setInviteDomain(folderPath, host ? withPort(host, cur.port, bedrock) : undefined))
 }
 
 // 켜져 있는 동안 주기적으로 "아직 켜져 있다"고 알린다. 그래야 소식이 끊긴 기록과 구별되고, 지워졌더라도 다시 만들어진다
