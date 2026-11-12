@@ -201,7 +201,7 @@
       <details data-i18n="q2"><summary>컴퓨터 사양은 얼마나 필요해요?</summary><p>Windows 10·11 64비트, 메모리 8GB 이상을 추천해요. 모드가 많은 서버는 16GB가 편해요.</p></details>
       <details data-i18n="q3"><summary>"Windows의 PC 보호" 창이 떠요. 괜찮아요?</summary><p>괜찮아요. 코드 서명 인증서가 없는 개인 앱이라 뜨는 창이에요. 추가 정보 → 실행을 누르면 돼요. 앱의 코드는 깃허브에 모두 공개돼 있어요.</p></details>
       <details data-i18n="q4"><summary>플레이어가 들어오지 못해요.</summary><p>서버 이름 아래 접속 주소 옆의 확인 버튼(밖에서 접속되는지 확인)을 눌러 보세요. 빨간 "밖에서 접속할 수 없어요"가 뜨면 눌러서 <b>터널로 열기</b> → playit.gg 로그인·회원가입 → 승인을 누르면 돼요. 처음 한 번만 하면 다음부터는 알아서 열려요.</p></details>
-      <details data-i18n="q6"><summary>앱이 내 정보를 보내나요?</summary><p>앱을 켠 횟수와 서버 종류만 익명으로 세요. 이름·서버 이름·IP 같은 개인 정보는 저장하지 않아요. 앱 설정 → 개인 정보에서 끌 수 있어요.</p></details>
+      <details data-i18n="q6"><summary>앱이 내 정보를 보내나요?</summary><p>사용 통계는 앱을 켠 횟수와 서버 종류만 익명으로 세요. 이름·서버 이름·IP는 담지 않고, 앱 설정 → 개인 정보에서 끌 수 있어요. 이름 주소를 쓰면 주소를 연결하려고 서버 컴퓨터의 공인 IP를 저장해요. 자세한 건 <a href="/privacy">개인정보 처리방침</a>을 봐 주세요.</p></details>
       <details data-i18n="q5"><summary>만든 서버는 어디에 저장돼요?</summary><p>내 컴퓨터에 저장돼요 (%APPDATA%\mc-server-manager). 앱을 지워도 서버와 백업은 남아요.</p></details>
     </div>
   </section>
@@ -209,7 +209,7 @@
 
 <footer>
   <div class="wrap">
-    <span>MC CubePanel · <a href="https://github.com/rlaxodbs1723-prog/mc-server-manager">GitHub</a></span>
+    <span>MC CubePanel · <a href="https://github.com/rlaxodbs1723-prog/mc-server-manager">GitHub</a> · <a href="/privacy" data-i18n="priv">개인정보 처리방침</a></span>
     <span data-i18n="foot">마인크래프트 공식 제품이 아니에요. Mojang·Microsoft와 관련이 없어요.</span>
   </div>
 </footer>
@@ -239,7 +239,8 @@
       q2: '<summary>What PC do I need?</summary><p>Windows 10 or 11 (64-bit) with 8 GB of memory or more is recommended. 16 GB is comfortable for heavily modded servers.</p>',
       q3: '<summary>A "Windows protected your PC" window appears. Is that OK?</summary><p>Yes. It appears because this personal app has no code signing certificate. Click More info → Run anyway. All of the app’s code is public on GitHub.</p>',
       q4: '<summary>Players can’t join.</summary><p>Click the check button next to the connection address under the server name (check outside access). If a red "Can’t be reached from outside" appears, click it → <b>Open with tunnel</b> → log in or sign up at playit.gg → approve. You only do this once; after that it opens automatically.</p>',
-      q6: '<summary>Does the app send my data?</summary><p>It only counts app launches and server types anonymously. No personal info like names, server names or IPs is stored. You can turn it off in App settings → Privacy.</p>',
+      priv: 'Privacy Policy',
+      q6: '<summary>Does the app send my data?</summary><p>Usage stats only count app launches and server types anonymously, without names, server names or IPs. You can turn them off in App settings → Privacy. Name addresses store the public IP of your server computer to point the address at it. See the <a href="/privacy">Privacy Policy</a> for details.</p>',
       q5: '<summary>Where are my servers stored?</summary><p>On your own computer (%APPDATA%\\mc-server-manager). Servers and backups stay even if you uninstall the app.</p>',
       foot: 'Not an official Minecraft product. Not associated with Mojang or Microsoft.',
       soon: 'Coming soon', version: 'Version', bits: '(64-bit)', changes: 'What’s new'
@@ -266,7 +267,8 @@
       q2: '<summary>需要什么配置的电脑？</summary><p>推荐 Windows 10·11 64 位、8GB 以上内存。模组很多的服务器建议 16GB。</p>',
       q3: '<summary>弹出"Windows 已保护你的电脑"窗口，没问题吗？</summary><p>没问题。这是没有代码签名证书的个人应用才会出现的窗口。点击 更多信息 → 仍要运行 即可。应用的代码全部公开在 GitHub 上。</p>',
       q4: '<summary>玩家进不来。</summary><p>点击服务器名称下方连接地址旁的检查按钮（检查外部能否连接）。如果出现红色的"无法从外部连接"，点击它 → <b>通过隧道开放</b> → 在 playit.gg 登录或注册 → 授权。只需做一次，之后会自动开放。</p>',
-      q6: '<summary>应用会发送我的信息吗？</summary><p>只匿名统计应用打开次数和服务器类型，不保存名字、服务器名称、IP 等个人信息。可以在 应用设置 → 隐私 中关闭。</p>',
+      priv: '隐私政策',
+      q6: '<summary>应用会发送我的信息吗？</summary><p>使用统计只匿名统计应用打开次数和服务器类型，不包含名字、服务器名称、IP，可以在 应用设置 → 隐私 中关闭。使用名称地址时，会保存服务器电脑的公网 IP 来连接地址。详情请看<a href="/privacy">隐私政策</a>。</p>',
       q5: '<summary>创建的服务器保存在哪里？</summary><p>保存在你自己的电脑上（%APPDATA%\\mc-server-manager）。卸载应用后服务器和备份仍会保留。</p>',
       foot: '非 Minecraft 官方产品，与 Mojang、Microsoft 无关。',
       soon: '即将发布', version: '版本', bits: '（64 位）', changes: '更新内容'
