@@ -45,7 +45,7 @@ import { getBedrockExperiments, setBedrockExperiment, setBedrockHardcore } from 
 import { DatabaseSync } from 'node:sqlite'
 import { checkImportFolder, detectServer } from '../src/main/importserver'
 import { createShareInvite, joinShare, leaveShare, remoteServers, revokeShareDevice, setShareRole, shareDevices, shareStatus, startSharing, stopSharing } from '../src/main/share'
-import { startDevRelay } from '../share/dev-relay.mjs'
+import { devSession, startDevRelay } from '../share/dev-relay.mjs'
 import { ipcMain } from 'electron'
 import { addAddonFile, bedrockProps, bedrockTellraw, checkAddons, listAddons, nethernetUdpPorts, removeAddon, setAddonEnabled } from '../src/main/bedrock'
 import { getBedrockManage, listBedrockRules, runBedrockAction } from '../src/main/bedrockmanage'
@@ -722,6 +722,9 @@ async function shareChecks(): Promise<void> {
     const PORT = 18799
     const relay = startDevRelay(PORT)
     process.env.MCSM_SHARE_RELAY = `ws://localhost:${PORT}`
+    // 서버 공유는 로그인이 필요하다: 시험용 중계의 시험 계정으로 로그인해 둔다 (account.json을 직접 쓴다)
+    const session = await devSession('시험')
+    fs.writeFileSync(path.join(process.env.TEST_HOME!, 'account.json'), JSON.stringify({ enc: false, token: Buffer.from(session).toString('base64'), account: { id: 'dev:시험', provider: 'dev', name: '시험' } }))
     const ipc = ipcMain as unknown as { handle: (c: string, fn: (...a: unknown[]) => unknown) => void; __invoke: (c: string, ...a: unknown[]) => Promise<unknown> }
     let deleted = false
     ipc.handle('getLog', (_e: unknown, f: unknown) => [`log of ${path.basename(String(f))}`])

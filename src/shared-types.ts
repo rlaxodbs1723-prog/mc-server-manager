@@ -175,6 +175,12 @@ export interface ServerListItem extends ServerInfo {
 // ---------- 서버 공유 ----------
 // view: 보기만 (상태·콘솔·접속자) / admin: 켜고 끄기·명령·관리까지
 export type ShareRole = 'view' | 'admin'
+// 로그인한 계정 (서버 공유에 필요). provider: discord · google (시험용 중계에서는 dev)
+export interface Account {
+  id: string
+  provider: string
+  name: string
+}
 export interface ShareDevice {
   id: string
   name: string // 친구 컴퓨터 이름
@@ -205,6 +211,7 @@ export type ServerEvent =
   | { type: 'players'; folderPath: string; players: string[] }
   | { type: 'backups'; folderPath: string } // 백업이 생기거나 지워짐 (목록을 다시 읽으라는 뜻)
   | { type: 'crashed'; folderPath: string; reason: string; restarting: boolean; analysis: CrashAnalysis }
+  | { type: 'account'; folderPath: '' } // 로그인·로그아웃함
   | { type: 'shares'; folderPath: '' } // 공유받은 서버 목록·연결 상태가 바뀜 (서버 목록을 다시 읽으라는 뜻)
 
 // ---------- 관리 탭 ----------
@@ -551,6 +558,12 @@ export interface Api {
   setShareRole: (folderPath: string, device: string, role: ShareRole) => Promise<ShareDevice[]>
   // 서버 공유 (친구)
   joinShare: (code: string) => Promise<string>
+  getAccount: () => Promise<Account | null>
+  loginProviders: () => Promise<string[]>
+  login: (provider: string) => Promise<Account>
+  cancelLogin: () => Promise<void>
+  logout: () => Promise<void>
+  deleteAccount: () => Promise<void>
   leaveShare: (folderPath: string) => Promise<void>
   cleanupReport: () => Promise<{ removed: string[]; failed: string[] }> // 앱을 켤 때 만들다 끊긴 서버 폴더를 정리한 결과
   openFolder: (folderPath: string) => Promise<void>

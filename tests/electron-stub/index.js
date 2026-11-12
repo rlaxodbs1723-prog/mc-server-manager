@@ -29,6 +29,7 @@ module.exports = {
     handle(channel, fn) { this.__handlers.set(channel, fn) },
     async __invoke(channel, ...args) { return this.__handlers.get(channel)({ sender: null }, ...args) }
   },
+  safeStorage: { isEncryptionAvailable: () => false, encryptString: (s) => Buffer.from(s), decryptString: (b) => b.toString() },
   Notification: class { static isSupported() { return false } show() {} },
   nativeImage: { createFromPath: () => ({ isEmpty: () => true }) }
 }

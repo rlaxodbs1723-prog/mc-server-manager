@@ -23,6 +23,12 @@ const api: Api = {
   revokeShareDevice: (folderPath, device) => ipcRenderer.invoke('revokeShareDevice', folderPath, device),
   setShareRole: (folderPath, device, role) => ipcRenderer.invoke('setShareRole', folderPath, device, role),
   joinShare: (code) => ipcRenderer.invoke('joinShare', code),
+  getAccount: () => ipcRenderer.invoke('getAccount'),
+  loginProviders: () => ipcRenderer.invoke('loginProviders'),
+  login: (provider) => ipcRenderer.invoke('login', provider),
+  cancelLogin: () => ipcRenderer.invoke('cancelLogin'),
+  logout: () => ipcRenderer.invoke('logout'),
+  deleteAccount: () => ipcRenderer.invoke('deleteAccount'),
   // 공유받은 서버 경로(remote:방번호)를 그대로 넘기면 방장에게 가 버려서, 방 번호만 넘긴다
   leaveShare: (folderPath) => ipcRenderer.invoke('leaveShare', folderPath.replace(/^remote:/, '')),
   cleanupReport: () => ipcRenderer.invoke('cleanupReport'),

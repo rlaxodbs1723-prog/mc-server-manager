@@ -6,6 +6,7 @@ import ModpackDialog from './ModpackDialog'
 import SetupWizard from './SetupWizard'
 import { FolderInput, Package, Users } from 'lucide-react'
 import JoinShareDialog from './JoinShareDialog'
+import LoginGate from './LoginGate'
 import { SoftwareBadge, useToast } from './ui'
 import { cleanError, IS_MAC } from './util'
 
@@ -110,7 +111,11 @@ export default function CreateServer({ existingNames }: Props) {
           </div>
         </div>
       </section>
-      {joining && <JoinShareDialog onClose={() => setJoining(false)} />}
+      {joining && (
+        <LoginGate onClose={() => setJoining(false)}>
+          <JoinShareDialog onClose={() => setJoining(false)} />
+        </LoginGate>
+      )}
       {modpack && <ModpackDialog existingNames={existingNames} onClose={() => setModpack(false)} />}
       {importing && <ImportServerDialog folder={importing.folder} detected={importing.detected} existingNames={existingNames} onClose={() => setImporting(null)} />}
 

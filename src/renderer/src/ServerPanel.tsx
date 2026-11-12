@@ -1,5 +1,6 @@
 import { ArrowDown, CopyPlus, FolderOpen, Pencil, Play, Search, Send, Settings, Share2, Square, Trash2, X, Zap } from 'lucide-react'
 import ShareDialog from './ShareDialog'
+import LoginGate, { useAccount } from './LoginGate'
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { SOFTWARE_INFO, type BedrockUpdateInfo, type ModKindInfo, type PreflightResult, type Progress, type ServerListItem } from '../../shared-types'
 import { suggest, usageOf } from './consoleHelp'
@@ -150,6 +151,8 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
       node
     )
   const [showShare, setShowShare] = useState(false)
+  const account = useAccount()
+  const [askLogin, setAskLogin] = useState(false)
   const [askLeave, setAskLeave] = useState(false)
   const BEDROCK_PACK_TABS = ['addons', 'resources', 'scripts', 'maps'] // 배드락: 애드온·리소스 팩·스크립트·맵을 탭으로 나눈다
   const shownTab = bedrock ? (['console', 'manage', ...BEDROCK_PACK_TABS, 'backup', 'files'].includes(tab) ? tab : 'console') : ['addons', 'resources', 'scripts'].includes(tab) ? 'console' : tab
@@ -461,6 +464,12 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
           {remote ? (
             <>
               <span className="pill">{remote.role === 'admin' ? '공유받음 · 관리자' : '공유받음 · 보기만'}</span>
+              {/* 로그아웃하면 공유받은 서버에 연결하지 못한다 */}
+              {account === null && (
+                <button className="btn sm primary" onClick={() => setAskLogin(true)}>
+                  로그인해야 연결돼요
+                </button>
+              )}
               <button className="btn icon ghost" onClick={() => setAskLeave(true)} title="내 목록에서 빼기 (방장 서버는 그대로예요)">
                 <Trash2 size={19} />
               </button>
@@ -762,7 +771,16 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
           onCancel={() => setAskDomain(false)}
         />
       )}
-      {showShare && <ShareDialog folderPath={folderPath} onClose={() => setShowShare(false)} />}
+      {askLogin && (
+        <LoginGate onClose={() => setAskLogin(false)}>
+          <AutoClose onClose={() => setAskLogin(false)} />
+        </LoginGate>
+      )}
+      {showShare && (
+        <LoginGate onClose={() => setShowShare(false)}>
+          <ShareDialog folderPath={folderPath} onClose={() => setShowShare(false)} />
+        </LoginGate>
+      )}
       {askLeave && (
         <Confirm
           title="내 목록에서 뺄까요?"
@@ -899,4 +917,10 @@ function BootProgress({ log }: { log: string[] }) {
       </div>
     </div>
   )
+}
+
+// 로그인만 하고 닫는 창: 로그인되면 바로 닫는다
+function AutoClose({ onClose }: { onClose: () => void }) {
+  useEffect(() => onClose(), [onClose])
+  return null
 }

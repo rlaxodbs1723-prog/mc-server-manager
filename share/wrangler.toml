@@ -1,5 +1,5 @@
 # 서버 공유 중계 (Cloudflare Worker + Durable Object). 배포: share 폴더에서 npx wrangler deploy
-# 사이트(Pages)와 따로 올라가고, cubepanel.kr/api/share/* 주소만 이 Worker가 받는다 (DNS 기록을 새로 쓰지 않으려고 경로로 붙인다)
+# 사이트(Pages)와 따로 올라가고, cubepanel.kr/api/share/* (공유 방)와 /api/auth/* (로그인) 주소만 이 Worker가 받는다
 name = "cubepanel-share"
 main = "worker.mjs"
 compatibility_date = "2025-06-01"
@@ -8,11 +8,28 @@ compatibility_date = "2025-06-01"
 name = "ROOMS"
 class_name = "ShareRoom"
 
+[[durable_objects.bindings]]
+name = "AUTH"
+class_name = "Auth"
+
+# 로그인 ID (공개 값). 비밀 값은 wrangler secret put DISCORD_SECRET / GOOGLE_SECRET 으로 넣는다
+[vars]
+DISCORD_CLIENT_ID = "1570415572871811215"
+GOOGLE_CLIENT_ID = ""
+
 # 무료 요금제는 SQLite 저장소를 쓰는 Durable Object만 만들 수 있다
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["ShareRoom"]
 
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["Auth"]
+
 [[routes]]
 pattern = "cubepanel.kr/api/share/*"
+zone_name = "cubepanel.kr"
+
+[[routes]]
+pattern = "cubepanel.kr/api/auth/*"
 zone_name = "cubepanel.kr"

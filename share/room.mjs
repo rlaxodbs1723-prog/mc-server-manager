@@ -2,9 +2,10 @@
 // Cloudflare Durable Object(worker.mjs)와 내 컴퓨터 시험용 중계(dev-relay.mjs)가 이 규칙을 같이 쓴다.
 //
 // 연결하면 처음 보내는 메시지로 누구인지 밝힌다 (주소창에 비밀 값을 넣지 않으려고)
-//   { t: 'auth', as: 'host', key }            방장. 처음 붙은 방장의 열쇠가 이 방의 주인이 된다
-//   { t: 'auth', as: 'join', code, name }     초대 코드로 처음 들어오는 친구 → 이 기기 전용 열쇠(token)를 받는다
-//   { t: 'auth', as: 'client', token }        한 번 들어온 친구
+//   { t: 'auth', as: 'host', key, session }          방장. 처음 붙은 방장의 열쇠가 이 방의 주인이 된다
+//   { t: 'auth', as: 'join', code, name, session }   초대 코드로 처음 들어오는 친구 → 이 기기 전용 열쇠(token)를 받는다
+//   { t: 'auth', as: 'client', token, session }      한 번 들어온 친구
+// session은 로그인 세션 토큰(auth.mjs). 로그인하지 않았으면 4010으로 닫는다. 친구 이름은 로그인한 계정 이름을 쓴다
 // 방장 → 방: invite(초대 코드 등록) · devices(친구 목록) · revoke(친구 끊기) · ev(친구 모두에게 알림) · res(요청의 답)
 // 친구 → 방: rpc(방장에게 보내는 요청). 방이 권한(role)을 붙여 넘기므로 친구가 권한을 속일 수 없다
 // 비밀 값(열쇠·코드·토큰)은 해시만 저장한다
@@ -23,7 +24,8 @@ const randomHex = (bytes) => [...crypto.getRandomValues(new Uint8Array(bytes))].
 const isHex = (s, len) => typeof s === 'string' && new RegExp(`^[0-9a-f]{${len}}$`).test(s)
 const cleanName = (s) => String(s ?? '').replace(/[\r\n\t]+/g, ' ').trim().slice(0, 40) || '이름 없는 기기'
 
-// env: { store: { get(k), put(k, v), delete(k) } (await 가능), sockets(): 붙어 있는 소켓들, now(): 시각 }
+// env: { store: { get(k), put(k, v), delete(k) } (await 가능), sockets(): 붙어 있는 소켓들, now(): 시각,
+//        verify(session): 로그인한 계정 { id, name } 또는 null }
 // 소켓: { send(obj), close(code, reason), attach (읽기), setAttach(obj) } — attach는 인증된 뒤의 정보 { as, device, role }
 export async function onMessage(env, ws, raw) {
   let msg
@@ -54,12 +56,15 @@ function broadcast(env, obj) {
 
 async function auth(env, ws, msg) {
   if (msg.t !== 'auth') return ws.close(4001, 'auth first')
+  const acct = await env.verify(msg.session)
+  if (!acct) return ws.close(4010, 'login')
   if (msg.as === 'host') {
     if (!isHex(msg.key, 64)) return ws.close(4001, 'bad key')
     const hash = await sha256(msg.key)
     const owner = await env.store.get('host')
     if (owner && owner !== hash) return ws.close(4003, 'not owner')
     if (!owner) await env.store.put('host', hash)
+    await env.store.put('hostAcct', acct.id)
     // 예전 방장 연결(앱을 다시 켜기 전의 것)은 닫는다. 방장 연결은 하나만
     for (const s of env.sockets()) if (s !== ws && s.attach?.as === 'host') s.close(4000, 'replaced')
     ws.setAttach({ as: 'host' })
@@ -79,7 +84,7 @@ async function auth(env, ws, msg) {
     if (Object.keys(devices).length >= MAX_DEVICES) return ws.close(4005, 'full')
     const device = randomHex(8)
     const token = randomHex(32)
-    devices[device] = { tokenHash: await sha256(token), role: inv.role, name: cleanName(msg.name), added: env.now() }
+    devices[device] = { tokenHash: await sha256(token), role: inv.role, name: cleanName(acct.name), pc: cleanName(msg.name), acct: acct.id, added: env.now() }
     await env.store.put('devices', devices)
     ws.setAttach({ as: 'client', device, role: inv.role })
     ws.send({ t: 'ok', as: 'client', token, device, role: inv.role })
@@ -93,7 +98,14 @@ async function auth(env, ws, msg) {
     const hash = await sha256(msg.token)
     const device = Object.keys(devices).find((id) => devices[id].tokenHash === hash)
     if (!device) return ws.close(4003, 'revoked')
-    const role = devices[device].role
+    const d = devices[device]
+    // 기기 열쇠는 처음 들어온 계정만 쓸 수 있다 (열쇠를 남에게 넘겨도 못 쓴다)
+    if (d.acct && d.acct !== acct.id) return ws.close(4011, 'other account')
+    if (!d.acct || d.name !== cleanName(acct.name)) {
+      Object.assign(d, { acct: acct.id, name: cleanName(acct.name) })
+      await env.store.put('devices', devices)
+    }
+    const role = d.role
     ws.setAttach({ as: 'client', device, role })
     ws.send({ t: 'ok', as: 'client', device, role })
     ws.send({ t: 'host', online: !!hostSocket(env) })
@@ -167,5 +179,5 @@ async function fromClient(env, ws, me, msg) {
 async function deviceList(env) {
   const devices = (await env.store.get('devices')) ?? {}
   const online = new Set(clients(env).map((s) => s.attach?.device))
-  return Object.entries(devices).map(([id, d]) => ({ id, name: d.name, role: d.role, added: d.added, online: online.has(id) }))
+  return Object.entries(devices).map(([id, d]) => ({ id, name: d.name, pc: d.pc ?? '', role: d.role, added: d.added, online: online.has(id) }))
 }

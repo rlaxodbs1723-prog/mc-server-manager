@@ -11,6 +11,7 @@ import { getHardcore, setHardcore } from './hardcore'
 import { getGameRuleLang } from './lang'
 import { applyDomain, checkReachable, closeAllPorts, getInvite, initInvite, recheckInvite, setInviteDomain, useTunnel } from './invite'
 import { checkDomainName, claimDomain, getDomain, releaseDomain } from './domain'
+import { cancelLogin, deleteAccount, getAccount, login, loginProviders, logout, refreshAccount } from './account'
 import { createShareInvite, initShareClient, initShareHost, joinShare, leaveShare, remoteServers, revokeShareDevice, setShareRole, shareDevices, shareStatus, startSharing, stopSharing } from './share'
 import { detectServer } from './importserver'
 import { addAddonFile, isBedrockFolder, latestBedrock, listAddons, removeAddon, setAddonEnabled } from './bedrock'
@@ -328,6 +329,12 @@ ipcMain.handle('setShareRole', (_event, folderPath: string, device: string, role
   setShareRole(checkServerFolder(folderPath), String(device), role === 'admin' ? 'admin' : 'view')
 )
 ipcMain.handle('joinShare', (_event, code: string) => joinShare(String(code)))
+ipcMain.handle('getAccount', () => getAccount())
+ipcMain.handle('loginProviders', () => loginProviders())
+ipcMain.handle('login', (_event, provider: string) => login(String(provider)))
+ipcMain.handle('cancelLogin', () => cancelLogin())
+ipcMain.handle('logout', () => logout())
+ipcMain.handle('deleteAccount', () => deleteAccount())
 ipcMain.handle('leaveShare', (_event, room: string) => leaveShare(String(room)))
 ipcMain.handle('cleanupReport', () => getCleanupReport())
 ipcMain.handle('setServerOrder', (_event, folderPaths: string[]) => setServerOrder(Array.isArray(folderPaths) ? folderPaths.map((p) => checkServerFolder(String(p))) : []))
@@ -721,6 +728,7 @@ app.whenReady().then(() => {
   // 서버 공유: 공유 중인 서버는 중계 방에 붙이고, 공유받은 서버는 방장에게 잇는다
   initShareHost(listServers().map((s) => s.folderPath))
   initShareClient()
+  void refreshAccount() // 저장된 로그인이 아직 살아 있는지
   trackUsage('open')
   // 버그 제보 답장: 켜고 1분 뒤, 그 뒤로 30분마다 묻는다
   const replies = (): void => void checkBugReplies(() => BrowserWindow.getAllWindows().forEach((w) => w.webContents.send('bugReplies')))

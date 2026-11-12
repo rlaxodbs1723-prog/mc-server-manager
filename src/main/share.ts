@@ -10,6 +10,7 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import type { ServerEvent, ServerListItem, ServerState, ShareDevice, ShareRole, Software } from '../shared-types'
+import { getAccount, onAccountChange, sessionToken } from './account'
 import { localHandler, REMOTE, setRemoteForwarder } from './remoteipc'
 import { getState, onServerEvent } from './runner'
 import { notify } from './notify'
@@ -81,8 +82,8 @@ class Link {
     ws.onclose = (e) => {
       if (this.ws === ws) this.ws = null
       this.onState(false, e.code)
-      // 주인이 아님·끊김·코드 무효는 다시 붙어도 안 된다
-      if (e.code === 4003 || e.code === 4004 || e.code === 4001) this.stopped = true
+      // 주인이 아님·끊김·코드 무효·로그인 필요·다른 계정은 다시 붙어도 안 된다 (로그인하면 restart로 다시 붙는다)
+      if ([4001, 4003, 4004, 4010, 4011].includes(e.code)) this.stopped = true
       this.later()
     }
     ws.onerror = () => undefined // onclose가 따라온다
@@ -96,6 +97,16 @@ class Link {
     if (this.ws?.readyState !== WebSocket.OPEN) return false
     this.ws.send(JSON.stringify(obj))
     return true
+  }
+  // 로그인·로그아웃하면 새 세션으로 다시 붙는다
+  restart(): void {
+    if (this.timer) clearTimeout(this.timer)
+    this.stopped = false
+    this.retry = 2000
+    const old = this.ws
+    this.ws = null
+    old?.close()
+    this.open()
   }
   stop(): void {
     this.stopped = true
@@ -147,7 +158,7 @@ function hostLink(folderPath: string): void {
   const h: Hosting = { online: false, waiters: [], logBuf: [], flush: null, link: null as unknown as Link }
   h.link = new Link(
     share.room,
-    () => ({ t: 'auth', as: 'host', key: share.key }),
+    () => ({ t: 'auth', as: 'host', key: share.key, session: sessionToken() }),
     (m) => {
       if (m.t === 'ok') h.online = true // 방장으로 들어갔다
       if (h.waiters.some((w, i) => w(m) && (h.waiters.splice(i, 1), true))) return
@@ -219,7 +230,18 @@ export function initShareHost(folders: string[]): void {
   }
 }
 
+const needLogin = (): void => {
+  if (!getAccount()) throw new Error('서버 공유는 로그인이 필요해요.')
+}
+
+// 로그인·로그아웃하면 모든 공유 연결을 새 세션으로 다시 붙인다
+onAccountChange(() => {
+  for (const h of hosting.values()) h.link.restart()
+  for (const r of remotes.values()) r.link.restart()
+})
+
 export function startSharing(folderPath: string): void {
+  needLogin()
   if (!readServerInfo(folderPath).share) patchServerInfo(folderPath, { share: { room: hex(16), key: hex(32) } })
   hostLink(folderPath)
 }
@@ -227,7 +249,7 @@ export function startSharing(folderPath: string): void {
 async function hostRequest<T>(folderPath: string, msg: object, pred: (m: Record<string, unknown>) => T | undefined): Promise<T> {
   const h = hosting.get(folderPath)
   if (!h) throw new Error('공유하고 있지 않은 서버예요.')
-  if (!h.online) throw new Error('공유 중계 서버에 연결하는 중이에요. 잠시 뒤에 다시 해 주세요.')
+  if (!h.online) throw new Error(getAccount() ? '공유 중계 서버에 연결하는 중이에요. 잠시 뒤에 다시 해 주세요.' : '서버 공유는 로그인이 필요해요.')
   const wait = waitFor(h.waiters, pred)
   h.link.send(msg)
   return wait
@@ -309,11 +331,11 @@ function writeJoined(): void {
 
 const emit = (room: string, e: Record<string, unknown>): void => toWindows({ ...e, folderPath: REMOTE + room } as ServerEvent)
 
-function connectRemote(joined: Joined, hello: object = { t: 'auth', as: 'client', token: joined.token }): Remote {
+function connectRemote(joined: Joined, hello: object = {}): Remote {
   const r: Remote = { joined, hostOnline: false, state: 'stopped', players: [], log: [], waiters: [], pending: new Map(), nextId: 1, link: null as unknown as Link }
   r.link = new Link(
     joined.room,
-    () => (joined.token ? { t: 'auth', as: 'client', token: joined.token } : hello),
+    () => ({ ...(joined.token ? { t: 'auth', as: 'client', token: joined.token } : hello), session: sessionToken() }),
     (m) => {
       if (r.waiters.some((w, i) => w(m) && (r.waiters.splice(i, 1), true))) return
       if (m.t === 'host') {
@@ -404,6 +426,7 @@ export async function joinShare(input: string): Promise<string> {
   const m = /^\s*([0-9a-f]{32})-([A-Za-z0-9]{6,16})\s*$/.exec(String(input))
   if (!m) throw new Error('공유 코드가 맞지 않아요. 방장에게 받은 코드를 그대로 붙여 넣어 주세요.')
   const [, room, code] = m
+  needLogin()
   if (remotes.has(room)) return REMOTE + room
   const joined: Joined = { room, token: '', device: '', role: 'view', name: '공유받은 서버', software: 'vanilla', mcVersion: '', addedAt: new Date().toISOString() }
   const r = connectRemote(joined, { t: 'auth', as: 'join', code, name: os.hostname() })
@@ -413,7 +436,7 @@ export async function joinShare(input: string): Promise<string> {
   })
   if (ok.t !== 'ok' || !ok.token) {
     r.link.stop()
-    throw new Error(ok.code === 4005 ? '이 서버를 공유받은 기기가 너무 많아요. 방장에게 말해 주세요.' : '공유 코드가 맞지 않거나, 이미 썼거나, 기한이 지났어요. 방장에게 새 코드를 받아 주세요.')
+    throw new Error(ok.code === 4010 ? '서버 공유는 로그인이 필요해요.' : ok.code === 4005 ? '이 서버를 공유받은 기기가 너무 많아요. 방장에게 말해 주세요.' : '공유 코드가 맞지 않거나, 이미 썼거나, 기한이 지났어요. 방장에게 새 코드를 받아 주세요.')
   }
   Object.assign(joined, { token: String(ok.token), device: String(ok.device), role: ok.role === 'admin' ? 'admin' : 'view' })
   remotes.set(room, r)

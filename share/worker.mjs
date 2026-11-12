@@ -1,17 +1,40 @@
 // 서버 공유 중계 (Cloudflare Worker + Durable Object). 규칙은 room.mjs에 있다.
 // 주소: wss://cubepanel.kr/api/share/<방 번호>  (방 번호는 방장 앱이 만든 32자리 무작위 값)
 // 웹소켓 잠자기(hibernation)를 써서, 아무도 말하지 않는 동안은 요금이 들지 않는다
+// 로그인: https://cubepanel.kr/api/auth/* (규칙은 auth.mjs). 계정은 Auth Durable Object 하나에 모아 둔다
 import { DurableObject } from 'cloudflare:workers'
+import { handleAuth, realProviders, verify } from './auth.mjs'
 import { onClose, onMessage } from './room.mjs'
 
 const ROOM_RE = /^\/api\/share\/([0-9a-f]{32})$/
 
 export default {
   async fetch(req, env) {
-    const m = ROOM_RE.exec(new URL(req.url).pathname)
+    const path = new URL(req.url).pathname
+    if (path.startsWith('/api/auth/')) return authStub(env).fetch(req)
+    const m = ROOM_RE.exec(path)
     if (!m) return new Response('not found', { status: 404 })
     if (req.headers.get('Upgrade') !== 'websocket') return new Response('websocket only', { status: 426 })
     return env.ROOMS.get(env.ROOMS.idFromName(m[1])).fetch(req)
+  }
+}
+
+const authStub = (env) => env.AUTH.get(env.AUTH.idFromName('main'))
+
+export class Auth extends DurableObject {
+  store() {
+    const st = this.ctx.storage
+    return { get: (k) => st.get(k), put: (k, v) => st.put(k, v), delete: (k) => st.delete(k), list: (prefix) => st.list({ prefix, limit: 1000 }) }
+  }
+
+  async fetch(req) {
+    return handleAuth(req, { store: this.store(), providers: realProviders(this.env), base: new URL(req.url).origin })
+  }
+
+  // 방(ShareRoom)이 부른다: 세션 토큰 → { id, name } 또는 null
+  async check(token) {
+    const a = await verify(this.store(), token)
+    return a ? { id: a.id, name: a.name } : null
   }
 }
 
@@ -28,7 +51,8 @@ export class ShareRoom extends DurableObject {
     return {
       store: { get: (k) => storage.get(k), put: (k, v) => storage.put(k, v), delete: (k) => storage.delete(k) },
       sockets: () => this.ctx.getWebSockets().map((ws) => this.wrap(ws)),
-      now: () => Date.now()
+      now: () => Date.now(),
+      verify: (session) => (typeof session === 'string' ? authStub(this.env).check(session) : null)
     }
   }
 
