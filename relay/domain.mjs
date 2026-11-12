@@ -20,6 +20,35 @@ const RESERVED = new Set([
   'www', 'api', 'app', 'mail', 'smtp', 'imap', 'pop', 'ftp', 'ns', 'ns1', 'ns2', 'admin', 'administrator', 'root', 'support', 'help', 'status', 'download', 'downloads',
   'cubepanel', 'cube', 'panel', 'mc', 'minecraft', 'mojang', 'microsoft', 'discord', 'official', 'staff', 'mod', 'moderator', 'dev', 'test', 'localhost', 'server', 'play', 'join'
 ])
+// 이름 안에 들어 있으면 새로 못 만드는 말: 회사·은행·결제 이름과 피싱에 흔한 단어 (예: kakao-login, toss-verify)
+// 이름 주소는 웹사이트 주소로도 쓸 수 있어서, 가짜 로그인 화면을 띄우면 cubepanel.kr 전체가 피싱 도메인으로 찍힐 수 있다.
+// 이미 주인이 있는 이름은 막지 않는다 (켤 때마다 갱신하는 서버가 끊기지 않게)
+// 이름 안 어디에 섞여 있어도 막는 말 (4글자 이상이라 평범한 이름에 우연히 들어갈 일이 드물다)
+const BLOCKED_PARTS = [
+  // 우리·마인크래프트·게임
+  'cubepanel', 'official', 'discord', 'minecraft', 'mojang', 'microsoft', 'xbox', 'playstation', 'nintendo', 'steam', 'valve',
+  'epicgames', 'riotgames', 'blizzard', 'battlenet', 'nexon', 'netmarble', 'ncsoft', 'krafton', 'smilegate', 'pubg', 'roblox',
+  'hypixel', 'curseforge', 'modrinth', 'playit', 'aternos', 'minehut',
+  // 큰 서비스·SNS
+  'google', 'gmail', 'youtube', 'apple', 'icloud', 'kakao', 'naver', 'daum', 'coupang', 'baemin', 'samsung', 'instagram',
+  'facebook', 'twitter', 'tiktok', 'telegram', 'whatsapp', 'twitch', 'afreeca', 'chzzk', 'amazon', 'netflix', 'spotify',
+  'openai', 'chatgpt',
+  // 은행·카드·결제·코인
+  'bank', 'kbstar', 'kookmin', 'shinhan', 'woori', 'nonghyup', 'citibank', 'hyundaicard', 'lottecard', 'mastercard',
+  'toss', 'paypal', 'payco', 'payment', 'wallet', 'upbit', 'bithumb', 'binance', 'coinone', 'korbit', 'bitcoin', 'crypto',
+  'giftcard', 'cultureland', 'happymoney', 'refund', 'invoice', 'billing',
+  // 나라·기관
+  'police', 'hometax', 'minwon', 'government',
+  // 피싱에 흔한 말
+  'login', 'logon', 'signin', 'signup', 'verify', 'verification', 'account', 'password', 'passwd', 'secure', 'security',
+  'recover', 'helpdesk', 'customer', 'unlock', 'suspend', 'confirm', 'airdrop', 'freegift', 'giveaway', 'freenitro'
+]
+// 이름 전체나 하이픈(-)으로 나눈 한 칸이 이것과 똑같을 때만 막는 짧은 말 (섞인 채로 막으면 class·pass 같은 이름까지 막힌다)
+const BLOCKED_WORDS = new Set(['auth', 'gov', 'ibk', 'visa', 'nh', 'kb', 'hana', 'pay', 'cash'])
+const isBlocked = (name) => {
+  const flat = name.replace(/-/g, '')
+  return BLOCKED_PARTS.some((w) => flat.includes(w)) || BLOCKED_WORDS.has(name) || name.split('-').some((p) => BLOCKED_WORDS.has(p))
+}
 const TUNNEL_HOST_RE = /^([a-z0-9-]+\.)+(joinmc\.link|ply\.gg|playit\.gg|playit\.cloud)$/ // 터널로 보낼 때 허용하는 주소 (남의 사이트로 보내지 못하게)
 const DEFAULT_LIMIT = 200 // 무료 요금제의 영역당 DNS 기록 개수 (사이트 자체 기록도 포함)
 const IDLE_DAYS = 30 // 켜지 않은 채 이만큼 지나면 이름 예약이 풀린다
@@ -251,6 +280,7 @@ export async function handleDomain(req, env, doFetch = fetch, now = Date.now(), 
     // 이름이 비어 있어도 DNS 기록을 만들 자리가 없으면 full로 알린다 (확인에서는 "사용 가능"인데 만들 때 거절되는 일이 없게)
     if (action === 'check') {
       const free = !row && have.length === 0
+      if (free && isBlocked(name)) return json({ error: 'reserved' }, 400)
       return json({ ok: true, free, ...(free && !(await hasRoom(1)) && { full: true }) })
     }
 
@@ -283,8 +313,9 @@ export async function handleDomain(req, env, doFetch = fetch, now = Date.now(), 
     const srv = have.find((r) => r.type === 'SRV')
     const wantSrv = !bedrock && !target && port !== DEFAULT_PORT
 
-    // 새 이름 예약: 같은 인터넷 주소로 예약한 이름 수를 본다
+    // 새 이름 예약: 막은 말이 들어 있는지, 같은 인터넷 주소로 예약한 이름 수를 본다
     if (!owner) {
+      if (isBlocked(name)) return json({ error: 'reserved' }, 400)
       const reserved = await store.countByIp(ip)
       const used = reserved ?? ((await cf('GET', `?type=${addrType}&content=${encodeURIComponent(ip)}&per_page=100`)).result ?? []).filter((r) => String(r.comment || '').startsWith('cp:')).length
       if (used >= MAX_PER_IP) return json({ error: 'limit' }, 429)

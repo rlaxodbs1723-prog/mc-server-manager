@@ -46,6 +46,7 @@
   },
   "productName": "MC CubePanel",
   "author": "Ora1ph",
+  "license": "GPL-3.0-only",
   "build": {
     "appId": "com.mcservermanager.app",
     "productName": "MC CubePanel",

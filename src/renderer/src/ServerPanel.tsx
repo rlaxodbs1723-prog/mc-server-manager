@@ -419,8 +419,8 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
               {STATE_LABEL[state]}
             </span>
             {/* 자리가 모자라면 이 글자가 줄어든다 (접속 주소 칸은 안 줄어든다). 전체는 마우스를 올리면 보인다 */}
-            <span className="sw-ver" title={`${SOFTWARE_INFO[software].label} ${server.mcVersion}${server.loaderVersion ? ` · ${versionLabel(software, server.loaderVersion)}` : ''}`}>
-              {SOFTWARE_INFO[software].label} {server.mcVersion}
+            <span className="sw-ver" title={`${(SOFTWARE_INFO[software]?.label ?? String(software))} ${server.mcVersion}${server.loaderVersion ? ` · ${versionLabel(software, server.loaderVersion)}` : ''}`}>
+              {(SOFTWARE_INFO[software]?.label ?? String(software))} {server.mcVersion}
               {server.loaderVersion ? ` · ${versionLabel(software, server.loaderVersion)}` : ''}
             </span>
             <InviteBox folderPath={folderPath} bedrock={bedrock} />

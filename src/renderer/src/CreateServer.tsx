@@ -70,7 +70,7 @@ export default function CreateServer({ existingNames }: Props) {
                 <button key={s} className="sw-tile" onClick={() => setPicked(s)}>
                   <SoftwareBadge software={s} size={40} />
                   <div>
-                    <div className="t">{SOFTWARE_INFO[s].label}</div>
+                    <div className="t">{(SOFTWARE_INFO[s]?.label ?? String(s))}</div>
                   </div>
                 </button>
               ))}

@@ -57,6 +57,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
 
   // 1단계: 기본 정보
   const [versions, setVersions] = useState<McVersion[]>([])
+  const [arclightPreview, setArclightPreview] = useState<Set<string>>(new Set()) // Arclight: 시험판 빌드만 있는 마인크래프트 버전
   const [includeSnapshots, setIncludeSnapshots] = useState(false)
   const [version, setVersion] = useState('')
   const [loaderVersions, setLoaderVersions] = useState<LoaderVersion[] | null>(null) // null이면 불러오는 중
@@ -100,9 +101,12 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
     Promise.all([window.api.getVersions(includeSnapshots), software === 'arclight' ? window.api.arclightMcVersions() : null])
       .then(([all, arclight]) => {
         // Arclight는 만든 버전만 고를 수 있다 (목록에 없는 새 버전이면 그대로 넣는다)
-        const list = arclight ? arclight.map((id) => all.find((v) => v.id === id) ?? { id, type: 'release' as const, url: '', releaseTime: '' }) : all
+        const list = arclight ? arclight.map(({ id }) => all.find((v) => v.id === id) ?? { id, type: 'release' as const, url: '', releaseTime: '' }) : all
         setVersions(list)
-        setVersion((v) => (list.some((x) => x.id === v) ? v : (list[0]?.id ?? '')))
+        setArclightPreview(new Set((arclight ?? []).filter((a) => !a.stable).map((a) => a.id)))
+        // Arclight는 정식 빌드가 있는 가장 최신 버전을 먼저 고른다 (최신 마인크래프트는 시험판만 있을 때가 많다)
+        const first = arclight?.find((a) => a.stable)?.id ?? list[0]?.id ?? ''
+        setVersion((v) => (list.some((x) => x.id === v) ? v : first))
       })
       .catch((e) => setLoadError(`버전 목록을 불러오지 못했어요. 인터넷 연결을 확인해 주세요. (${cleanError(e)})`))
   }, [includeSnapshots])
@@ -273,7 +277,7 @@ export default function SetupWizard({ software, existingNames, onClose }: Props)
                     options={versions.map((v, i) => ({
                       value: v.id,
                       label: v.id,
-                      tag: v.type === 'snapshot' ? '스냅샷' : i === 0 ? '최신' : undefined
+                      tag: arclightPreview.has(v.id) ? '시험판만' : v.type === 'snapshot' ? '스냅샷' : i === 0 ? '최신' : undefined
                     }))}
                   />
                 </div>

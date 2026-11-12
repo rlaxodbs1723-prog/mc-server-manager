@@ -98,9 +98,10 @@ async function arclightBuilds(): Promise<ArclightBuild[]> {
   return out
 }
 
-// Arclight가 지원하는 마인크래프트 버전 (최신순)
-export async function arclightMcVersions(): Promise<string[]> {
-  return [...new Set((await arclightBuilds()).map((b) => b.mcVersion))].sort(compareDesc)
+// Arclight가 지원하는 마인크래프트 버전 (최신순). stable: 그 버전에 정식 빌드가 하나라도 있다 (없으면 시험판만)
+export async function arclightMcVersions(): Promise<{ id: string; stable: boolean }[]> {
+  const builds = await arclightBuilds()
+  return [...new Set(builds.map((b) => b.mcVersion))].sort(compareDesc).map((id) => ({ id, stable: builds.some((b) => b.mcVersion === id && b.stable) }))
 }
 
 // 해당 마인크래프트 버전에서 쓸 수 있는 로더 버전 (안정 버전 먼저, 각각 최신순). 지원하지 않으면 빈 배열.

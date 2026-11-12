@@ -7,7 +7,7 @@ import { arclightLabel, sameMod } from '../src/shared-types'
 import { preferCurseForge } from '../src/main/merge'
 import { readYamlValue, writeYamlValue } from '../src/main/yamlvalue'
 import { readProperties, writeProperties } from '../src/main/properties'
-import { applyDefaultsOnce, parseJavaArgs, picksGc, createServer, startServerAt, readServerInfo, patchServerInfo, saveSettings, getSettings, duplicateServer, resetWorld, changeVersion, renameServer, listServers, setServerOrder, deleteServer, cleanupUnfinished } from '../src/main/servers'
+import { applyDefaultsOnce, parseJavaArgs, picksGc, createServer, startServerAt, readServerInfo, patchServerInfo, saveSettings, getSettings, duplicateServer, resetWorld, worldExists, changeVersion, renameServer, listServers, setServerOrder, deleteServer, cleanupUnfinished } from '../src/main/servers'
 import { getLoaderVersions } from '../src/main/loaders'
 import { acceptEula, emitEvent, getLog, getStartedAt, getState, isEulaAccepted, onServerEvent, sendCommand, stopServer } from '../src/main/runner'
 import { autoStartServers, setStarter } from '../src/main/automation'
@@ -31,7 +31,7 @@ import type { CrashAnalysis } from '../src/shared-types'
 import yazl from 'yazl'
 import * as mods from '../src/main/mods'
 import { curseForgeKeySource, getFile, hasCurseForgeKey, mapFiles, removeCurseForgeKey, searchMaps, setCurseForgeKey } from '../src/main/curseforge'
-import { createBackup, deleteBackup, getBackupSettings, listBackups, restoreBackup, setBackupSettings } from '../src/main/backup'
+import { autoBackupBeforeStart, backupRoot, createBackup, deleteBackup, getBackupSettings, listBackups, restoreBackup, setBackupSettings } from '../src/main/backup'
 import { analyzeCrash, analyzeJoinFailure } from '../src/main/crash'
 import http from 'http'
 import dgram from 'dgram'
@@ -245,6 +245,7 @@ async function quick(): Promise<void> {
   await domainChecks()
   await importChecks()
   await bedrockChecks()
+  await backupChecks()
   await check('버그 제보: 디스코드 메시지 (앱 정보 자동, 길이 자르기, 아무도 안 부르기, 파일 검사)', async () => {
     type Embed = { title: string; description: string; fields: { name: string; value: string }[] }
     const m = bugMessage('모드 & 설치 @everyone', '설명\n둘째 줄', ['a.png'])
@@ -475,6 +476,18 @@ async function domainChecks(): Promise<void> {
     expect((await call(cf, { action: 'check', name: 'www' })).status === 400, '막은 이름을 확인해 줬어요')
     expect((await call(cf, { action: 'check', name: 'ab' })).status === 400, '짧은 이름을 확인해 줬어요')
   })
+  await check('이름 주소: 회사 이름·피싱 단어가 든 새 이름은 막고, 이미 주인이 있는 이름은 계속 갱신된다', async () => {
+    const cf = fakeCloudflare()
+    for (const n of ['kakao-login', 'toss', 'my-bank', 'verify-me', 'naver-x', 'lo-gin'])
+      expect((await call(cf, { action: 'check', name: n })).status === 400 && (await call(cf, { action: 'claim', name: n, key: K1 })).status === 400, `${n}을(를) 막지 않았어요`)
+    expect(cf.records.length === 0, '막은 이름으로 기록을 만들었어요')
+    expect((await call(cf, { action: 'check', name: 'steve-world' })).status === 200, '평범한 이름을 막았어요')
+    // 금지어가 생기기 전에 만든 이름 (DNS 기록에 주인 메모가 있다): 주인은 계속 갱신·끄기·지우기를 할 수 있다
+    const tag = 'cp:' + [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`cubepanel-domain:${K1}`)))].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32)
+    const old = fakeCloudflare([{ id: 'o1', type: 'A', name: 'kakao-friends.cubepanel.kr', content: '1.2.3.4', comment: tag }])
+    expect((await call(old, { action: 'claim', name: 'kakao-friends', key: K1 })).status === 200, '원래 주인의 갱신을 막았어요')
+    expect((await call(old, { action: 'release', name: 'kakao-friends', key: K1 })).status === 200, '원래 주인이 지우지 못했어요')
+  })
   await check('이름 주소: 같은 인터넷 주소는 10개까지, 기록이 너무 많으면 새 이름을 막기', async () => {
     const cf = fakeCloudflare()
     for (let i = 0; i < 10; i++) expect((await call(cf, { action: 'claim', name: `name-${i}-abc`, key: K1 })).status === 200, `${i}번째 이름을 만들지 못했어요`)
@@ -699,6 +712,129 @@ async function domainChecks(): Promise<void> {
 }
 
 // ---------- 배드락 서버: 애드온·설정 ----------
+// 되돌릴 수 없는 일(백업·되돌리기·리셋·삭제)을 서버를 켜지 않고 파일로만 확인한다
+async function backupChecks(): Promise<void> {
+  const base = fs.mkdtempSync(path.join(process.env.TEST_HOME!, 'bk-'))
+  // 꺼진 자바 서버 폴더 (월드·네더·session.lock)
+  const javaServer = (name: string): string => {
+    const dir = path.join(base, name)
+    const files: Record<string, string> = {
+      'server.properties': 'level-name=world\n',
+      'world/level.dat': 'v1',
+      'world/region/r.0.0.mca': 'chunk1',
+      'world/session.lock': 'lock',
+      'world_nether/DIM-1/region/r.0.0.mca': 'nether1'
+    }
+    for (const [rel, text] of Object.entries(files)) {
+      fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true })
+      fs.writeFileSync(path.join(dir, rel), text)
+    }
+    return dir
+  }
+  const read = (p: string): string => fs.readFileSync(p, 'utf8')
+
+  await check('백업: 만들기·되돌리기 왕복 (session.lock 빼기, 되돌리기 전 백업, 임시 폴더 안 남김)', async () => {
+    const dir = javaServer('roundtrip')
+    const b = await createBackup(dir)
+    expect(b.worlds.join() === 'world,world_nether', `백업한 월드: ${b.worlds}`)
+    const saved = path.join(backupRoot(dir), b.id)
+    expect(!fs.existsSync(path.join(saved, 'world', 'session.lock')), 'session.lock까지 백업했어요')
+    fs.writeFileSync(path.join(dir, 'world', 'level.dat'), 'v2')
+    fs.writeFileSync(path.join(dir, 'world', 'new.txt'), 'after')
+    await restoreBackup(dir, b.id)
+    expect(read(path.join(dir, 'world', 'level.dat')) === 'v1', '되돌렸는데 월드가 그대로예요')
+    expect(!fs.existsSync(path.join(dir, 'world', 'new.txt')), '백업 뒤에 생긴 파일이 남았어요')
+    expect(read(path.join(dir, 'world_nether', 'DIM-1', 'region', 'r.0.0.mca')) === 'nether1', '네더를 되돌리지 않았어요')
+    const before = listBackups(dir).find((x) => x.note === '되돌리기 전')
+    expect(!!before && read(path.join(backupRoot(dir), before.id, 'world', 'level.dat')) === 'v2', '되돌리기 전의 월드를 백업해 두지 않았어요')
+    expect(!fs.readdirSync(dir).some((n) => n.startsWith('.restoring-')), '임시 폴더가 남았어요')
+  })
+
+  await check('백업: 망가진 백업으로 되돌리면 지금 월드는 그대로 둔다', async () => {
+    const dir = javaServer('broken')
+    const b = await createBackup(dir)
+    fs.writeFileSync(path.join(dir, 'world', 'level.dat'), 'current')
+    fs.rmSync(path.join(backupRoot(dir), b.id, 'world'), { recursive: true, force: true }) // 백업 안의 월드가 사라졌다
+    expect(await throws(() => restoreBackup(dir, b.id)), '망가진 백업으로 되돌렸어요')
+    expect(read(path.join(dir, 'world', 'level.dat')) === 'current', '실패했는데 지금 월드가 바뀌었어요')
+    expect(!fs.readdirSync(dir).some((n) => n.startsWith('.restoring-')), '임시 폴더가 남았어요')
+  })
+
+  await check('백업: 이상한 백업 이름·바깥을 가리키는 백업은 막는다', async () => {
+    const dir = javaServer('paths')
+    for (const id of ['../../x', '..', 'abc', '20260101-000000/../..'])
+      expect((await throws(() => restoreBackup(dir, id))) && (await throws(() => deleteBackup(dir, id))), `이상한 이름을 받아들였어요: ${id}`)
+    expect(await throws(() => restoreBackup(dir, '20200101-000000')), '없는 백업으로 되돌렸어요')
+    // 백업 정보에 서버 폴더 바깥 경로가 적혀 있어도 그쪽에는 아무것도 쓰지 않는다
+    const b = await createBackup(dir)
+    const metaFile = path.join(backupRoot(dir), b.id, 'backup.json')
+    fs.writeFileSync(metaFile, JSON.stringify({ ...b, worlds: ['../evil', 'world'] }))
+    fs.mkdirSync(path.join(backupRoot(dir), b.id, '..', 'evil'), { recursive: true })
+    await restoreBackup(dir, b.id)
+    expect(!fs.existsSync(path.join(base, 'evil')), '서버 폴더 바깥에 썼어요')
+    expect(read(path.join(dir, 'world', 'level.dat')) === 'v1', '정상 월드를 되돌리지 않았어요')
+  })
+
+  await check('백업: 자동 백업은 정한 개수만 남기고, 이유가 적힌 백업은 지우지 않는다', async () => {
+    const dir = javaServer('prune')
+    setBackupSettings(dir, { ...getBackupSettings(dir), keep: 2 })
+    await createBackup(dir, false, '버전 바꾸기 전')
+    for (let i = 0; i < 4; i++) await createBackup(dir, true)
+    const list = listBackups(dir)
+    expect(list.filter((x) => x.auto && !x.note).length === 2, `자동 백업이 ${list.filter((x) => x.auto).length}개 남았어요`)
+    expect(list.some((x) => x.note === '버전 바꾸기 전'), '이유가 적힌 백업을 지웠어요')
+  })
+
+  await check('백업: 켜기 전 자동 백업은 월드가 바뀌었을 때만 한다', async () => {
+    const dir = javaServer('beforestart')
+    await autoBackupBeforeStart(dir)
+    const n1 = listBackups(dir).length
+    await autoBackupBeforeStart(dir)
+    expect(n1 === 1 && listBackups(dir).length === 1, `바뀐 게 없는데 또 백업했어요: ${n1} → ${listBackups(dir).length}`)
+    const later = new Date(Date.now() + 60_000)
+    fs.utimesSync(path.join(dir, 'world', 'level.dat'), later, later)
+    await autoBackupBeforeStart(dir)
+    expect(listBackups(dir).length === 2, '월드가 바뀌었는데 백업하지 않았어요')
+  })
+
+  await check('월드 리셋: 데이터팩(자바)·애드온 연결(배드락)을 남기거나 같이 지운다', async () => {
+    const dir = javaServer('reset-java')
+    fs.mkdirSync(path.join(dir, 'world', 'datapacks'), { recursive: true })
+    fs.writeFileSync(path.join(dir, 'world', 'datapacks', 'pack.zip'), 'dp')
+    await resetWorld(dir)
+    expect(!fs.existsSync(path.join(dir, 'world', 'level.dat')) && !fs.existsSync(path.join(dir, 'world_nether')), '월드가 남았어요')
+    expect(read(path.join(dir, 'world', 'datapacks', 'pack.zip')) === 'dp', '데이터팩을 지웠어요')
+    expect(!worldExists(dir), '데이터팩만 남은 폴더를 월드로 봤어요')
+    expect(listBackups(dir).some((x) => x.note === '월드 리셋 전'), '리셋 전에 백업하지 않았어요')
+    const dir2 = javaServer('reset-java-nokeep')
+    fs.mkdirSync(path.join(dir2, 'world', 'datapacks'), { recursive: true })
+    fs.writeFileSync(path.join(dir2, 'world', 'datapacks', 'pack.zip'), 'dp')
+    await resetWorld(dir2, false)
+    expect(!fs.existsSync(path.join(dir2, 'world')), '남기지 말라고 했는데 데이터팩을 남겼어요')
+    // 배드락: 애드온을 켜 둔 기록(world_behavior_packs.json)은 월드 폴더 안에 있다
+    const bed = path.join(base, 'reset-bedrock')
+    const w = path.join(bed, 'worlds', 'W')
+    fs.mkdirSync(path.join(w, 'db'), { recursive: true })
+    fs.writeFileSync(path.join(bed, 'bedrock_server.exe'), '')
+    fs.writeFileSync(path.join(bed, 'server.properties'), 'level-name=W\n')
+    fs.writeFileSync(path.join(w, 'level.dat'), 'x')
+    fs.writeFileSync(path.join(w, 'world_behavior_packs.json'), '[{"pack_id":"a"}]')
+    await resetWorld(bed)
+    expect(!fs.existsSync(path.join(w, 'level.dat')) && !fs.existsSync(path.join(w, 'db')), '배드락 월드가 남았어요')
+    expect(read(path.join(w, 'world_behavior_packs.json')).includes('"a"'), '배드락 애드온 연결을 지웠어요')
+    expect(!fs.readdirSync(bed).some((n) => n.startsWith('.reset-keep')), '임시 폴더가 남았어요')
+  })
+
+  await check('서버 삭제: 서버 폴더와 백업을 같이 지운다', async () => {
+    const dir = javaServer('delete-me')
+    await createBackup(dir)
+    expect(fs.existsSync(backupRoot(dir)), '백업이 안 만들어졌어요')
+    await deleteServer(dir)
+    expect(!fs.existsSync(dir) && !fs.existsSync(backupRoot(dir)), '서버나 백업이 남았어요')
+  })
+  fs.rmSync(base, { recursive: true, force: true })
+}
+
 async function bedrockChecks(): Promise<void> {
   await check('배드락 실험적 기능: level.dat(리틀엔디언·8바이트 머리)를 그대로 읽고 쓰고, 베타 API를 켜고 끈다', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcsm-bexp-'))

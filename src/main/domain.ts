@@ -76,9 +76,15 @@ async function call(body: Record<string, unknown>, timeoutMs = 15000): Promise<{
 }
 
 // 서버를 만들기 전에 이 이름을 쓸 수 있는지 확인한다. 'free' 쓸 수 있음, 'taken' 이미 쓰는 이름, 'full' 이름은 비었지만 지금은 새 주소를 만들 자리가 없음. 아무것도 만들지 않는다
-export async function checkDomainName(rawName: string): Promise<'free' | 'taken' | 'full'> {
+export async function checkDomainName(rawName: string): Promise<'free' | 'taken' | 'full' | 'reserved'> {
   const name = cleanDomainName(rawName)
-  const out = (await call({ action: 'check', name })) as { free?: boolean; full?: boolean }
+  let out: { free?: boolean; full?: boolean }
+  try {
+    out = (await call({ action: 'check', name })) as { free?: boolean; full?: boolean }
+  } catch (e) {
+    if (e instanceof Error && e.message === MESSAGES.reserved) return 'reserved' // 회사 이름·피싱에 흔한 말 등
+    throw e
+  }
   if (out.free !== true) return 'taken'
   return out.full === true ? 'full' : 'free'
 }

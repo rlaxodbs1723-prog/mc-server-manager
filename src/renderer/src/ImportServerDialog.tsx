@@ -103,7 +103,7 @@ export default function ImportServerDialog({
                     setLoader('')
                   }}
                   placeholder="종류 선택"
-                  options={SOFTWARES.map((s) => ({ value: s, label: SOFTWARE_INFO[s].label }))}
+                  options={SOFTWARES.map((s) => ({ value: s, label: (SOFTWARE_INFO[s]?.label ?? String(s)) }))}
                 />
               </div>
               <div>
@@ -114,8 +114,8 @@ export default function ImportServerDialog({
                 <div>
                   <div className="label">
                     {software === 'paper' || software === 'purpur'
-                      ? `${SOFTWARE_INFO[software as Software].label} 빌드`
-                      : `${SOFTWARE_INFO[software as Software].label} 버전`}
+                      ? `${(SOFTWARE_INFO[software as Software]?.label ?? String(software as Software))} 빌드`
+                      : `${(SOFTWARE_INFO[software as Software]?.label ?? String(software as Software))} 버전`}
                   </div>
                   <Select
                     value={loader}

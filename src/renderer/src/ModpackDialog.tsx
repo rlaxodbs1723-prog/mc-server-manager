@@ -203,7 +203,7 @@ export default function ModpackDialog({ existingNames, onClose }: { existingName
               <div>
                 <span>로더</span>
                 <b>
-                  {SOFTWARE_INFO[info.software].label} {info.loaderVersion}
+                  {(SOFTWARE_INFO[info.software]?.label ?? String(info.software))} {info.loaderVersion}
                 </b>
               </div>
               <div>

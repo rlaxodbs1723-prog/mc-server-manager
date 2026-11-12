@@ -2048,5 +2048,7 @@
  "하이브리드 (모드+플러그인)": "Hybrid (mods + plugins)",
  "시험판": "Preview",
  "모드+플러그인": "Mods + plugins",
- "모드(NeoForge·Fabric·Forge)와 플러그인(Spigot·Bukkit)을 같이 쓰는 하이브리드 서버": "Hybrid server that runs mods (NeoForge, Fabric, Forge) and plugins (Spigot, Bukkit) together"
+ "모드(NeoForge·Fabric·Forge)와 플러그인(Spigot·Bukkit)을 같이 쓰는 하이브리드 서버": "Hybrid server that runs mods (NeoForge, Fabric, Forge) and plugins (Spigot, Bukkit) together",
+ "쓸 수 없는 이름 (회사·서비스 이름이나 login 같은 말은 못 씀)": "Name not allowed (company/service names or words like login cannot be used)",
+ "시험판만": "Preview only"
 }

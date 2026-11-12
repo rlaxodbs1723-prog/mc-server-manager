@@ -39,7 +39,7 @@ export default function VersionSection({ serverOn, software, mcVersion, loaderVe
       .then(([list, arclight]) =>
         setVersions(
           arclight
-            ? [...new Set([...arclight, mcVersion])].map((id) => list.find((v) => v.id === id) ?? { id, type: 'release' as const, url: '', releaseTime: '' })
+            ? [...new Set([...arclight.map((a) => a.id), mcVersion])].map((id) => list.find((v) => v.id === id) ?? { id, type: 'release' as const, url: '', releaseTime: '' })
             : list.filter((v) => v.type === 'release' || v.id === mcVersion)
         )
       )

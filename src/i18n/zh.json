@@ -2048,5 +2048,7 @@
  "하이브리드 (모드+플러그인)": "混合（模组+插件）",
  "시험판": "测试版",
  "모드+플러그인": "模组+插件",
- "모드(NeoForge·Fabric·Forge)와 플러그인(Spigot·Bukkit)을 같이 쓰는 하이브리드 서버": "可同时运行模组（NeoForge、Fabric、Forge）和插件（Spigot、Bukkit）的混合服务器"
+ "모드(NeoForge·Fabric·Forge)와 플러그인(Spigot·Bukkit)을 같이 쓰는 하이브리드 서버": "可同时运行模组（NeoForge、Fabric、Forge）和插件（Spigot、Bukkit）的混合服务器",
+ "쓸 수 없는 이름 (회사·서비스 이름이나 login 같은 말은 못 씀)": "不可使用的名称（不能包含公司/服务名称或 login 等词）",
+ "시험판만": "仅测试版"
 }

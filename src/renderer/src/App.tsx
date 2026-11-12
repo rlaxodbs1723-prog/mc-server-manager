@@ -188,7 +188,7 @@ export default function App() {
                   <div className="meta">
                     <div className="name">{s.name}</div>
                     <div className="sub">
-                      {SOFTWARE_INFO[s.software ?? 'vanilla'].label} · {s.mcVersion}
+                      {(SOFTWARE_INFO[s.software ?? 'vanilla']?.label ?? String(s.software ?? 'vanilla'))} · {s.mcVersion}
                     </div>
                     <div className={`sub status ${s.state}`}>{serverStatusLine(s, now, s.modCount == null ? null : ['paper', 'purpur'].includes(s.software ?? '') ? '플러그인' : '모드')}</div>
                   </div>

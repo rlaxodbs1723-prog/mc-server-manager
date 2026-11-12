@@ -520,7 +520,7 @@ export interface Progress {
 
 export interface Api {
   getVersions: (includeSnapshots: boolean) => Promise<McVersion[]>
-  arclightMcVersions: () => Promise<string[]> // Arclight(하이브리드)가 지원하는 마인크래프트 버전
+  arclightMcVersions: () => Promise<{ id: string; stable: boolean }[]> // Arclight(하이브리드)가 지원하는 마인크래프트 버전. stable: 정식 빌드가 있다
   // 바닐라가 아닌 종류의 로더/빌드 버전 목록. 지원하지 않는 마인크래프트 버전이면 빈 배열
   getLoaderVersions: (software: Software, mcVersion: string) => Promise<LoaderVersion[]>
   // taskId: 진행 상황(onCreateProgress)을 어느 만들기 작업의 것인지 구분하는 번호
@@ -571,7 +571,7 @@ export interface Api {
   // 바깥 인터넷에서 이 서버에 접속되는지 확인한다
   checkReachable: (folderPath: string) => Promise<{ ok: boolean; message: string }>
   // 이름 주소: 서버를 만들기 전에 이 이름을 쓸 수 있는지 (true면 비어 있음)
-  checkDomainName: (name: string) => Promise<'free' | 'taken' | 'full'>
+  checkDomainName: (name: string) => Promise<'free' | 'taken' | 'full' | 'reserved'>
   // 배드락 서버: 받을 수 있는 최신 버전, 애드온 관리
   getBedrockVersion: () => Promise<string>
   listAddons: (folderPath: string) => Promise<InstalledAddon[]>

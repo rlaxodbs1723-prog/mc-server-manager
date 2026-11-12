@@ -9,7 +9,7 @@ export interface AddressMemoryValue {
   blocked: boolean // 이름을 잘못 썼거나 이미 쓰는 이름이라 이대로는 만들 수 없다 (비워 두는 건 괜찮다)
 }
 
-type Check = 'idle' | 'checking' | 'free' | 'taken' | 'full' | 'error'
+type Check = 'idle' | 'checking' | 'free' | 'taken' | 'full' | 'reserved' | 'error'
 
 const gb = (mb: number): string => `${(mb / 1024).toFixed(mb % 1024 ? 1 : 0)}GB`
 
@@ -38,7 +38,7 @@ export function DomainField({ onChange }: { onChange: (v: { domainName?: string;
   useEffect(() => {
     // 비워 두면 이름 주소 없이 만든다 (공유기 포트를 직접 열고 내 도메인을 쓰는 사람 등). 쓴 이름이 틀렸거나 남의 것이면 막는다
     const empty = name.trim() === ''
-    onChange({ domainName: valid ? name.trim() : undefined, blocked: !empty && (!valid || check === 'taken' || check === 'checking') })
+    onChange({ domainName: valid ? name.trim() : undefined, blocked: !empty && (!valid || check === 'taken' || check === 'reserved' || check === 'checking') })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name, valid, check])
 
@@ -50,7 +50,7 @@ export function DomainField({ onChange }: { onChange: (v: { domainName?: string;
         <span className="domain-suffix">{`.${BASE}`}</span>
       </div>
       {name.trim() !== '' && (
-        <p className={`hint ${!valid || check === 'taken' || check === 'error' || check === 'full' ? 'name-bad' : check === 'free' ? 'name-ok' : ''}`}>
+        <p className={`hint ${!valid || check === 'taken' || check === 'reserved' || check === 'error' || check === 'full' ? 'name-bad' : check === 'free' ? 'name-ok' : ''}`}>
           {!valid
             ? '영어 소문자, 숫자, 하이픈(-) 3~20자. 하이픈은 처음과 끝에 사용 불가'
             : check === 'checking'
@@ -59,7 +59,9 @@ export function DomainField({ onChange }: { onChange: (v: { domainName?: string;
                 ? '사용 가능한 이름'
                 : check === 'taken'
                   ? '이미 사용 중인 이름'
-                  : check === 'full'
+                  : check === 'reserved'
+                    ? '쓸 수 없는 이름 (회사·서비스 이름이나 login 같은 말은 못 씀)'
+                    : check === 'full'
                     ? '지금은 새 주소를 만들 수 없음. 서버를 켤 때 다시 시도하니 그대로 진행해도 됨'
                     : check === 'error'
                     ? '확인하지 못함. 서버를 만든 뒤 다시 확인'

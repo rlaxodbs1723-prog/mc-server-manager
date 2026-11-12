@@ -39,3 +39,11 @@ The CurseForge API key, the Discord webhook and the Discord bot token live only 
 ## Note
 
 Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.
+
+## License
+
+Copyright (C) 2026 Ora1ph
+
+MC CubePanel is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License, version 3, as published by the Free Software Foundation. It comes with ABSOLUTELY NO WARRANTY. See [LICENSE](LICENSE) for the full text.
+
+If you share a modified version, you must also share its source code under the same license.
