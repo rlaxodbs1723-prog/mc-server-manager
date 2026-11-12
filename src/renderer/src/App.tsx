@@ -84,6 +84,16 @@ export default function App() {
     return () => clearInterval(t)
   }, [])
 
+  // 공유 코드로 서버를 넣으면 그 서버를 연다
+  useEffect(() => {
+    const on = (e: Event): void => {
+      const path = (e as CustomEvent<string>).detail
+      void refresh().then(() => setSelected(path))
+    }
+    window.addEventListener('open-server', on)
+    return () => window.removeEventListener('open-server', on)
+  }, [refresh])
+
   // 마지막으로 연 서버를 기억해 두었다가 다음에 켤 때 그 서버를 연다
   useEffect(() => {
     if (selected) writeStored('lastServer', selected)
@@ -104,6 +114,7 @@ export default function App() {
         void refresh()
       }
       if (e.type === 'backups') void refresh() // 서버 목록의 "백업 N분 전"
+      if (e.type === 'shares') void refresh() // 공유받은 서버가 생기거나 방장 연결이 바뀜
       if (e.type === 'players') setServers((list) => list.map((s) => (s.folderPath === e.folderPath ? { ...s, playerCount: e.players.length } : s)))
     })
     const offQuit = window.api.onConfirmQuit(setAskQuit)
@@ -114,6 +125,8 @@ export default function App() {
   }, [refresh])
 
   const current = servers.find((s) => s.folderPath === selected)
+  const mine = servers.filter((s) => !s.remote) // 이 컴퓨터의 서버 (끌어서 순서 바꾸기는 이것만)
+  const shared = servers.filter((s) => s.remote) // 친구가 공유해 준 서버
   const runningCount = servers.filter((s) => s.state !== 'stopped').length
 
   return (
@@ -138,17 +151,17 @@ export default function App() {
                 새 서버 만들기
               </button>
 
-              <div className="sidebar-title">내 서버 {servers.length > 0 && servers.length}</div>
-              {servers.length === 0 && (
+              <div className="sidebar-title">내 서버 {mine.length > 0 && mine.length}</div>
+              {mine.length === 0 && (
                 <p className="empty-side">
                   아직 만든 서버가 없어요.
                   <br />위 버튼으로 첫 서버를 만들어 보세요.
                 </p>
               )}
-              {servers.map((s, idx) => (
+              {mine.map((s, idx) => (
                 <button
                   key={s.folderPath}
-                  className={`server-item ${selected === s.folderPath ? 'active' : ''} ${dragging === s.folderPath ? 'dragging' : ''} ${dragging && dropAt === idx ? 'drop-before' : ''} ${dragging && dropAt === idx + 1 && idx === servers.length - 1 ? 'drop-after' : ''}`}
+                  className={`server-item ${selected === s.folderPath ? 'active' : ''} ${dragging === s.folderPath ? 'dragging' : ''} ${dragging && dropAt === idx ? 'drop-before' : ''} ${dragging && dropAt === idx + 1 && idx === mine.length - 1 ? 'drop-after' : ''}`}
                   onClick={() => setSelected(s.folderPath)}
                   draggable
                   onDragStart={(e) => {
@@ -161,18 +174,18 @@ export default function App() {
                     e.preventDefault()
                     // 칸의 위쪽 절반이면 이 서버 앞, 아래쪽 절반이면 뒤에 하얀 줄을 보여 준다 (놓으면 그 자리로 옮긴다)
                     const rect = e.currentTarget.getBoundingClientRect()
-                    const i = servers.findIndex((x) => x.folderPath === s.folderPath)
+                    const i = mine.findIndex((x) => x.folderPath === s.folderPath)
                     const at = e.clientY - rect.top < rect.height / 2 ? i : i + 1
                     if (at !== dropAt) setDropAt(at)
                   }}
                   onDrop={(e) => {
                     e.preventDefault()
                     if (!dragging || dropAt == null) return
-                    const from = servers.findIndex((x) => x.folderPath === dragging)
-                    const next = [...servers]
+                    const from = mine.findIndex((x) => x.folderPath === dragging)
+                    const next = [...mine]
                     const [moved] = next.splice(from, 1)
                     next.splice(dropAt > from ? dropAt - 1 : dropAt, 0, moved)
-                    setServers(next)
+                    setServers([...next, ...shared])
                     window.api.setServerOrder(next.map((x) => x.folderPath))
                   }}
                   onDragEnd={() => {
@@ -193,6 +206,20 @@ export default function App() {
                     <div className={`sub status ${s.state}`}>{serverStatusLine(s, now, s.modCount == null ? null : ['paper', 'purpur'].includes(s.software ?? '') ? '플러그인' : '모드')}</div>
                   </div>
                   <span className={`dot ${s.state}`} title={STATE_LABEL[s.state]} />
+                </button>
+              ))}
+              {shared.length > 0 && <div className="sidebar-title" style={{ marginTop: 14 }}>공유받은 서버 {shared.length}</div>}
+              {shared.map((s) => (
+                <button key={s.folderPath} className={`server-item ${selected === s.folderPath ? 'active' : ''}`} onClick={() => setSelected(s.folderPath)}>
+                  <SoftwareBadge software={s.software ?? 'vanilla'} size={36} name={s.name} icon={s.icon} />
+                  <div className="meta">
+                    <div className="name">{s.name}</div>
+                    <div className="sub">
+                      {(SOFTWARE_INFO[s.software ?? 'vanilla']?.label ?? String(s.software ?? 'vanilla'))} · {s.mcVersion}
+                    </div>
+                    <div className={`sub status ${s.state}`}>{s.remote?.hostOnline ? serverStatusLine(s, now, null) : '방장 컴퓨터 꺼짐'}</div>
+                  </div>
+                  <span className={`dot ${s.remote?.hostOnline ? s.state : 'stopped'}`} title={s.remote?.hostOnline ? STATE_LABEL[s.state] : '방장 컴퓨터 꺼짐'} />
                 </button>
               ))}
             </aside>

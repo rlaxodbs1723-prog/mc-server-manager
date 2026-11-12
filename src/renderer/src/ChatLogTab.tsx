@@ -8,7 +8,8 @@ import { cleanError } from './util'
 const LABEL: Record<Exclude<ChatEvent['kind'], 'chat' | 'say'>, string> = { join: '접속', leave: '퇴장', death: '', advancement: '' }
 
 // 채팅 탭: 로그 파일을 골라서 채팅, 접속·퇴장, 사망, 발전 과제를 메신저처럼 보여 준다
-export default function ChatLogTab({ folderPath }: { folderPath: string }) {
+// readOnly: 공유받은 서버(보기만)에서는 기록을 읽기만 한다 (지우는 기간 설정은 끈다)
+export default function ChatLogTab({ folderPath, readOnly = false }: { folderPath: string; readOnly?: boolean }) {
   const [list, setList] = useState<ChatLogList | null>(null)
   const [date, setDate] = useState('')
   const [events, setEvents] = useState<ChatEvent[] | null>(null)
@@ -84,6 +85,7 @@ export default function ChatLogTab({ folderPath }: { folderPath: string }) {
             </div>
             <div className="chatlog-keep" title="서버를 켤 때 오래된 기록을 지워요">
               <Select
+                disabled={readOnly}
                 value={String(list.keepDays)}
                 options={
                   KEEP.some((k) => k.value === String(list.keepDays))

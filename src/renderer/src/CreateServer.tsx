@@ -4,7 +4,8 @@ import DiscordLogo from './DiscordLogo'
 import ImportServerDialog from './ImportServerDialog'
 import ModpackDialog from './ModpackDialog'
 import SetupWizard from './SetupWizard'
-import { FolderInput, Package } from 'lucide-react'
+import { FolderInput, Package, Users } from 'lucide-react'
+import JoinShareDialog from './JoinShareDialog'
 import { SoftwareBadge, useToast } from './ui'
 import { cleanError, IS_MAC } from './util'
 
@@ -24,6 +25,7 @@ interface Props {
 export default function CreateServer({ existingNames }: Props) {
   const [picked, setPicked] = useState<Software | null>(null)
   const [modpack, setModpack] = useState(false)
+  const [joining, setJoining] = useState(false)
   const toast = useToast()
   const [importing, setImporting] = useState<{ folder: string; detected: DetectedServer } | null>(null)
 
@@ -96,9 +98,19 @@ export default function CreateServer({ existingNames }: Props) {
                 <div className="t">기존 서버</div>
               </div>
             </button>
+            {/* 친구가 공유해 준 서버를 초대 코드로 내 목록에 넣는다 */}
+            <button className="sw-tile" onClick={() => setJoining(true)}>
+              <span className="sw-badge" style={{ width: 40, height: 40, borderRadius: 12, color: '#5ab0ff', background: '#5ab0ff24' }}>
+                <Users size={22} />
+              </span>
+              <div>
+                <div className="t">공유받은 서버</div>
+              </div>
+            </button>
           </div>
         </div>
       </section>
+      {joining && <JoinShareDialog onClose={() => setJoining(false)} />}
       {modpack && <ModpackDialog existingNames={existingNames} onClose={() => setModpack(false)} />}
       {importing && <ImportServerDialog folder={importing.folder} detected={importing.detected} existingNames={existingNames} onClose={() => setImporting(null)} />}
 

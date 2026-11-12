@@ -137,6 +137,7 @@ export interface ServerInfo {
   logKeepDays?: number // 며칠 지난 로그를 지울지 (없으면 30일, 0이면 지우지 않음)
   domain?: DomainInfo // 이름 주소(이름.cubepanel.kr)를 만들었으면 그 이름과 주인 열쇠
   domainWish?: string // 서버를 만들 때 정한 이름인데 주소를 못 만들었으면 (서버를 켤 때 다시 시도한다)
+  share?: { room: string; key: string } // 서버 공유 중이면 중계 서버의 방 번호와 방장 열쇠
   folderPath: string
   createdAt: string
 }
@@ -168,6 +169,18 @@ export interface ServerListItem extends ServerInfo {
   playerCount: number
   modCount: number | null // 켜진 모드·플러그인 수 (모드를 못 쓰는 서버면 null)
   lastBackupAt: number | null
+  remote?: { role: ShareRole; hostOnline: boolean } // 공유받은 서버(친구 앱): 내 권한과 방장 앱이 켜져 있는지
+}
+
+// ---------- 서버 공유 ----------
+// view: 보기만 (상태·콘솔·접속자) / admin: 켜고 끄기·명령·관리까지
+export type ShareRole = 'view' | 'admin'
+export interface ShareDevice {
+  id: string
+  name: string // 친구 컴퓨터 이름
+  role: ShareRole
+  added: number
+  online: boolean
 }
 
 // 배드락 실험적 기능 하나 (id: level.dat의 experiments 안 이름, 예: gametest = 베타 API)
@@ -192,6 +205,7 @@ export type ServerEvent =
   | { type: 'players'; folderPath: string; players: string[] }
   | { type: 'backups'; folderPath: string } // 백업이 생기거나 지워짐 (목록을 다시 읽으라는 뜻)
   | { type: 'crashed'; folderPath: string; reason: string; restarting: boolean; analysis: CrashAnalysis }
+  | { type: 'shares'; folderPath: '' } // 공유받은 서버 목록·연결 상태가 바뀜 (서버 목록을 다시 읽으라는 뜻)
 
 // ---------- 관리 탭 ----------
 export type Difficulty = 'peaceful' | 'easy' | 'normal' | 'hard'
@@ -527,6 +541,17 @@ export interface Api {
   createServer: (options: CreateServerOptions, taskId: string) => Promise<ServerInfo>
   onCreateProgress: (fn: (taskId: string, p: Progress) => void) => () => void
   listServers: () => Promise<ServerListItem[]>
+  // 서버 공유 (방장)
+  startSharing: (folderPath: string) => Promise<void>
+  stopSharing: (folderPath: string) => Promise<void>
+  shareStatus: (folderPath: string) => Promise<{ sharing: boolean; online: boolean }>
+  createShareInvite: (folderPath: string, role: ShareRole) => Promise<string>
+  shareDevices: (folderPath: string) => Promise<ShareDevice[]>
+  revokeShareDevice: (folderPath: string, device: string) => Promise<ShareDevice[]>
+  setShareRole: (folderPath: string, device: string, role: ShareRole) => Promise<ShareDevice[]>
+  // 서버 공유 (친구)
+  joinShare: (code: string) => Promise<string>
+  leaveShare: (folderPath: string) => Promise<void>
   cleanupReport: () => Promise<{ removed: string[]; failed: string[] }> // 앱을 켤 때 만들다 끊긴 서버 폴더를 정리한 결과
   openFolder: (folderPath: string) => Promise<void>
   // 서버 폴더를 휴지통으로 보낸다 (확인은 화면에서 먼저 받는다)

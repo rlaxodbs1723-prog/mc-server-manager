@@ -146,6 +146,7 @@ export default function BedrockWorldTab({ folderPath, serverOn }: { folderPath: 
 
   // 탭에 월드 파일을 끌어다 놓으면 가져온다 (하나만. 지금 월드는 백업해 둔다)
   async function dropWorld(files: FileList) {
+    if (folderPath.startsWith('remote:')) return toast('월드 가져오기는 방장만 할 수 있어요', 'error')
     if (serverOn) return toast('서버를 끈 다음에 월드를 바꿀 수 있어요', 'error')
     const f = files[0]
     try {
@@ -197,8 +198,8 @@ export default function BedrockWorldTab({ folderPath, serverOn }: { folderPath: 
             <button
               className={`btn ${worldExists ? 'danger' : ''}`}
               onClick={() => setShowReset(true)}
-              disabled={serverOn}
-              title={serverOn ? '서버를 끈 다음에 할 수 있어요' : undefined}
+              disabled={serverOn || folderPath.startsWith('remote:')}
+              title={folderPath.startsWith('remote:') ? '월드 리셋은 방장만 할 수 있어요' : serverOn ? '서버를 끈 다음에 할 수 있어요' : undefined}
             >
               <RotateCcw size={16} />
               {worldExists ? '월드 리셋' : '설정하기'}

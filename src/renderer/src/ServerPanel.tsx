@@ -1,4 +1,5 @@
-import { ArrowDown, CopyPlus, FolderOpen, Pencil, Play, Search, Send, Settings, Square, Trash2, X, Zap } from 'lucide-react'
+import { ArrowDown, CopyPlus, FolderOpen, Pencil, Play, Search, Send, Settings, Share2, Square, Trash2, X, Zap } from 'lucide-react'
+import ShareDialog from './ShareDialog'
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { SOFTWARE_INFO, type BedrockUpdateInfo, type ModKindInfo, type PreflightResult, type Progress, type ServerListItem } from '../../shared-types'
 import { suggest, usageOf } from './consoleHelp'
@@ -137,6 +138,19 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
   const [tab, setTab] = useStored<'console' | 'manage' | 'chat' | 'mods' | 'plugins' | 'datapacks' | 'addons' | 'resources' | 'scripts' | 'maps' | 'backup' | 'files'>(`tab:${folderPath}`, 'console') // 서버마다 마지막 탭을 기억한다
   const [bedrockUpdate, setBedrockUpdate] = useState<BedrockUpdateInfo | null>(null)
   const bedrock = software === 'bedrock' // 배드락은 관리·채팅·데이터팩·모드 탭 대신 애드온 탭을 쓴다
+  // 친구가 공유해 준 서버: 서버는 방장 컴퓨터에서 돈다. 지금은 상태와 콘솔 보기만 (조작은 다음 단계)
+  const remote = server.remote
+  const readOnly = !!remote && (remote.role !== 'admin' || !remote.hostOnline)
+  const guard = (node: React.ReactNode): React.ReactNode =>
+    readOnly ? (
+      <fieldset disabled className="ro-fieldset">
+        {node}
+      </fieldset>
+    ) : (
+      node
+    )
+  const [showShare, setShowShare] = useState(false)
+  const [askLeave, setAskLeave] = useState(false)
   const BEDROCK_PACK_TABS = ['addons', 'resources', 'scripts', 'maps'] // 배드락: 애드온·리소스 팩·스크립트·맵을 탭으로 나눈다
   const shownTab = bedrock ? (['console', 'manage', ...BEDROCK_PACK_TABS, 'backup', 'files'].includes(tab) ? tab : 'console') : ['addons', 'resources', 'scripts'].includes(tab) ? 'console' : tab
   const [modKinds, setModKinds] = useState<ModKindInfo[]>([]) // 바닐라면 비어 있음 → 모드 탭 없음. 하이브리드(Arclight)는 모드·플러그인 둘
@@ -155,13 +169,14 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
   const resumeStart = useRef(false) // 켜기 전 점검에서 끌지 묻는 창을 띄웠으면, 답한 뒤 이어서 켠다
 
   useEffect(() => {
+    if (remote) return setModKinds([]) // 공유받은 서버는 모드 탭이 없다
     window.api.modKinds(folderPath).then(setModKinds)
-  }, [folderPath])
+  }, [folderPath]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 배드락은 게임이 먼저 올라가면 접속이 안 되므로 새 서버 버전이 있는지 알아 둔다 (서버가 바뀌거나 업데이트되면 다시 본다)
   useEffect(() => {
     setBedrockUpdate(null)
-    if (software !== 'bedrock') return
+    if (software !== 'bedrock' || remote) return
     let alive = true
     window.api
       .checkBedrockUpdate(folderPath)
@@ -272,6 +287,17 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
   async function start(skipAskOff = false) {
     if (startBusy.current) return
     setError('')
+    if (remote) {
+      startBusy.current = true
+      try {
+        await window.api.startServer(folderPath)
+      } catch (e) {
+        setError(cleanError(e))
+      } finally {
+        startBusy.current = false
+      }
+      return
+    }
     if (!server.eulaAccepted) return setShowEula(true)
     // 이름 주소가 없는 서버(기능이 생기기 전에 만든 서버)는 켜기 전에 정하는 창을 띄운다. 건너뛰면 이 서버는 다시 묻지 않는다
     if (!domainSkipped.current && readStored<string>(`domainSkip:${folderPath}`, '') !== '1') {
@@ -409,7 +435,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
       <header className="server-head">
         <SoftwareBadge software={software} size={52} name={server.name} icon={server.icon} />
         <div className="title">
-          <h1 className="editable" onClick={() => setNaming('rename')} title="눌러서 이름 바꾸기">
+          <h1 className={remote ? '' : 'editable'} onClick={() => !remote && setNaming('rename')} title={remote ? undefined : '눌러서 이름 바꾸기'}>
             <span className="n">{server.name}</span>
             <Pencil size={16} className="edit-icon" />
           </h1>
@@ -432,6 +458,29 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
           </div>
         </div>
         <div className="head-actions">
+          {remote ? (
+            <>
+              <span className="pill">{remote.role === 'admin' ? '공유받음 · 관리자' : '공유받음 · 보기만'}</span>
+              <button className="btn icon ghost" onClick={() => setAskLeave(true)} title="내 목록에서 빼기 (방장 서버는 그대로예요)">
+                <Trash2 size={19} />
+              </button>
+              {on ? (
+                <button className="btn lg" onClick={() => stop()} disabled={readOnly || state === 'stopping'} title={readOnly ? '보기만 할 수 있는 권한이에요' : undefined}>
+                  <Square size={16} fill="currentColor" />
+                  {state === 'stopping' ? '끄는 중…' : '서버 끄기'}
+                </button>
+              ) : (
+                <button className="btn primary lg" onClick={() => start()} disabled={readOnly} title={readOnly ? (remote.hostOnline ? '보기만 할 수 있는 권한이에요' : '방장 컴퓨터가 꺼져 있어요') : undefined}>
+                  <Play size={17} fill="currentColor" />
+                  서버 켜기
+                </button>
+              )}
+            </>
+          ) : (
+          <>
+          <button className="btn icon ghost" onClick={() => setShowShare(true)} title="서버 공유: 친구 CubePanel에서도 이 서버를 보고 관리하게 해요">
+            <Share2 size={19} />
+          </button>
           <button className="btn icon ghost" onClick={() => setShowSettings(true)} title="서버 설정">
             <Settings size={19} />
           </button>
@@ -471,18 +520,40 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
               {checking ? '점검 중…' : starting ? '준비 중…' : busy ? `${busy} 중…` : '서버 켜기'}
             </button>
           )}
+          </>
+          )}
         </div>
       </header>
+      {remote && !remote.hostOnline && <p className="hint" style={{ margin: '0 0 10px' }}>방장 컴퓨터가 꺼져 있거나 CubePanel이 닫혀 있어요. 방장이 켜면 자동으로 다시 연결돼요.</p>}
 
       {starting && progress && <ProgressView progress={progress} />}
       {/* 자바가 실행된 뒤 다 켜질 때까지: 로그로 단계를 짐작해 보여 준다 */}
       {!starting && state === 'starting' && <BootProgress log={log} />}
       {error && <p className="error-text">{error}</p>}
 
-      {bedrock && <BedrockLoopbackNotice />}
+      {bedrock && !remote && <BedrockLoopbackNotice />}
 
       <StatsBar folderPath={folderPath} on={on} />
 
+      {remote ? (
+        // 공유받은 서버: 콘솔·관리·월드·채팅 (모드·백업·설정 파일은 방장만)
+        <nav className="tabs">
+          <button className={tab === 'console' ? 'active' : ''} onClick={() => setTab('console')}>
+            콘솔
+          </button>
+          <button className={shownTab === 'manage' ? 'active' : ''} onClick={() => setTab('manage')}>
+            관리
+          </button>
+          <button className={shownTab === 'maps' ? 'active' : ''} onClick={() => setTab('maps')}>
+            월드
+          </button>
+          {!bedrock && (
+            <button className={tab === 'chat' ? 'active' : ''} onClick={() => setTab('chat')}>
+              채팅
+            </button>
+          )}
+        </nav>
+      ) : (
       <nav className="tabs">
         <button className={tab === 'console' ? 'active' : ''} onClick={() => setTab('console')}>
           콘솔
@@ -531,13 +602,14 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
           설정 파일
         </button>
       </nav>
+      )}
 
       {bedrock && shownTab === 'maps' ? (
-        <BedrockWorldTab folderPath={folderPath} serverOn={on} />
+        guard(<BedrockWorldTab folderPath={folderPath} serverOn={on} />)
       ) : bedrock && BEDROCK_PACK_TABS.includes(shownTab) ? (
         <AddonsTab key={shownTab} folderPath={folderPath} serverOn={on} kind={shownTab === 'resources' ? 'resource' : shownTab === 'scripts' ? 'script' : 'addon'} />
       ) : shownTab === 'maps' ? (
-        <MapTab folderPath={folderPath} serverOn={on} mcVersion={server.mcVersion} />
+        guard(<MapTab folderPath={folderPath} serverOn={on} mcVersion={server.mcVersion} />)
       ) : shownTab === 'datapacks' ? (
         <DatapacksTab folderPath={folderPath} serverOn={on} />
       ) : tab === 'backup' ? (
@@ -545,9 +617,9 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
       ) : tab === 'files' ? (
         <FilesTab folderPath={folderPath} serverOn={on} />
       ) : tab === 'chat' ? (
-        <ChatLogTab folderPath={folderPath} />
+        <ChatLogTab folderPath={folderPath} readOnly={readOnly} />
       ) : shownTab === 'manage' ? (
-        bedrock ? <BedrockManageTab folderPath={folderPath} running={state === 'running'} /> : <ManageTab folderPath={folderPath} running={state === 'running'} />
+        guard(bedrock ? <BedrockManageTab folderPath={folderPath} running={state === 'running'} /> : <ManageTab folderPath={folderPath} running={state === 'running'} />)
       ) : tab === 'mods' && modKind ? (
         <ModsTab key="mods" folderPath={folderPath} kind={modKind} serverOn={on} />
       ) : tab === 'plugins' && modKinds[1] ? (
@@ -594,6 +666,8 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
             // 한 번도 켜지 않은 서버(남은 로그가 없음)에는 시작 안내를 보여 준다
             <FirstRunGuide software={software} onStart={() => start()} startDisabled={starting || checking || !!busy} busyText={checking ? '점검 중…' : starting ? '준비 중…' : undefined} />
           )}
+          {/* 공유받은 서버는 관리자 권한일 때만 명령을 보낸다 */}
+          {(!remote || (remote.role === 'admin' && remote.hostOnline)) && (
           <form className="command" onSubmit={submitCommand}>
             {on && (suggestions.length > 0 || usage) && (
               <div className="suggest">
@@ -635,6 +709,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
               <Send size={17} />
             </button>
           </form>
+          )}
         </div>
       )}
 
@@ -685,6 +760,21 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
             void start()
           }}
           onCancel={() => setAskDomain(false)}
+        />
+      )}
+      {showShare && <ShareDialog folderPath={folderPath} onClose={() => setShowShare(false)} />}
+      {askLeave && (
+        <Confirm
+          title="내 목록에서 뺄까요?"
+          body="이 컴퓨터의 목록에서만 빠져요. 방장의 서버는 그대로예요. 다시 보려면 방장에게 새 초대 코드를 받아야 해요."
+          confirmText="목록에서 빼기"
+          danger
+          onConfirm={async () => {
+            setAskLeave(false)
+            await window.api.leaveShare(folderPath)
+            onDeleted()
+          }}
+          onCancel={() => setAskLeave(false)}
         />
       )}
       {naming && (

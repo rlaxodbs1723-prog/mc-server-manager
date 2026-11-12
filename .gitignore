@@ -6,3 +6,4 @@ dist
 .claude/
 dist-*/
 stats/
+.wrangler/

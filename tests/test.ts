@@ -44,6 +44,9 @@ import { child, parseBedrockLevelDat, serializeBedrockLevelDat } from '../src/ma
 import { getBedrockExperiments, setBedrockExperiment, setBedrockHardcore } from '../src/main/bedrockexperiments'
 import { DatabaseSync } from 'node:sqlite'
 import { checkImportFolder, detectServer } from '../src/main/importserver'
+import { createShareInvite, joinShare, leaveShare, remoteServers, revokeShareDevice, setShareRole, shareDevices, shareStatus, startSharing, stopSharing } from '../src/main/share'
+import { startDevRelay } from '../share/dev-relay.mjs'
+import { ipcMain } from 'electron'
 import { addAddonFile, bedrockProps, bedrockTellraw, checkAddons, listAddons, nethernetUdpPorts, removeAddon, setAddonEnabled } from '../src/main/bedrock'
 import { getBedrockManage, listBedrockRules, runBedrockAction } from '../src/main/bedrockmanage'
 import { isExempt } from '../src/main/bedrockloopback'
@@ -246,6 +249,7 @@ async function quick(): Promise<void> {
   await importChecks()
   await bedrockChecks()
   await backupChecks()
+  await shareChecks()
   await check('버그 제보: 디스코드 메시지 (앱 정보 자동, 길이 자르기, 아무도 안 부르기, 파일 검사)', async () => {
     type Embed = { title: string; description: string; fields: { name: string; value: string }[] }
     const m = bugMessage('모드 & 설치 @everyone', '설명\n둘째 줄', ['a.png'])
@@ -712,6 +716,76 @@ async function domainChecks(): Promise<void> {
 }
 
 // ---------- 배드락 서버: 애드온·설정 ----------
+// 서버 공유: 한 프로그램 안에서 방장과 친구를 같이 흉내 내서, 시험용 중계(share/dev-relay.mjs)로 실제로 주고받아 본다
+async function shareChecks(): Promise<void> {
+  await check('서버 공유: 공유 시작 → 초대 코드 → 친구 추가 → 콘솔 보기 → 허락 안 된 요청 거절 → 끊기 → 공유 끄기', async () => {
+    const PORT = 18799
+    const relay = startDevRelay(PORT)
+    process.env.MCSM_SHARE_RELAY = `ws://localhost:${PORT}`
+    const ipc = ipcMain as unknown as { handle: (c: string, fn: (...a: unknown[]) => unknown) => void; __invoke: (c: string, ...a: unknown[]) => Promise<unknown> }
+    let deleted = false
+    ipc.handle('getLog', (_e: unknown, f: unknown) => [`log of ${path.basename(String(f))}`])
+    ipc.handle('deleteServer', () => {
+      deleted = true
+    })
+    const waitUntil = async (fn: () => boolean, ms = 5000): Promise<boolean> => {
+      const end = Date.now() + ms
+      while (!fn()) {
+        if (Date.now() > end) return false
+        await new Promise((r) => setTimeout(r, 50))
+      }
+      return true
+    }
+    const dir = fs.mkdtempSync(path.join(process.env.TEST_HOME!, 'share-'))
+    fs.writeFileSync(path.join(dir, 'server-manager.json'), JSON.stringify({ name: '우리 서버', software: 'paper', mcVersion: '1.21.1', createdAt: new Date().toISOString() }))
+    fs.writeFileSync(path.join(dir, 'server.properties'), '')
+    try {
+      startSharing(dir)
+      expect(!!readServerInfo(dir).share, '공유 정보를 저장하지 않았어요')
+      expect(await waitUntil(() => shareStatus(dir).online), '방장이 중계 방에 붙지 못했어요')
+      const code = await createShareInvite(dir, 'view')
+      expect(/^[0-9a-f]{32}-[A-Za-z0-9]+$/.test(code), `초대 코드 모양이 이상해요: ${code}`)
+      const remotePath = await joinShare(code)
+      expect(remotePath.startsWith('remote:'), `공유받은 서버 경로가 이상해요: ${remotePath}`)
+      expect(await waitUntil(() => remoteServers().some((s) => s.folderPath === remotePath && s.name === '우리 서버' && s.remote?.hostOnline === true)), `친구 목록에 서버 이름·연결이 안 왔어요: ${JSON.stringify(remoteServers())}`)
+      expect(await joinShare(code).then(() => true, () => true), '같은 코드를 다시 넣으면 멈췄어요')
+      const log = (await ipc.__invoke('getLog', remotePath)) as string[]
+      expect(log[0] === `log of ${path.basename(dir)}`, `콘솔 기록이 방장 쪽 서버의 것이 아니에요: ${log}`)
+      // 허락 목록에 없는 일(삭제)은 방장 앱이 거절하고 실행하지 않는다
+      const err = await ipc.__invoke('deleteServer', remotePath).then(() => '', (e: Error) => e.message)
+      expect(!!err && !deleted, `공유받은 쪽에서 서버를 지울 수 있었어요: ${err}`)
+      const devices = await shareDevices(dir)
+      expect(devices.length === 1 && devices[0].role === 'view' && devices[0].online, `친구 목록이 이상해요: ${JSON.stringify(devices)}`)
+      // 보기만: 명령은 거절. 관리자로 바꾸면 명령이 가고, 설정 저장은 허락한 칸만 방장에게 간다
+      const commands: string[] = []
+      let savedSettings: unknown = null
+      ipc.handle('sendCommand', (_e: unknown, _f: unknown, cmd: unknown) => void commands.push(String(cmd)))
+      ipc.handle('saveSettings', (_e: unknown, _f: unknown, set: unknown) => void (savedSettings = set))
+      const viewErr = await ipc.__invoke('sendCommand', remotePath, 'op Steve').then(() => '', (e: Error) => e.message)
+      expect(/보기만/.test(viewErr) && commands.length === 0, `보기만인데 명령을 보냈어요: ${viewErr}`)
+      await setShareRole(dir, devices[0].id, 'admin')
+      expect(await waitUntil(() => remoteServers().some((s) => s.remote?.role === 'admin')), '친구 쪽 권한이 관리자로 안 바뀌었어요')
+      await ipc.__invoke('sendCommand', remotePath, 'say hi')
+      expect(commands[0] === 'say hi', `관리자 명령이 안 갔어요: ${commands}`)
+      await ipc.__invoke('saveSettings', remotePath, { properties: { difficulty: 'hard', 'server-port': '1', 'enable-rcon': 'true', 'rcon.password': 'x' }, memoryMb: 99999, javaArgs: '-javaagent:evil.jar', automation: { welcome: '어서 와요', autoStart: true } })
+      expect(JSON.stringify(savedSettings) === JSON.stringify({ properties: { difficulty: 'hard' }, automation: { welcome: '어서 와요' } }), `위험한 설정이 걸러지지 않았어요: ${JSON.stringify(savedSettings)}`)
+      // 친구를 끊으면 그 친구는 더 이상 요청할 수 없다
+      await revokeShareDevice(dir, devices[0].id)
+      expect(await waitUntil(() => remoteServers().every((s) => !s.remote?.hostOnline)), '끊긴 친구가 아직 연결돼 있어요')
+      const after = await ipc.__invoke('getLog', remotePath).then(() => 'answered', () => 'refused')
+      expect(after !== 'answered' || (await shareDevices(dir)).length === 0, '끊긴 친구의 요청에 방장이 답했어요')
+      leaveShare(remotePath.slice('remote:'.length))
+      expect(!remoteServers().some((s) => s.folderPath === remotePath), '목록에서 빠지지 않았어요')
+      await stopSharing(dir)
+      expect(!readServerInfo(dir).share && !shareStatus(dir).sharing, '공유를 끄지 않았어요')
+    } finally {
+      for (const c of relay.clients) c.terminate()
+      await new Promise((r) => relay.close(r))
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+}
+
 // 되돌릴 수 없는 일(백업·되돌리기·리셋·삭제)을 서버를 켜지 않고 파일로만 확인한다
 async function backupChecks(): Promise<void> {
   const base = fs.mkdtempSync(path.join(process.env.TEST_HOME!, 'bk-'))

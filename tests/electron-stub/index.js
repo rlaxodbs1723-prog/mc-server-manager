@@ -23,6 +23,12 @@ module.exports = {
     }
   },
   BrowserWindow: class { static getAllWindows() { return [] } },
+  // 화면 요청 처리 함수: 등록만 해 두고, 테스트가 __invoke로 화면처럼 부른다
+  ipcMain: {
+    __handlers: new Map(),
+    handle(channel, fn) { this.__handlers.set(channel, fn) },
+    async __invoke(channel, ...args) { return this.__handlers.get(channel)({ sender: null }, ...args) }
+  },
   Notification: class { static isSupported() { return false } show() {} },
   nativeImage: { createFromPath: () => ({ isEmpty: () => true }) }
 }

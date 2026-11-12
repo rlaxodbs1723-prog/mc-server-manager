@@ -54,6 +54,8 @@ export default function InviteBox({ folderPath, bedrock = false }: { folderPath:
   }
 
   if (invite.state === 'off') return null
+  // 친구가 공유해 준 서버: 주소 보기·복사만 (주소 바꾸기·포트 확인·이 컴퓨터용 주소는 방장 쪽 일이다)
+  const remote = folderPath.startsWith('remote:')
   // 서버 포트가 기본(25565)이 아니면 주소 뒤에 :포트를 붙여야 접속된다
   const defaultPort = bedrock ? 19132 : 25565
   const port = 'port' in invite ? invite.port : defaultPort
@@ -64,7 +66,7 @@ export default function InviteBox({ folderPath, bedrock = false }: { folderPath:
   if (invite.state === 'failed')
     return (
       <>
-        <button className="invite-inline failed" onClick={() => setHelp(true)} title="눌러서 원인과 해결법 보기">
+        <button className="invite-inline failed" onClick={() => !remote && setHelp(true)} title={remote ? '방장 컴퓨터에서 밖으로 서버를 열지 못했어요' : '눌러서 원인과 해결법 보기'}>
           <AlertTriangle size={14} />
           밖에서 접속할 수 없어요
         </button>
@@ -99,9 +101,11 @@ export default function InviteBox({ folderPath, bedrock = false }: { folderPath:
       >
         <Copy size={14} />
       </button>
-      <button onClick={() => setShowDomain(true)} title="주소 변경: 이름.cubepanel.kr 같은 외우기 쉬운 주소를 정하거나 바꿔요">
-        <Pencil size={13} />
-      </button>
+      {!remote && (
+        <button onClick={() => setShowDomain(true)} title="주소 변경: 이름.cubepanel.kr 같은 외우기 쉬운 주소를 정하거나 바꿔요">
+          <Pencil size={13} />
+        </button>
+      )}
       {/* 배드락은 게임에서 주소와 포트를 따로 넣어야 해서, 포트를 주소 옆에 따로 보여 준다 */}
       {bedrock && (
         <>
@@ -118,6 +122,8 @@ export default function InviteBox({ folderPath, bedrock = false }: { folderPath:
         </>
       )}
       {/* 방장이 바깥 주소로 들어가면 공유기에 따라 타임아웃이 나서, 이 컴퓨터용 주소를 따로 보여 준다 */}
+      {!remote && (
+      <>
       <button
         className="invite-self"
         onClick={async () => {
@@ -140,6 +146,8 @@ export default function InviteBox({ folderPath, bedrock = false }: { folderPath:
       <button onClick={check} disabled={checking} title="밖에서 접속되는지 확인">
         {checking ? <span className="spinner" /> : <Radar size={14} />}
       </button>
+      </>
+      )}
       {/* 접속 주소 줄 안에 그리면 줄의 파란 글씨·작은 버튼 모양이 창에 묻어서, 화면 맨 바깥에 그린다 */}
       {showDomain && createPortal(<DomainDialog folderPath={folderPath} onClose={() => setShowDomain(false)} />, document.body)}
       {showJoin && <BedrockJoinHelp address={invite.domain ?? invite.address} port={port} lan={invite.lan.map((ip) => ip.replace(/:\d+$/, ''))} tunnel={!!invite.tunnel} onClose={() => setShowJoin(false)} />}

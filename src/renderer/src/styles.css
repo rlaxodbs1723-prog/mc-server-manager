@@ -1124,3 +1124,7 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 .create { max-width: 900px; gap: 20px; padding-bottom: 20px; }
 .create .sw-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .create .sw-group + .sw-group { margin-top: 8px; }
+
+/* 공유받은 서버(보기만): 탭 내용을 감싸 안의 버튼·입력을 모두 끈다. 모양은 그대로 */
+.ro-fieldset { display: contents; border: 0; margin: 0; padding: 0; min-width: 0; }
+.ro-fieldset :disabled { cursor: not-allowed; }

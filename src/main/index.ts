@@ -1,15 +1,17 @@
 import './datapath' // 맨 먼저: 데이터 폴더 위치 고정
+import './remoteipc' // 다음: 다른 처리 함수가 등록되기 전에 공유받은 서버 요청을 가로챌 준비
 import { getUpdateState, initUpdater, installUpdateNow } from './updater'
 import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, Notification, screen, shell, Tray } from 'electron'
 import fs from 'fs'
 import { join, resolve, sep } from 'path'
-import { EULA_URL, friendlyError, SOFTWARE_INFO, type BedrockAction, type BedrockKind, type CreateServerOptions, type BackupSettings, type ManageAction, type ModPart, type ModpackBrowseOptions, type SearchSite, type MapSort, type Progress, type SaveSettings, type ServerEvent, type Software } from '../shared-types'
+import { EULA_URL, friendlyError, SOFTWARE_INFO, type BedrockAction, type BedrockKind, type CreateServerOptions, type BackupSettings, type ManageAction, type ModPart, type ShareRole, type ModpackBrowseOptions, type SearchSite, type MapSort, type Progress, type SaveSettings, type ServerEvent, type Software } from '../shared-types'
 import { CreateEta } from './eta'
 import { listGameRules, setGameRule } from './gamerules'
 import { getHardcore, setHardcore } from './hardcore'
 import { getGameRuleLang } from './lang'
 import { applyDomain, checkReachable, closeAllPorts, getInvite, initInvite, recheckInvite, setInviteDomain, useTunnel } from './invite'
 import { checkDomainName, claimDomain, getDomain, releaseDomain } from './domain'
+import { createShareInvite, initShareClient, initShareHost, joinShare, leaveShare, remoteServers, revokeShareDevice, setShareRole, shareDevices, shareStatus, startSharing, stopSharing } from './share'
 import { detectServer } from './importserver'
 import { addAddonFile, isBedrockFolder, latestBedrock, listAddons, removeAddon, setAddonEnabled } from './bedrock'
 import { allowLoopback, getLoopbackState } from './bedrockloopback'
@@ -313,7 +315,20 @@ ipcMain.handle('pickModpackFile', async (event) => {
   return res.canceled || !res.filePaths[0] ? null : prepareFromUpload(res.filePaths[0])
 })
 ipcMain.handle('cancelCreate', (_event, taskId: string) => cancelTask(String(taskId)))
-ipcMain.handle('listServers', () => listServers())
+ipcMain.handle('listServers', () => [...listServers(), ...remoteServers()])
+// ---------- 서버 공유 ----------
+// 공유 설정은 방장만 바꾼다 (친구 앱에서 remote: 경로로 오면 remoteipc가 방장에게 넘기고, 방장은 허락 목록에 없어서 거절한다)
+ipcMain.handle('startSharing', (_event, folderPath: string) => startSharing(checkServerFolder(folderPath)))
+ipcMain.handle('stopSharing', (_event, folderPath: string) => stopSharing(checkServerFolder(folderPath)))
+ipcMain.handle('shareStatus', (_event, folderPath: string) => shareStatus(checkServerFolder(folderPath)))
+ipcMain.handle('createShareInvite', (_event, folderPath: string, role: ShareRole) => createShareInvite(checkServerFolder(folderPath), role === 'admin' ? 'admin' : 'view'))
+ipcMain.handle('shareDevices', (_event, folderPath: string) => shareDevices(checkServerFolder(folderPath)))
+ipcMain.handle('revokeShareDevice', (_event, folderPath: string, device: string) => revokeShareDevice(checkServerFolder(folderPath), String(device)))
+ipcMain.handle('setShareRole', (_event, folderPath: string, device: string, role: ShareRole) =>
+  setShareRole(checkServerFolder(folderPath), String(device), role === 'admin' ? 'admin' : 'view')
+)
+ipcMain.handle('joinShare', (_event, code: string) => joinShare(String(code)))
+ipcMain.handle('leaveShare', (_event, room: string) => leaveShare(String(room)))
 ipcMain.handle('cleanupReport', () => getCleanupReport())
 ipcMain.handle('setServerOrder', (_event, folderPaths: string[]) => setServerOrder(Array.isArray(folderPaths) ? folderPaths.map((p) => checkServerFolder(String(p))) : []))
 
@@ -703,6 +718,9 @@ app.whenReady().then(() => {
   cleanWorldTemp()
   cleanModpackTemp() // 지난번에 만들다 만 서버 폴더 정리
   createWindow()
+  // 서버 공유: 공유 중인 서버는 중계 방에 붙이고, 공유받은 서버는 방장에게 잇는다
+  initShareHost(listServers().map((s) => s.folderPath))
+  initShareClient()
   trackUsage('open')
   // 버그 제보 답장: 켜고 1분 뒤, 그 뒤로 30분마다 묻는다
   const replies = (): void => void checkBugReplies(() => BrowserWindow.getAllWindows().forEach((w) => w.webContents.send('bugReplies')))

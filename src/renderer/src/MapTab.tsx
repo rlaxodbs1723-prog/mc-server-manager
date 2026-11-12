@@ -248,8 +248,8 @@ export default function MapTab({ folderPath, serverOn, mcVersion }: { folderPath
             <button
               className={`btn ${world?.exists ? 'danger' : ''}`}
               onClick={() => setShowReset(true)}
-              disabled={serverOn || !world}
-              title={serverOn ? '서버를 끈 다음에 할 수 있어요' : undefined}
+              disabled={serverOn || !world || folderPath.startsWith('remote:')}
+              title={folderPath.startsWith('remote:') ? '월드 리셋은 방장만 할 수 있어요' : serverOn ? '서버를 끈 다음에 할 수 있어요' : undefined}
             >
               <RotateCcw size={16} />
               {world?.exists ? '월드 리셋' : '설정하기'}
