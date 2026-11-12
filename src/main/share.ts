@@ -12,6 +12,7 @@ import path from 'path'
 import type { ServerEvent, ServerListItem, ServerState, ShareDevice, ShareRole, Software } from '../shared-types'
 import { localHandler, REMOTE, setRemoteForwarder } from './remoteipc'
 import { getState, onServerEvent } from './runner'
+import { notify } from './notify'
 import { patchServerInfo, readServerInfo } from './servers'
 
 const RELAY = (): string => process.env.MCSM_SHARE_RELAY ?? 'wss://cubepanel.kr'
@@ -288,6 +289,7 @@ interface Remote {
   waiters: ((m: Record<string, unknown>) => boolean)[]
   pending: Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> }>
   nextId: number
+  seen?: boolean // 첫 상태를 받았는지 (앱을 켤 때 이미 켜져 있던 서버는 알리지 않는다)
 }
 const LOG_KEEP = 2000
 const remotes = new Map<string, Remote>() // 방번호 → 연결
@@ -358,7 +360,10 @@ function onHostEvent(r: Remote, e: Record<string, unknown>): void {
     }
     if (r.log.length > LOG_KEEP) r.log.splice(0, r.log.length - LOG_KEEP)
   } else if (e.type === 'status') {
+    const was = r.state
     r.state = e.state as ServerState
+    if (r.seen && r.state === 'running' && was !== 'running') notify('공유받은 서버가 켜졌어요', r.joined.name || '서버')
+    r.seen = true
     emit(room, { type: 'status', state: r.state })
   } else if (e.type === 'players') {
     r.players = Array.isArray(e.players) ? e.players.map(String) : []

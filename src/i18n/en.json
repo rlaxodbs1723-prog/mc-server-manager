@@ -2104,5 +2104,6 @@
  "월드 가져오기는 방장만 할 수 있어요": "Only the host can import a world",
  "월드 리셋은 방장만 할 수 있어요": "Only the host can reset the world",
  "보기만 할 수 있는 권한이에요": "You only have view permission",
- "방장 컴퓨터가 꺼져 있어요": "The host's computer is off"
+ "방장 컴퓨터가 꺼져 있어요": "The host's computer is off",
+ "공유받은 서버가 켜졌어요": "A shared server is on"
 }

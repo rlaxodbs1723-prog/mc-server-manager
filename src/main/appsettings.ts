@@ -6,7 +6,7 @@ import type { AppSettings } from '../shared-types'
 import { langFromLocale } from '../i18n'
 
 const DEFAULTS: AppSettings = {
-  launchAtLogin: false,
+  launchAtLogin: true,
   startHidden: true,
   closeBehavior: 'tray-if-running',
   notifications: true,
