@@ -40,7 +40,8 @@ export function realProviders(env) {
       async profile(code, redirect) {
         const tok = await postForm('https://discord.com/api/oauth2/token', { client_id: env.DISCORD_CLIENT_ID, client_secret: env.DISCORD_SECRET, grant_type: 'authorization_code', code, redirect_uri: redirect })
         const me = await getJson('https://discord.com/api/users/@me', tok.access_token)
-        return { id: String(me.id), name: me.global_name || me.username, email: me.verified ? me.email ?? '' : '' }
+        const avatar = me.avatar ? `https://cdn.discordapp.com/avatars/${me.id}/${me.avatar}.png?size=64` : ''
+        return { id: String(me.id), name: me.global_name || me.username, email: me.verified ? me.email ?? '' : '', avatar }
       }
     }
   }
@@ -51,7 +52,7 @@ export function realProviders(env) {
       async profile(code, redirect) {
         const tok = await postForm('https://oauth2.googleapis.com/token', { client_id: env.GOOGLE_CLIENT_ID, client_secret: env.GOOGLE_SECRET, grant_type: 'authorization_code', code, redirect_uri: redirect })
         const me = await getJson('https://openidconnect.googleapis.com/v1/userinfo', tok.access_token)
-        return { id: String(me.sub), name: me.name || (me.email ?? '').split('@')[0], email: me.email_verified ? me.email ?? '' : '' }
+        return { id: String(me.sub), name: me.name || (me.email ?? '').split('@')[0], email: me.email_verified ? me.email ?? '' : '', avatar: String(me.picture ?? '') }
       }
     }
   }
@@ -111,7 +112,7 @@ export async function handleAuth(req, { store, providers, base, now = () => Date
     }
     const id = `${m[1]}:${prof.id}`
     const old = await store.get(`acct:${id}`)
-    await store.put(`acct:${id}`, { id, provider: m[1], name: cleanName(prof.name), email: String(prof.email ?? '').slice(0, 200), created: old?.created ?? now(), sessions: old?.sessions ?? [] })
+    await store.put(`acct:${id}`, { id, provider: m[1], name: cleanName(prof.name), email: String(prof.email ?? '').slice(0, 200), avatar: safeAvatar(prof.avatar), created: old?.created ?? now(), sessions: old?.sessions ?? [] })
     const c = randomHex(32)
     await sweep(store, 'oc:', now())
     await store.put(`oc:${await hash(c)}`, { acct: id, challenge: st.challenge, exp: now() + CODE_MS })
@@ -195,7 +196,9 @@ async function sweep(store, prefix, t) {
   for (const [k, v] of list) if (v?.exp < t) await store.delete(k)
 }
 
-const pub = (a) => ({ id: a.id, provider: a.provider, name: a.name })
+const pub = (a) => ({ id: a.id, provider: a.provider, name: a.name, avatar: a.avatar ?? '' })
+// 프로필 사진은 Discord·Google 사진 서버 주소만 받는다
+const safeAvatar = (u) => (/^https:\/\/(cdn\.discordapp\.com|lh3\.googleusercontent\.com)\//.test(String(u ?? '')) ? String(u).slice(0, 300) : '')
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } })
 const page = (msg, status) =>
   new Response(

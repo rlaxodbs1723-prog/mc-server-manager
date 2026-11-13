@@ -137,7 +137,8 @@ export interface ServerInfo {
   logKeepDays?: number // 며칠 지난 로그를 지울지 (없으면 30일, 0이면 지우지 않음)
   domain?: DomainInfo // 이름 주소(이름.cubepanel.kr)를 만들었으면 그 이름과 주인 열쇠
   domainWish?: string // 서버를 만들 때 정한 이름인데 주소를 못 만들었으면 (서버를 켤 때 다시 시도한다)
-  share?: { room: string; key: string } // 서버 공유 중이면 중계 서버의 방 번호와 방장 열쇠
+  // 서버 공유 중이면 중계 서버의 방 번호와 방장 열쇠, 친구(기기)별 권한, 아직 안 쓴 초대 코드(해시)별 권한
+  share?: { room: string; key: string; perms?: Record<string, SharePerm[]>; notify?: Record<string, boolean>; invitePerms?: Record<string, { perms: SharePerm[]; exp: number }> }
   folderPath: string
   createdAt: string
 }
@@ -169,22 +170,42 @@ export interface ServerListItem extends ServerInfo {
   playerCount: number
   modCount: number | null // 켜진 모드·플러그인 수 (모드를 못 쓰는 서버면 null)
   lastBackupAt: number | null
-  remote?: { role: ShareRole; hostOnline: boolean } // 공유받은 서버(친구 앱): 내 권한과 방장 앱이 켜져 있는지
+  remote?: { role: ShareRole; hostOnline: boolean; perms: SharePerm[] } // 공유받은 서버(친구 앱): 내 권한과 방장 앱이 켜져 있는지
 }
 
 // ---------- 서버 공유 ----------
 // view: 보기만 (상태·콘솔·접속자) / admin: 켜고 끄기·명령·관리까지
 export type ShareRole = 'view' | 'admin'
+// 공유받은 친구가 할 수 있는 일 (항목별). 하나도 없으면 "보기만", 다 있으면 "관리자". 보기는 언제나 된다
+export type SharePerm =
+  | 'start' // 서버 켜기
+  | 'stop' // 서버 끄기
+  | 'console' // 콘솔 명령어
+  | 'announce' // 공지 보내기
+  | 'players' // 플레이어 관리 (OP·추방·차단·플레이어별 게임 모드·텔레포트·아이템·회복)
+  | 'whitelist' // 화이트리스트 관리
+  | 'welcome' // 환영 메시지 바꾸기
+  | 'difficulty' // 난이도
+  | 'gamemodeAll' // 모두의 게임 모드 바꾸기
+  | 'timeWeather' // 시간·날씨 바꾸기
+  | 'world' // 월드 관리 (월드 설정·게임 규칙·하드코어·실험 기능·저장)
+  | 'chat' // 채팅 관리 (채팅 기록 보관 기간)
+  | 'backup' // 백업 관리 (만들기·되돌리기·지우기·자동 백업 설정)
+export const SHARE_PERMS: SharePerm[] = ['start', 'stop', 'console', 'announce', 'players', 'whitelist', 'welcome', 'difficulty', 'gamemodeAll', 'timeWeather', 'world', 'chat', 'backup']
 // 로그인한 계정 (서버 공유에 필요). provider: discord · google (시험용 중계에서는 dev)
 export interface Account {
   id: string
   provider: string
   name: string
+  avatar?: string // 프로필 사진 주소 (Discord·Google)
 }
 export interface ShareDevice {
   id: string
-  name: string // 친구 컴퓨터 이름
+  name: string // 친구 계정 이름
+  pc: string // 친구 컴퓨터 이름
   role: ShareRole
+  perms: SharePerm[]
+  notify: boolean // 서버가 켜지면 이 친구에게 알림
   added: number
   online: boolean
 }
@@ -552,10 +573,11 @@ export interface Api {
   startSharing: (folderPath: string) => Promise<void>
   stopSharing: (folderPath: string) => Promise<void>
   shareStatus: (folderPath: string) => Promise<{ sharing: boolean; online: boolean }>
-  createShareInvite: (folderPath: string, role: ShareRole) => Promise<string>
+  createShareInvite: (folderPath: string, perms: SharePerm[]) => Promise<string>
   shareDevices: (folderPath: string) => Promise<ShareDevice[]>
   revokeShareDevice: (folderPath: string, device: string) => Promise<ShareDevice[]>
-  setShareRole: (folderPath: string, device: string, role: ShareRole) => Promise<ShareDevice[]>
+  setSharePerms: (folderPath: string, device: string, perms: SharePerm[]) => Promise<ShareDevice[]>
+  setShareNotify: (folderPath: string, device: string, on: boolean) => Promise<void>
   // 서버 공유 (친구)
   joinShare: (code: string) => Promise<string>
   getAccount: () => Promise<Account | null>

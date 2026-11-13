@@ -15,7 +15,7 @@ class_name = "Auth"
 # 로그인 ID (공개 값). 비밀 값은 wrangler secret put DISCORD_SECRET / GOOGLE_SECRET 으로 넣는다
 [vars]
 DISCORD_CLIENT_ID = "1570415572871811215"
-GOOGLE_CLIENT_ID = ""
+GOOGLE_CLIENT_ID = "1001732417189-h2jb13vq694mnuth7oblt90fq987n4p8.apps.googleusercontent.com"
 
 # 무료 요금제는 SQLite 저장소를 쓰는 Durable Object만 만들 수 있다
 [[migrations]]

@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import type { Account } from '../../shared-types'
 import DiscordLogo from './DiscordLogo'
 import { Confirm, Loading, Modal, useToast } from './ui'
@@ -28,15 +29,24 @@ function GoogleLogo() {
   )
 }
 
-// 서버 공유 창을 열기 전에 로그인을 확인한다. 로그인돼 있으면 바로 children을, 아니면 로그인 안내 창을 보여 준다
-export default function LoginGate({ children, onClose }: { children: ReactNode; onClose: () => void }) {
+// 서버 공유 창을 열기 전에 로그인을 확인한다. 로그인돼 있으면 바로 children을, 아니면 로그인 안내 창을 보여 준다 (로그인하면 닫힌다)
+// plain: 기능 안내 없이 그냥 "로그인" 창 (왼쪽 아래 프로필에서 열 때)
+export default function LoginGate({ children, onClose, plain }: { children: ReactNode; onClose: () => void; plain?: boolean }) {
   const account = useAccount()
+  // 창을 열 때 로그인 안 돼 있었으면, 로그인한 뒤에는 원래 창(공유 창 등)으로 넘어가지 않고 그냥 닫는다
+  const [askedLogin, setAskedLogin] = useState(false)
+  useEffect(() => {
+    if (account === null) setAskedLogin(true)
+    else if (account && askedLogin) onClose()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account])
   if (account === undefined) return null
-  if (account) return <>{children}</>
-  return <LoginDialog onClose={onClose} />
+  if (account) return askedLogin ? null : <>{children}</>
+  // 화면 맨 위에 띄운다 (왼쪽 목록 안에서 열어도 다른 칸에 가려지지 않게)
+  return createPortal(<LoginDialog onClose={onClose} plain={plain} />, document.body)
 }
 
-function LoginDialog({ onClose }: { onClose: () => void }) {
+function LoginDialog({ onClose, plain }: { onClose: () => void; plain?: boolean }) {
   const toast = useToast()
   const [providers, setProviders] = useState<string[] | null>(null)
   const [waiting, setWaiting] = useState('')
@@ -72,7 +82,7 @@ function LoginDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Modal onClose={cancel}>
-      <h2>서버 공유는 로그인이 필요해요</h2>
+      <h2>{plain ? '로그인' : '서버 공유는 로그인이 필요해요'}</h2>
       {waiting ? (
         <>
           <p className="body">{`브라우저에서 ${LABEL[waiting] ?? waiting} 로그인을 마쳐 주세요. 끝나면 자동으로 이어져요.`}</p>
@@ -80,7 +90,7 @@ function LoginDialog({ onClose }: { onClose: () => void }) {
         </>
       ) : (
         <>
-          <p className="body">친구와 서버를 주고받으려면 로그인해 주세요. 공유하는 사람과 들어오는 사람을 확인하는 데만 써요. 비밀번호는 CubePanel이 받지 않아요.</p>
+          {!plain && <p className="body">친구와 서버를 주고받으려면 로그인해 주세요. 공유하는 사람과 들어오는 사람을 확인하는 데만 써요. 비밀번호는 CubePanel이 받지 않아요.</p>}
           {providers === null ? (
             <Loading />
           ) : providers.length === 0 ? (
@@ -112,12 +122,27 @@ function LoginDialog({ onClose }: { onClose: () => void }) {
   )
 }
 
-// 앱 설정의 "계정" 칸: 로그인한 계정, 로그아웃, 계정 지우기
-export function AccountSection() {
+// 왼쪽 아래 프로필 칸: 로그인한 계정 (누르면 로그아웃·계정 지우기), 로그인 전이면 로그인 버튼
+export function ProfileBox() {
   const toast = useToast()
   const account = useAccount()
+  const [menu, setMenu] = useState(false)
+  const [login, setLogin] = useState(false)
   const [ask, setAsk] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [noPic, setNoPic] = useState(false) // 사진을 못 불러오면 이름 첫 글자
+
+  // 로그인되면 로그인 창을 닫는다
+  useEffect(() => {
+    if (account) setLogin(false)
+  }, [account])
+  // 메뉴 바깥을 누르면 닫는다
+  useEffect(() => {
+    if (!menu) return
+    const close = (): void => setMenu(false)
+    window.addEventListener('mousedown', close)
+    return () => window.removeEventListener('mousedown', close)
+  }, [menu])
 
   async function run(job: () => Promise<void>, done: string): Promise<void> {
     setBusy(true)
@@ -129,32 +154,50 @@ export function AccountSection() {
     } finally {
       setBusy(false)
       setAsk(false)
+      setMenu(false)
     }
   }
 
+  if (account === undefined) return null
   return (
-    <section>
-      <div className="label">계정</div>
-      {account === undefined ? null : account ? (
-        <div className="reset-row">
-          <span>
-            <b>
+    <div className="profile-box">
+      {account ? (
+        <button className="profile" onClick={() => setMenu(!menu)} onMouseDown={(e) => e.stopPropagation()}>
+          {account.avatar && !noPic ? (
+            <img className="profile-avatar" src={account.avatar} alt="" referrerPolicy="no-referrer" onError={() => setNoPic(true)} />
+          ) : (
+            <span className="profile-avatar">{[...account.name][0]?.toUpperCase()}</span>
+          )}
+          <span className="profile-text">
+            <b>{account.name}</b>
+            <span className="hint">
               {account.provider === 'discord' ? <DiscordLogo /> : account.provider === 'google' ? <GoogleLogo /> : null}
-              {account.name}
-            </b>
-            <span className="hint">서버 공유에 쓰는 계정이에요.</span>
+              {LABEL[account.provider] ?? account.provider}
+            </span>
           </span>
-          <span style={{ display: 'flex', gap: 6 }}>
-            <button className="btn sm" disabled={busy} onClick={() => void run(() => window.api.logout(), '로그아웃했어요')}>
-              로그아웃
-            </button>
-            <button className="btn sm ghost danger-hover" disabled={busy} onClick={() => setAsk(true)}>
-              계정 지우기
-            </button>
-          </span>
-        </div>
+        </button>
       ) : (
-        <p className="hint">로그인하지 않았어요. 서버 공유를 쓸 때 로그인해요.</p>
+        <button className="profile" onClick={() => setLogin(true)}>
+          <span className="profile-avatar no-login">?</span>
+          <span className="profile-text">
+            <b>로그인</b>
+          </span>
+        </button>
+      )}
+      {menu && account && (
+        <div className="profile-menu" onMouseDown={(e) => e.stopPropagation()}>
+          <button disabled={busy} onClick={() => void run(() => window.api.logout(), '로그아웃했어요')}>
+            로그아웃
+          </button>
+          <button className="danger" disabled={busy} onClick={() => setAsk(true)}>
+            계정 지우기
+          </button>
+        </div>
+      )}
+      {login && (
+        <LoginGate plain onClose={() => setLogin(false)}>
+          <></>
+        </LoginGate>
       )}
       {ask && (
         <Confirm
@@ -166,6 +209,6 @@ export function AccountSection() {
           onCancel={() => setAsk(false)}
         />
       )}
-    </section>
+    </div>
   )
 }

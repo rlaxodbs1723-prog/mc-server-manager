@@ -1,8 +1,9 @@
 import { ArrowDown, CopyPlus, FolderOpen, Pencil, Play, Search, Send, Settings, Share2, Square, Trash2, X, Zap } from 'lucide-react'
 import ShareDialog from './ShareDialog'
+import { PERM_INFO, PermsContext, permsLabel } from './perms'
 import LoginGate, { useAccount } from './LoginGate'
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { SOFTWARE_INFO, type BedrockUpdateInfo, type ModKindInfo, type PreflightResult, type Progress, type ServerListItem } from '../../shared-types'
+import { SOFTWARE_INFO, type BedrockUpdateInfo, type ModKindInfo, type PreflightResult, type Progress, type ServerListItem, type SharePerm } from '../../shared-types'
 import { suggest, usageOf } from './consoleHelp'
 import EulaDialog from './EulaDialog'
 import DomainStartDialog from './DomainStartDialog'
@@ -139,11 +140,12 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
   const [tab, setTab] = useStored<'console' | 'manage' | 'chat' | 'mods' | 'plugins' | 'datapacks' | 'addons' | 'resources' | 'scripts' | 'maps' | 'backup' | 'files'>(`tab:${folderPath}`, 'console') // 서버마다 마지막 탭을 기억한다
   const [bedrockUpdate, setBedrockUpdate] = useState<BedrockUpdateInfo | null>(null)
   const bedrock = software === 'bedrock' // 배드락은 관리·채팅·데이터팩·모드 탭 대신 애드온 탭을 쓴다
-  // 친구가 공유해 준 서버: 서버는 방장 컴퓨터에서 돈다. 지금은 상태와 콘솔 보기만 (조작은 다음 단계)
+  // 친구가 공유해 준 서버: 서버는 방장 컴퓨터에서 돈다. 방장이 준 권한(항목별)만큼만 버튼이 켜진다
   const remote = server.remote
-  const readOnly = !!remote && (remote.role !== 'admin' || !remote.hostOnline)
-  const guard = (node: React.ReactNode): React.ReactNode =>
-    readOnly ? (
+  const can = (p: SharePerm): boolean => !remote || (remote.hostOnline && remote.perms.includes(p))
+  const noPermTitle = (p: SharePerm): string | undefined => (can(p) ? undefined : !remote?.hostOnline ? '방장 컴퓨터가 꺼져 있어요' : `"${PERM_INFO[p].title}" 권한이 없어요`)
+  const guard = (p: SharePerm, node: React.ReactNode): React.ReactNode =>
+    !can(p) ? (
       <fieldset disabled className="ro-fieldset">
         {node}
       </fieldset>
@@ -434,6 +436,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
   }, [request])
 
   return (
+    <PermsContext.Provider value={can}>
     <div className="server">
       <header className="server-head">
         <SoftwareBadge software={software} size={52} name={server.name} icon={server.icon} />
@@ -463,7 +466,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
         <div className="head-actions">
           {remote ? (
             <>
-              <span className="pill">{remote.role === 'admin' ? '공유받음 · 관리자' : '공유받음 · 보기만'}</span>
+              <span className="pill" title={remote.perms.length ? `할 수 있는 일: ${remote.perms.map((p) => PERM_INFO[p].title).join(', ')}` : '보기만 할 수 있어요'}>{`공유받음 · ${permsLabel(remote.perms, true)}`}</span>
               {/* 로그아웃하면 공유받은 서버에 연결하지 못한다 */}
               {account === null && (
                 <button className="btn sm primary" onClick={() => setAskLogin(true)}>
@@ -474,12 +477,12 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
                 <Trash2 size={19} />
               </button>
               {on ? (
-                <button className="btn lg" onClick={() => stop()} disabled={readOnly || state === 'stopping'} title={readOnly ? '보기만 할 수 있는 권한이에요' : undefined}>
+                <button className="btn lg" onClick={() => stop()} disabled={!can('stop') || state === 'stopping'} title={noPermTitle('stop')}>
                   <Square size={16} fill="currentColor" />
                   {state === 'stopping' ? '끄는 중…' : '서버 끄기'}
                 </button>
               ) : (
-                <button className="btn primary lg" onClick={() => start()} disabled={readOnly} title={readOnly ? (remote.hostOnline ? '보기만 할 수 있는 권한이에요' : '방장 컴퓨터가 꺼져 있어요') : undefined}>
+                <button className="btn primary lg" onClick={() => start()} disabled={!can('start')} title={noPermTitle('start')}>
                   <Play size={17} fill="currentColor" />
                   서버 켜기
                 </button>
@@ -561,6 +564,12 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
               채팅
             </button>
           )}
+          {/* 백업 탭은 "백업 관리" 권한을 받은 친구에게만 */}
+          {remote.perms.includes('backup') && (
+            <button className={tab === 'backup' ? 'active' : ''} onClick={() => setTab('backup')}>
+              백업
+            </button>
+          )}
         </nav>
       ) : (
       <nav className="tabs">
@@ -614,21 +623,22 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
       )}
 
       {bedrock && shownTab === 'maps' ? (
-        guard(<BedrockWorldTab folderPath={folderPath} serverOn={on} />)
+        guard('world', <BedrockWorldTab folderPath={folderPath} serverOn={on} />)
       ) : bedrock && BEDROCK_PACK_TABS.includes(shownTab) ? (
         <AddonsTab key={shownTab} folderPath={folderPath} serverOn={on} kind={shownTab === 'resources' ? 'resource' : shownTab === 'scripts' ? 'script' : 'addon'} />
       ) : shownTab === 'maps' ? (
-        guard(<MapTab folderPath={folderPath} serverOn={on} mcVersion={server.mcVersion} />)
+        guard('world', <MapTab folderPath={folderPath} serverOn={on} mcVersion={server.mcVersion} />)
       ) : shownTab === 'datapacks' ? (
         <DatapacksTab folderPath={folderPath} serverOn={on} />
       ) : tab === 'backup' ? (
-        <BackupTab folderPath={folderPath} serverOn={on} />
+        guard('backup', <BackupTab folderPath={folderPath} serverOn={on} />)
       ) : tab === 'files' ? (
         <FilesTab folderPath={folderPath} serverOn={on} />
       ) : tab === 'chat' ? (
-        <ChatLogTab folderPath={folderPath} readOnly={readOnly} />
+        <ChatLogTab folderPath={folderPath} readOnly={!can('chat')} />
       ) : shownTab === 'manage' ? (
-        guard(bedrock ? <BedrockManageTab folderPath={folderPath} running={state === 'running'} /> : <ManageTab folderPath={folderPath} running={state === 'running'} />)
+        // 관리 탭은 칸마다 권한이 달라서 탭 안에서 막는다 (perms.tsx의 Perm)
+        bedrock ? <BedrockManageTab folderPath={folderPath} running={state === 'running'} /> : <ManageTab folderPath={folderPath} running={state === 'running'} />
       ) : tab === 'mods' && modKind ? (
         <ModsTab key="mods" folderPath={folderPath} kind={modKind} serverOn={on} />
       ) : tab === 'plugins' && modKinds[1] ? (
@@ -676,7 +686,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
             <FirstRunGuide software={software} onStart={() => start()} startDisabled={starting || checking || !!busy} busyText={checking ? '점검 중…' : starting ? '준비 중…' : undefined} />
           )}
           {/* 공유받은 서버는 관리자 권한일 때만 명령을 보낸다 */}
-          {(!remote || (remote.role === 'admin' && remote.hostOnline)) && (
+          {can('console') && (
           <form className="command" onSubmit={submitCommand}>
             {on && (suggestions.length > 0 || usage) && (
               <div className="suggest">
@@ -846,6 +856,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
         />
       )}
     </div>
+    </PermsContext.Provider>
   )
 }
 

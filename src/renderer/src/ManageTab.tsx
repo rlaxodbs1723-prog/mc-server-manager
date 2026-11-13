@@ -1,3 +1,5 @@
+import type { SharePerm } from '../../shared-types'
+import { Perm, useCan } from './perms'
 import { Ban, Users, CloudLightning, Gamepad2, ShieldCheck, CloudRain, Crown, LogOut, Megaphone, Moon, Send, Sun, Sunrise } from 'lucide-react'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import type { Difficulty, GameMode, ManageAction, ManageInfo, PlayerRecord } from '../../shared-types'
@@ -33,7 +35,8 @@ function Segmented<T extends string>({ value, options, onChange, disabled }: { v
   )
 }
 
-function Card({ title, icon, children, extra }: { title: string; icon: ReactNode; children: ReactNode; extra?: ReactNode }) {
+function Card({ title, icon, children, extra, perm }: { title: string; icon: ReactNode; children: ReactNode; extra?: ReactNode; perm?: SharePerm }) {
+  const wrap = (n: ReactNode): ReactNode => (perm ? <Perm p={perm}>{n}</Perm> : n)
   return (
     <section className="manage-card">
       <header>
@@ -41,9 +44,9 @@ function Card({ title, icon, children, extra }: { title: string; icon: ReactNode
           {icon}
           {title}
         </h3>
-        {extra}
+        {extra && wrap(extra)}
       </header>
-      {children}
+      {wrap(children)}
     </section>
   )
 }
@@ -59,6 +62,7 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
   const [findPlayer, setFindPlayer] = useState('')
   const [showHistory, setShowHistory] = useState(false)
 
+  const can = useCan()
   const load = useCallback(() => {
     window.api.getPlayerHistory(folderPath).then(setHistory).catch(() => undefined)
     return window.api.getManageInfo(folderPath).then(setInfo)
@@ -90,7 +94,7 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
 
       <div className="manage-grid">
         <div className="manage-col">
-          <Card title="공지 보내기" icon={<Megaphone size={18} />}>
+          <Card title="공지 보내기" icon={<Megaphone size={18} />} perm="announce">
             <form
               className="say-form"
               onSubmit={(e) => {
@@ -127,6 +131,7 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
                       <span className="n">{p.name}</span>
                       {p.op && <span className="chip blue">관리자</span>}
                     </button>
+                    <Perm p="players">
                     <div className="player-mode">
                       <Select
                         value=""
@@ -148,6 +153,7 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
                     <button className="btn icon sm ghost danger-hover" title="차단" onClick={() => setAskBan(p.name)}>
                       <Ban size={16} />
                     </button>
+                    </Perm>
                   </div>
                 ))}
               </div>
@@ -155,7 +161,7 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
           </Card>
 
           {info.banned.length > 0 && (
-            <Card title={`차단한 사람 ${info.banned.length}명`} icon={<Ban size={18} />}>
+            <Card title={`차단한 사람 ${info.banned.length}명`} icon={<Ban size={18} />} perm="players">
               <div className="player-list scroll">
                 {info.banned.map((name) => (
                   <div className="player" key={name}>
@@ -182,17 +188,17 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
             </button>
           )}
 
-          <Card title="화이트리스트" icon={<ShieldCheck size={18} />}>
+          <Card title="화이트리스트" icon={<ShieldCheck size={18} />} perm="whitelist">
             <WhitelistPanel folderPath={folderPath} />
           </Card>
         </div>
 
         <div className="manage-col">
-          <Card title="환영 메시지" icon={<span className="card-emoji">👋</span>}>
+          <Card title="환영 메시지" icon={<span className="card-emoji">👋</span>} perm="welcome">
             <WelcomeBox folderPath={folderPath} />
           </Card>
 
-          <Card title="난이도" icon={<span className="card-emoji">⚔️</span>}>
+          <Card title="난이도" icon={<span className="card-emoji">⚔️</span>} perm="difficulty">
             <Segmented
               value={info.difficulty}
               options={DIFFICULTY}
@@ -204,7 +210,7 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
             />
           </Card>
 
-          <button className="btn block mode-button" disabled={!running} onClick={() => setPickMode(true)}>
+          <button className="btn block mode-button" disabled={!running || !can('gamemodeAll')} onClick={() => setPickMode(true)}>
             <span className="mode-button-label">
               <Gamepad2 size={18} />
               모두의 게임 모드 바꾸기
@@ -214,7 +220,7 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
             </span>
           </button>
 
-          <Card title="시간 · 날씨" icon={<span className="card-emoji">🌤️</span>}>
+          <Card title="시간 · 날씨" icon={<span className="card-emoji">🌤️</span>} perm="timeWeather">
             <div className="quick-grid">
               <button className="quick" disabled={!running} onClick={() => act({ type: 'time', value: 'day' }, '아침으로 바꿨어요')}>
                 <Sunrise size={20} />

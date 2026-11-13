@@ -1,3 +1,4 @@
+import { ProfileBox } from './LoginGate'
 import { CopyPlus, FolderOpen, Pencil, Play, Plus, Settings, Square, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { SOFTWARE_INFO, type CrashAnalysis, type ServerListItem } from '../../shared-types'
@@ -222,6 +223,7 @@ export default function App() {
                   <span className={`dot ${s.remote?.hostOnline ? s.state : 'stopped'}`} title={s.remote?.hostOnline ? STATE_LABEL[s.state] : '방장 컴퓨터 꺼짐'} />
                 </button>
               ))}
+              <ProfileBox />
             </aside>
 
             <main className={`main ${current ? 'fill' : ''}`}>

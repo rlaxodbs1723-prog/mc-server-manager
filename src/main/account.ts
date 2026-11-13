@@ -76,7 +76,7 @@ export async function refreshAccount(): Promise<void> {
     }
     if (!res.ok) return
     const me = (await res.json()).account as Account
-    if (me && (me.name !== account?.name || me.id !== account?.id)) {
+    if (me && (me.name !== account?.name || me.id !== account?.id || (me.avatar ?? '') !== (account?.avatar ?? ''))) {
       account = me
       changed()
     }

@@ -1,3 +1,5 @@
+import type { SharePerm } from '../../shared-types'
+import { Perm, useCan } from './perms'
 import { CloudLightning, CloudRain, Crown, Gamepad2, LogOut, Megaphone, Moon, Plus, Send, ShieldCheck, Skull, Sun, Sunrise, X } from 'lucide-react'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import type { BedrockAction, BedrockManageInfo } from '../../shared-types'
@@ -28,7 +30,8 @@ function avatarColor(name: string): string {
   return AVATAR_COLORS[h % AVATAR_COLORS.length]
 }
 
-function Card({ title, icon, children, extra }: { title: string; icon: ReactNode; children: ReactNode; extra?: ReactNode }) {
+function Card({ title, icon, children, extra, perm }: { title: string; icon: ReactNode; children: ReactNode; extra?: ReactNode; perm?: SharePerm }) {
+  const wrap = (n: ReactNode): ReactNode => (perm ? <Perm p={perm}>{n}</Perm> : n)
   return (
     <section className="manage-card">
       <header>
@@ -36,9 +39,9 @@ function Card({ title, icon, children, extra }: { title: string; icon: ReactNode
           {icon}
           {title}
         </h3>
-        {extra}
+        {extra && wrap(extra)}
       </header>
-      {children}
+      {wrap(children)}
     </section>
   )
 }
@@ -68,6 +71,7 @@ export default function BedrockManageTab({ folderPath, running }: { folderPath: 
     })
   }, [folderPath, load])
 
+  const can = useCan()
   async function act(action: BedrockAction, done?: string) {
     try {
       await window.api.bedrockAction(folderPath, action)
@@ -86,7 +90,7 @@ export default function BedrockManageTab({ folderPath, running }: { folderPath: 
 
       <div className="manage-grid">
         <div className="manage-col">
-          <Card title="공지 보내기" icon={<Megaphone size={18} />}>
+          <Card title="공지 보내기" icon={<Megaphone size={18} />} perm="announce">
             <form
               className="say-form"
               onSubmit={(e) => {
@@ -110,7 +114,7 @@ export default function BedrockManageTab({ folderPath, running }: { folderPath: 
             </form>
           </Card>
 
-          <Card title={`접속 중 ${info.players.length}명`} icon={<span className={`dot ${info.players.length ? 'running' : ''}`} />}>
+          <Card title={`접속 중 ${info.players.length}명`} icon={<span className={`dot ${info.players.length ? 'running' : ''}`} />} perm="players">
             {info.players.length === 0 ? (
               <Empty title={running ? '아직 아무도 없어요' : '서버가 꺼져 있어요'} hint={running ? '플레이어가 들어오면 여기에 보여요.' : undefined} />
             ) : (
@@ -156,6 +160,7 @@ export default function BedrockManageTab({ folderPath, running }: { folderPath: 
           <Card
             title="허용 목록"
             icon={<ShieldCheck size={18} />}
+            perm="whitelist"
             extra={
               <label className="switch" title={info.allowlistOn ? '허용 목록에 있는 사람만 들어올 수 있어요' : '누구나 들어올 수 있어요'}>
                 <input
@@ -206,11 +211,11 @@ export default function BedrockManageTab({ folderPath, running }: { folderPath: 
         </div>
 
         <div className="manage-col">
-          <Card title="환영 메시지" icon={<span className="card-emoji">👋</span>}>
+          <Card title="환영 메시지" icon={<span className="card-emoji">👋</span>} perm="welcome">
             <WelcomeBox folderPath={folderPath} />
           </Card>
 
-          <Card title="난이도" icon={<span className="card-emoji">⚔️</span>}>
+          <Card title="난이도" icon={<span className="card-emoji">⚔️</span>} perm="difficulty">
             <div className="seg">
               {DIFFICULTY.map((d) => (
                 <button
@@ -229,7 +234,7 @@ export default function BedrockManageTab({ folderPath, running }: { folderPath: 
             </div>
           </Card>
 
-          <button className="btn block mode-button" disabled={!running} onClick={() => setPickMode(true)}>
+          <button className="btn block mode-button" disabled={!running || !can('gamemodeAll')} onClick={() => setPickMode(true)}>
             <span className="mode-button-label">
               <Gamepad2 size={18} />
               모두의 게임 모드 바꾸기
@@ -237,7 +242,7 @@ export default function BedrockManageTab({ folderPath, running }: { folderPath: 
             <span className="mode-button-now">지금 {GAMEMODE.find((g) => g.value === info.gamemode)?.label}</span>
           </button>
 
-          <Card title="시간 · 날씨" icon={<span className="card-emoji">🌤️</span>}>
+          <Card title="시간 · 날씨" icon={<span className="card-emoji">🌤️</span>} perm="timeWeather">
             <div className="quick-grid">
               <button className="quick" disabled={!running} onClick={() => act({ type: 'time', value: 'day' }, '아침으로 바꿨어요')}>
                 <Sunrise size={20} />

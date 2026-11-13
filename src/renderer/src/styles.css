@@ -1128,3 +1128,53 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 /* 공유받은 서버(보기만): 탭 내용을 감싸 안의 버튼·입력을 모두 끈다. 모양은 그대로 */
 .ro-fieldset { display: contents; border: 0; margin: 0; padding: 0; min-width: 0; }
 .ro-fieldset :disabled { cursor: not-allowed; }
+
+/* ---------- 서버 공유 창 ---------- */
+.share-start { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding-top: 4px; }
+.share-notes { margin: 0; padding-left: 18px; color: var(--text-2); font-size: 14px; line-height: 1.7; }
+.perm-editor { display: flex; flex-direction: column; gap: 2px; }
+.perm-editor .seg { margin-bottom: 6px; }
+.perm-always { opacity: 0.75; }
+.nav-count { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--surface-2); color: var(--text-2); font-size: 12px; display: inline-flex; align-items: center; justify-content: center; }
+.settings-nav button:disabled { opacity: 0.45; cursor: default; }
+.friend-list { display: flex; flex-direction: column; gap: 8px; }
+.friend { border-radius: var(--r-lg); background: var(--surface-2); }
+.friend-head { width: 100%; display: flex; align-items: center; gap: 10px; padding: 12px 14px; text-align: left; border-radius: var(--r-lg); }
+.friend-head:hover { background: var(--surface-3); }
+.friend-name { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.friend-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.friend-head .pill { background: var(--surface); max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; line-height: 26px; }
+.friend-chevron { color: var(--text-3); transition: transform 0.15s; flex-shrink: 0; }
+.friend.open .friend-chevron { transform: rotate(180deg); }
+.friend-body { padding: 4px 14px 14px; }
+.perm-group { margin-top: 10px; } .perm-group .label { margin-bottom: 2px; }
+.share-code { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; border-radius: var(--r-md); background: var(--surface-2); margin: 6px 0 8px; }
+.share-code code { flex: 1; min-width: 0; font-size: 13px; user-select: text; word-break: break-all; color: var(--text); }
+.friend-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--r-md); background: var(--surface-2); }
+.friend-row .pill { background: var(--surface); cursor: pointer; }
+.friend-row .pill:hover { color: var(--text); }
+.perm-targets { display: flex; flex-wrap: wrap; gap: 6px; }
+.perm-targets .chip { height: 32px; padding: 0 12px; font-size: 13px; border: 0; cursor: pointer; font-family: inherit; }
+.perm-targets .chip:hover { color: var(--text); }
+.perm-targets .chip.active { background: var(--primary); color: #fff; }
+.share-code-empty { flex: 1; min-width: 0; }
+.perm-onoff { display: flex; gap: 6px; flex-shrink: 0; }
+.perm-every { margin-top: 8px; }
+.perm-state { display: block; } .perm-state.on { color: var(--primary); }
+
+/* ---------- 왼쪽 아래 프로필 ---------- */
+.profile-box { position: sticky; bottom: -16px; margin: auto -12px -16px; padding: 10px 12px 14px; background: var(--sidebar, var(--bg)); border-top: 1px solid var(--line); }
+.profile { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--r-md); text-align: left; }
+.profile:hover { background: var(--surface); }
+.profile-avatar { width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; background: var(--primary-soft); color: var(--primary); }
+.profile-avatar.no-login { background: var(--surface-2); color: var(--text-3); }
+.profile-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.profile-text b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-text .hint { display: flex; align-items: center; font-size: 12px; }
+.profile-menu { position: absolute; left: 12px; right: 12px; bottom: calc(100% - 4px); background: var(--surface-2); border-radius: var(--r-md); box-shadow: var(--shadow); padding: 6px; display: flex; flex-direction: column; z-index: 20; }
+.profile-menu button { text-align: left; padding: 9px 12px; border-radius: 8px; font-weight: 600; color: var(--text); }
+.profile-menu button:hover:not(:disabled) { background: var(--surface-3); }
+.profile-menu button.danger { color: var(--danger); }
+img.profile-avatar { object-fit: cover; }
+.profile-box .profile-avatar { flex: 0 0 34px; width: 34px; height: 34px; min-height: 34px; max-height: 34px; aspect-ratio: 1; align-self: center; }
+.friend-notify { display: flex; align-items: center; gap: 8px; cursor: pointer; }

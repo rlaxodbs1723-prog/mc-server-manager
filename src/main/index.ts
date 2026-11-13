@@ -4,7 +4,7 @@ import { getUpdateState, initUpdater, installUpdateNow } from './updater'
 import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, Notification, screen, shell, Tray } from 'electron'
 import fs from 'fs'
 import { join, resolve, sep } from 'path'
-import { EULA_URL, friendlyError, SOFTWARE_INFO, type BedrockAction, type BedrockKind, type CreateServerOptions, type BackupSettings, type ManageAction, type ModPart, type ShareRole, type ModpackBrowseOptions, type SearchSite, type MapSort, type Progress, type SaveSettings, type ServerEvent, type Software } from '../shared-types'
+import { EULA_URL, friendlyError, SOFTWARE_INFO, type BedrockAction, type BedrockKind, type CreateServerOptions, type BackupSettings, type ManageAction, type ModPart, type SharePerm, type ModpackBrowseOptions, type SearchSite, type MapSort, type Progress, type SaveSettings, type ServerEvent, type Software } from '../shared-types'
 import { CreateEta } from './eta'
 import { listGameRules, setGameRule } from './gamerules'
 import { getHardcore, setHardcore } from './hardcore'
@@ -12,7 +12,7 @@ import { getGameRuleLang } from './lang'
 import { applyDomain, checkReachable, closeAllPorts, getInvite, initInvite, recheckInvite, setInviteDomain, useTunnel } from './invite'
 import { checkDomainName, claimDomain, getDomain, releaseDomain } from './domain'
 import { cancelLogin, deleteAccount, getAccount, login, loginProviders, logout, refreshAccount } from './account'
-import { createShareInvite, initShareClient, initShareHost, joinShare, leaveShare, remoteServers, revokeShareDevice, setShareRole, shareDevices, shareStatus, startSharing, stopSharing } from './share'
+import { createShareInvite, initShareClient, initShareHost, joinShare, leaveShare, remoteServers, revokeShareDevice, setShareNotify, setSharePerms, shareDevices, shareStatus, startSharing, stopSharing } from './share'
 import { detectServer } from './importserver'
 import { addAddonFile, isBedrockFolder, latestBedrock, listAddons, removeAddon, setAddonEnabled } from './bedrock'
 import { allowLoopback, getLoopbackState } from './bedrockloopback'
@@ -322,12 +322,11 @@ ipcMain.handle('listServers', () => [...listServers(), ...remoteServers()])
 ipcMain.handle('startSharing', (_event, folderPath: string) => startSharing(checkServerFolder(folderPath)))
 ipcMain.handle('stopSharing', (_event, folderPath: string) => stopSharing(checkServerFolder(folderPath)))
 ipcMain.handle('shareStatus', (_event, folderPath: string) => shareStatus(checkServerFolder(folderPath)))
-ipcMain.handle('createShareInvite', (_event, folderPath: string, role: ShareRole) => createShareInvite(checkServerFolder(folderPath), role === 'admin' ? 'admin' : 'view'))
+ipcMain.handle('createShareInvite', (_event, folderPath: string, perms: SharePerm[]) => createShareInvite(checkServerFolder(folderPath), perms))
 ipcMain.handle('shareDevices', (_event, folderPath: string) => shareDevices(checkServerFolder(folderPath)))
 ipcMain.handle('revokeShareDevice', (_event, folderPath: string, device: string) => revokeShareDevice(checkServerFolder(folderPath), String(device)))
-ipcMain.handle('setShareRole', (_event, folderPath: string, device: string, role: ShareRole) =>
-  setShareRole(checkServerFolder(folderPath), String(device), role === 'admin' ? 'admin' : 'view')
-)
+ipcMain.handle('setShareNotify', (_event, folderPath: string, device: string, on: boolean) => setShareNotify(checkServerFolder(folderPath), String(device), !!on))
+ipcMain.handle('setSharePerms', (_event, folderPath: string, device: string, perms: SharePerm[]) => setSharePerms(checkServerFolder(folderPath), String(device), perms))
 ipcMain.handle('joinShare', (_event, code: string) => joinShare(String(code)))
 ipcMain.handle('getAccount', () => getAccount())
 ipcMain.handle('loginProviders', () => loginProviders())

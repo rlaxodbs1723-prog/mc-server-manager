@@ -89,7 +89,7 @@ async function auth(env, ws, msg) {
     ws.setAttach({ as: 'client', device, role: inv.role })
     ws.send({ t: 'ok', as: 'client', token, device, role: inv.role })
     ws.send({ t: 'host', online: !!hostSocket(env) })
-    sendHost(env, { t: 'joined', device, name: devices[device].name, role: inv.role, first: true })
+    sendHost(env, { t: 'joined', device, name: devices[device].name, role: inv.role, first: true, invite: key })
     return
   }
   if (msg.as === 'client') {

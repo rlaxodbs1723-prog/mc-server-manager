@@ -4,7 +4,6 @@ import type { AppInfo, AppSettings } from '../../shared-types'
 import { Loading, Modal, useToast } from './ui'
 import { cleanError } from './util'
 import { LANGS } from '../../i18n'
-import { AccountSection } from './LoginGate'
 
 // 앱 전체 설정 (서버마다가 아닌 것). 바꾸면 바로 저장된다
 export default function AppSettingsDialog({ onClose }: { onClose: () => void }) {
@@ -130,8 +129,6 @@ export default function AppSettingsDialog({ onClose }: { onClose: () => void }) 
               </span>
             </label>
           </section>
-
-          <AccountSection />
 
           {/* 예전에 직접 넣은 CurseForge 키가 있을 때만: 끊으면 기본 연결로 돌아간다 */}
           {info.curseForgeKey === 'user' && (

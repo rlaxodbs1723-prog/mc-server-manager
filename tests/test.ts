@@ -3,7 +3,7 @@
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import { arclightLabel, sameMod } from '../src/shared-types'
+import { SHARE_PERMS, arclightLabel, sameMod } from '../src/shared-types'
 import { preferCurseForge } from '../src/main/merge'
 import { readYamlValue, writeYamlValue } from '../src/main/yamlvalue'
 import { readProperties, writeProperties } from '../src/main/properties'
@@ -44,7 +44,7 @@ import { child, parseBedrockLevelDat, serializeBedrockLevelDat } from '../src/ma
 import { getBedrockExperiments, setBedrockExperiment, setBedrockHardcore } from '../src/main/bedrockexperiments'
 import { DatabaseSync } from 'node:sqlite'
 import { checkImportFolder, detectServer } from '../src/main/importserver'
-import { createShareInvite, joinShare, leaveShare, remoteServers, revokeShareDevice, setShareRole, shareDevices, shareStatus, startSharing, stopSharing } from '../src/main/share'
+import { createShareInvite, joinShare, leaveShare, remoteServers, revokeShareDevice, setSharePerms, shareDevices, shareStatus, startSharing, stopSharing } from '../src/main/share'
 import { devSession, startDevRelay } from '../share/dev-relay.mjs'
 import { ipcMain } from 'electron'
 import { addAddonFile, bedrockProps, bedrockTellraw, checkAddons, listAddons, nethernetUdpPorts, removeAddon, setAddonEnabled } from '../src/main/bedrock'
@@ -746,7 +746,8 @@ async function shareChecks(): Promise<void> {
       startSharing(dir)
       expect(!!readServerInfo(dir).share, '공유 정보를 저장하지 않았어요')
       expect(await waitUntil(() => shareStatus(dir).online), '방장이 중계 방에 붙지 못했어요')
-      const code = await createShareInvite(dir, 'view')
+      // 초대 코드에 "서버 켜기"만 준다
+      const code = await createShareInvite(dir, ['start'])
       expect(/^[0-9a-f]{32}-[A-Za-z0-9]+$/.test(code), `초대 코드 모양이 이상해요: ${code}`)
       const remotePath = await joinShare(code)
       expect(remotePath.startsWith('remote:'), `공유받은 서버 경로가 이상해요: ${remotePath}`)
@@ -758,18 +759,40 @@ async function shareChecks(): Promise<void> {
       const err = await ipc.__invoke('deleteServer', remotePath).then(() => '', (e: Error) => e.message)
       expect(!!err && !deleted, `공유받은 쪽에서 서버를 지울 수 있었어요: ${err}`)
       const devices = await shareDevices(dir)
-      expect(devices.length === 1 && devices[0].role === 'view' && devices[0].online, `친구 목록이 이상해요: ${JSON.stringify(devices)}`)
-      // 보기만: 명령은 거절. 관리자로 바꾸면 명령이 가고, 설정 저장은 허락한 칸만 방장에게 간다
+      expect(devices.length === 1 && devices[0].perms.join() === 'start' && devices[0].online, `친구 목록·초대 코드 권한이 이상해요: ${JSON.stringify(devices)}`)
+      expect(await waitUntil(() => remoteServers().some((s) => s.remote?.perms.join() === 'start')), `친구 쪽에 권한이 안 왔어요: ${JSON.stringify(remoteServers())}`)
+      // 항목별: 켜기만 되고 명령·설정은 거절
       const commands: string[] = []
       let savedSettings: unknown = null
+      let started = false
+      ipc.handle('startServer', () => void (started = true))
       ipc.handle('sendCommand', (_e: unknown, _f: unknown, cmd: unknown) => void commands.push(String(cmd)))
       ipc.handle('saveSettings', (_e: unknown, _f: unknown, set: unknown) => void (savedSettings = set))
-      const viewErr = await ipc.__invoke('sendCommand', remotePath, 'op Steve').then(() => '', (e: Error) => e.message)
-      expect(/보기만/.test(viewErr) && commands.length === 0, `보기만인데 명령을 보냈어요: ${viewErr}`)
-      await setShareRole(dir, devices[0].id, 'admin')
-      expect(await waitUntil(() => remoteServers().some((s) => s.remote?.role === 'admin')), '친구 쪽 권한이 관리자로 안 바뀌었어요')
+      await ipc.__invoke('startServer', remotePath)
+      expect(started, '"서버 켜기" 권한인데 켜지 못했어요')
+      const noErr = await ipc.__invoke('sendCommand', remotePath, 'op Steve').then(() => '', (e: Error) => e.message)
+      expect(/권한이 없어요/.test(noErr) && commands.length === 0, `명령 권한이 없는데 명령을 보냈어요: ${noErr}`)
+      // 명령어 권한만 주면 명령은 가고 설정 저장은 막힌다
+      await setSharePerms(dir, devices[0].id, ['console'])
+      expect(await waitUntil(() => remoteServers().some((s) => s.remote?.perms.join() === 'console')), '친구 쪽 권한이 안 바뀌었어요')
       await ipc.__invoke('sendCommand', remotePath, 'say hi')
-      expect(commands[0] === 'say hi', `관리자 명령이 안 갔어요: ${commands}`)
+      expect(commands[0] === 'say hi', `명령이 안 갔어요: ${commands}`)
+      const setErr = await ipc.__invoke('saveSettings', remotePath, { properties: { difficulty: 'hard' } }).then(() => '', (e: Error) => e.message)
+      expect(/권한이 없어요/.test(setErr) && savedSettings === null, '설정 권한이 없는데 설정을 바꿨어요')
+      // 관리 탭: 일마다 권한이 따로 (공지만 주면 공지는 되고 OP는 막힌다)
+      const managed: string[] = []
+      ipc.handle('manage', (_e: unknown, _f: unknown, a: { type: string }) => void managed.push(a.type))
+      await setSharePerms(dir, devices[0].id, ['announce', 'difficulty'])
+      expect(await waitUntil(() => remoteServers().some((s) => s.remote?.perms.join() === 'announce,difficulty')), '친구 쪽 권한이 안 바뀌었어요 (공지)')
+      await ipc.__invoke('manage', remotePath, { type: 'say', text: 'hi' })
+      const opErr = await ipc.__invoke('manage', remotePath, { type: 'op', name: 'Steve' }).then(() => '', (e: Error) => e.message)
+      expect(managed.join() === 'say' && /권한이 없어요/.test(opErr), `관리 탭 권한이 이상해요: ${managed} / ${opErr}`)
+      // 설정 저장: 난이도 권한만 있으면 난이도 칸만 간다
+      await ipc.__invoke('saveSettings', remotePath, { properties: { difficulty: 'easy', pvp: 'false' }, automation: { welcome: 'x' } })
+      expect(JSON.stringify(savedSettings) === JSON.stringify({ properties: { difficulty: 'easy' } }), `난이도 권한인데 다른 칸까지 갔어요: ${JSON.stringify(savedSettings)}`)
+      // 다 주면(관리자) 설정 저장은 허락한 칸만 방장에게 간다
+      await setSharePerms(dir, devices[0].id, [...SHARE_PERMS])
+      expect(await waitUntil(() => remoteServers().some((s) => s.remote?.role === 'admin' && s.remote.perms.length === SHARE_PERMS.length)), '친구 쪽 권한이 관리자로 안 바뀌었어요')
       await ipc.__invoke('saveSettings', remotePath, { properties: { difficulty: 'hard', 'server-port': '1', 'enable-rcon': 'true', 'rcon.password': 'x' }, memoryMb: 99999, javaArgs: '-javaagent:evil.jar', automation: { welcome: '어서 와요', autoStart: true } })
       expect(JSON.stringify(savedSettings) === JSON.stringify({ properties: { difficulty: 'hard' }, automation: { welcome: '어서 와요' } }), `위험한 설정이 걸러지지 않았어요: ${JSON.stringify(savedSettings)}`)
       // 친구를 끊으면 그 친구는 더 이상 요청할 수 없다

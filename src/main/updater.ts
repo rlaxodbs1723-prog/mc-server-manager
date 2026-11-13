@@ -36,6 +36,25 @@ function log(line: string): void {
   }
 }
 
+// 켤 때 바로 설치를 했는데 다시 켜 보니 버전이 그대로면(관리자 권한 창에서 막혔거나 설치가 실패) 또 바로 설치하지 않는다.
+// 안 그러면 켤 때마다 설치 창이 뜨고 → 실패 → 다시 켜짐이 끝없이 반복된다. 그때는 "업데이트" 버튼으로 둔다
+const attemptFile = (): string => path.join(app.getPath('userData'), 'update-attempt.json')
+function lastAttemptFailed(target: string): boolean {
+  try {
+    const a = JSON.parse(fs.readFileSync(attemptFile(), 'utf8'))
+    return a.from === app.getVersion() && a.to === target && Date.now() - a.at < 3 * 86400_000
+  } catch {
+    return false
+  }
+}
+function rememberAttempt(target: string): void {
+  try {
+    fs.writeFileSync(attemptFile(), JSON.stringify({ from: app.getVersion(), to: target, at: Date.now() }))
+  } catch {
+    // 못 남기면 예전처럼 동작
+  }
+}
+
 function set(next: UpdateState): void {
   state = next
   for (const w of BrowserWindow.getAllWindows()) w.webContents.send('update', state)
@@ -60,7 +79,7 @@ function initManualUpdateCheck(): void {
       })
       if (!res.ok) return
       const tag = String(((await res.json()) as { tag_name?: string }).tag_name ?? '').replace(/^v/, '')
-      if (/^d+.d+.d+$/.test(tag) && isNewer(tag, app.getVersion()) && !(state.state === 'manual' && state.version === tag)) {
+      if (/^\d+\.\d+\.\d+$/.test(tag) && isNewer(tag, app.getVersion()) && !(state.state === 'manual' && state.version === tag)) {
         log(`새 버전 ${tag} 있음 (맥: 직접 받기)`)
         set({ state: 'manual', version: tag })
         notify('새 버전이 나왔어요', `새 버전 ${tag}이 나왔어요. 앱 오른쪽 위 "새 버전 받기"를 눌러 받아 주세요.`)
@@ -76,7 +95,7 @@ function initManualUpdateCheck(): void {
 export function initUpdater(): void {
   if (!app.isPackaged) return
   if (process.platform === 'darwin') return initManualUpdateCheck()
-  log('앱 시작')
+  log(`앱 시작 (${process.execPath})`) // 어디에 깔렸는지 (Program Files면 설치할 때 관리자 권한 창이 뜬다)
   // 업데이트 라이브러리가 남기는 기록도 같은 파일에 (오류 원인 찾기용)
   autoUpdater.logger = { info: (m: unknown) => log(`· ${m}`), warn: (m: unknown) => log(`경고: ${m}`), error: (m: unknown) => log(`오류: ${m}`), debug: () => undefined }
   const testUrl = process.env.MCSM_UPDATE_URL
@@ -103,9 +122,14 @@ export function initUpdater(): void {
     log(`새 버전 ${info.version} 준비됨`)
     if (installAtLaunch && !anyRunning()) {
       installAtLaunch = false
-      log('앱을 켤 때 있던 새 버전이라 바로 설치하고 다시 켜기')
-      autoUpdater.quitAndInstall(true, true)
-      return
+      if (lastAttemptFailed(info.version)) {
+        log(`지난번에 ${info.version} 설치가 안 됐어요 (관리자 권한 창에서 막혔거나 설치 실패). 이번엔 바로 설치하지 않고 버튼으로 둠`)
+      } else {
+        log('앱을 켤 때 있던 새 버전이라 바로 설치하고 다시 켜기')
+        rememberAttempt(info.version)
+        autoUpdater.quitAndInstall(true, true)
+        return
+      }
     }
     installAtLaunch = false
     set({ state: 'ready', version: info.version })

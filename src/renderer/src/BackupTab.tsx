@@ -99,9 +99,12 @@ export default function BackupTab({ folderPath, serverOn }: { folderPath: string
             {!!list?.length && <span className="hint">{`${list.length} · ${size(list.reduce((n, b) => n + b.sizeBytes, 0))}`}</span>}
           </h3>
           <div className="backup-actions">
-            <button className="btn icon ghost" onClick={() => window.api.openBackupFolder(folderPath)} title="백업 폴더 열기">
-              <FolderOpen size={18} />
-            </button>
+            {/* 공유받은 서버의 백업 폴더는 방장 컴퓨터에 있어서 열 수 없다 */}
+            {!folderPath.startsWith('remote:') && (
+              <button className="btn icon ghost" onClick={() => window.api.openBackupFolder(folderPath)} title="백업 폴더 열기">
+                <FolderOpen size={18} />
+              </button>
+            )}
             <button className="btn primary" onClick={make} disabled={making || !!busy} title={busy ? `${busy} 중이에요. 끝나면 할 수 있어요` : undefined}>
               {making ? <span className="spinner" /> : null}
               {making ? '백업하는 중…' : '지금 백업하기'}
