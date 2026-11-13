@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   mac:
-    runs-on: macos-14 # Apple 칩(arm64)
+    runs-on: macos-15 # Apple 칩(arm64). macos-14는 GitHub가 지원을 끝냈다
     steps:
       - uses: actions/checkout@v4
         with:
