@@ -154,7 +154,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></svg>
       <span id="dl-text" data-i18n="dl">윈도우용 무료 다운로드</span>
     </a>
-    <div class="dl-meta" id="dl-meta" data-i18n="meta">Windows 10 · 11 (64비트) · 무료</div>
+    <div class="dl-meta" id="dl-meta" data-i18n="meta">Windows 10 · 11 (64비트) · macOS (Apple 칩) · 무료</div>
     <div class="mobile-note" id="mobile-note" hidden>
       <span data-i18n="mob">📱 PC(윈도우)용 프로그램이에요.<br />링크를 PC로 보내 두고 PC에서 열어 주세요.</span>
       <div class="acts">
@@ -202,6 +202,7 @@
       <details data-i18n="q3"><summary>"Windows의 PC 보호" 창이 떠요. 괜찮아요?</summary><p>괜찮아요. 코드 서명 인증서가 없는 개인 앱이라 뜨는 창이에요. 추가 정보 → 실행을 누르면 돼요. 앱의 코드는 깃허브에 모두 공개돼 있어요.</p></details>
       <details data-i18n="q4"><summary>플레이어가 들어오지 못해요.</summary><p>서버 이름 아래 접속 주소 옆의 확인 버튼(밖에서 접속되는지 확인)을 눌러 보세요. 빨간 "밖에서 접속할 수 없어요"가 뜨면 눌러서 <b>터널로 열기</b> → playit.gg 로그인·회원가입 → 승인을 누르면 돼요. 처음 한 번만 하면 다음부터는 알아서 열려요.</p></details>
       <details data-i18n="q6"><summary>앱이 내 정보를 보내나요?</summary><p>사용 통계는 앱을 켠 횟수와 서버 종류만 익명으로 세요. 이름·서버 이름·IP는 담지 않고, 앱 설정 → 개인 정보에서 끌 수 있어요. 이름 주소를 쓰면 주소를 연결하려고 서버 컴퓨터의 공인 IP를 저장해요. 자세한 건 <a href="/privacy">개인정보 처리방침</a>을 봐 주세요.</p></details>
+      <details data-i18n="q7"><summary>맥에서도 돼요?</summary><p>네. Apple 칩(M1 이상) 맥에서 돼요. 서명이 없는 앱이라 처음 열 때 "손상되었기 때문에 열 수 없습니다"가 뜨면, 다운로드 페이지의 안내대로 터미널에서 한 줄만 실행하면 돼요. 맥에서는 배드락 서버와 터널 열기는 아직 쓸 수 없고, 새 버전은 알림을 보고 직접 받아야 해요.</p></details>
       <details data-i18n="q5"><summary>만든 서버는 어디에 저장돼요?</summary><p>내 컴퓨터에 저장돼요 (%APPDATA%\mc-server-manager). 앱을 지워도 서버와 백업은 남아요.</p></details>
     </div>
   </section>
@@ -221,7 +222,7 @@
       nav1: 'Features', nav2: 'Install', nav3: 'FAQ',
       h1: 'A <em>Minecraft server</em> for your players,<br />in just a few clicks',
       lead: 'No commands or config files needed. Create servers, install mods and modpacks, back up, and find crash causes, all in one app.',
-      dl: 'Free download for Windows', meta: 'Windows 10 · 11 (64-bit) · Free',
+      dl: 'Free download for Windows', meta: 'Windows 10 · 11 (64-bit) · macOS (Apple silicon) · Free', dlMac: 'Free download for Mac', mac: 'macOS (Apple silicon)',
       mob: '📱 This is a PC (Windows) app.<br />Send the link to yourself and open it on your PC.', share: '📤 Send to myself', shareText: 'Open on your PC - Minecraft server app', copy: 'Copy link', copied: 'Copied!',
       fh: 'What you can do', fs: 'The app handles the hard parts and only asks what you need to choose.',
       c1t: 'Create servers', c1p: 'Vanilla, Paper, Fabric, Forge, NeoForge, Quilt, Purpur. Pick a version and the app even downloads Java.',
@@ -241,6 +242,7 @@
       q4: '<summary>Players can’t join.</summary><p>Click the check button next to the connection address under the server name (check outside access). If a red "Can’t be reached from outside" appears, click it → <b>Open with tunnel</b> → log in or sign up at playit.gg → approve. You only do this once; after that it opens automatically.</p>',
       priv: 'Privacy Policy',
       q6: '<summary>Does the app send my data?</summary><p>Usage stats only count app launches and server types anonymously, without names, server names or IPs. You can turn them off in App settings → Privacy. Name addresses store the public IP of your server computer to point the address at it. See the <a href="/privacy">Privacy Policy</a> for details.</p>',
+      q7: '<summary>Does it work on Mac?</summary><p>Yes, on Apple silicon (M1 or later) Macs. The app isn’t signed, so if “is damaged and can’t be opened” appears the first time, run one line in Terminal as shown on the download page. Bedrock servers and tunnels aren’t available on Mac yet, and new versions are downloaded manually when the app tells you.</p>',
       q5: '<summary>Where are my servers stored?</summary><p>On your own computer (%APPDATA%\\mc-server-manager). Servers and backups stay even if you uninstall the app.</p>',
       foot: 'Not an official Minecraft product. Not associated with Mojang or Microsoft.',
       soon: 'Coming soon', version: 'Version', bits: '(64-bit)', changes: 'What’s new'
@@ -249,7 +251,7 @@
       nav1: '功能', nav2: '安装方法', nav3: '常见问题',
       h1: '和玩家们一起玩的<em>Minecraft 服务器</em>，<br />点几下就搞定',
       lead: '不懂命令和配置文件也没关系。从创建服务器到安装模组和整合包、备份、查找崩溃原因，一个应用全搞定。',
-      dl: 'Windows 免费下载', meta: 'Windows 10 · 11（64 位）· 免费',
+      dl: 'Windows 免费下载', meta: 'Windows 10 · 11（64 位）· macOS（Apple 芯片）· 免费', dlMac: 'Mac 免费下载', mac: 'macOS（Apple 芯片）',
       mob: '📱 这是 PC（Windows）应用。<br />请把链接发给自己，在电脑上打开。', share: '📤 发给自己', shareText: '请在电脑上打开 - Minecraft 服务器程序', copy: '复制链接', copied: '已复制！',
       fh: '可以做这些事', fs: '复杂的事交给应用，只问你需要选择的。',
       c1t: '创建服务器', c1p: '原版、Paper、Fabric、Forge、NeoForge、Quilt、Purpur。选好版本，连 Java 都会自动下载。',
@@ -269,12 +271,13 @@
       q4: '<summary>玩家进不来。</summary><p>点击服务器名称下方连接地址旁的检查按钮（检查外部能否连接）。如果出现红色的"无法从外部连接"，点击它 → <b>通过隧道开放</b> → 在 playit.gg 登录或注册 → 授权。只需做一次，之后会自动开放。</p>',
       priv: '隐私政策',
       q6: '<summary>应用会发送我的信息吗？</summary><p>使用统计只匿名统计应用打开次数和服务器类型，不包含名字、服务器名称、IP，可以在 应用设置 → 隐私 中关闭。使用名称地址时，会保存服务器电脑的公网 IP 来连接地址。详情请看<a href="/privacy">隐私政策</a>。</p>',
+      q7: '<summary>Mac 上能用吗？</summary><p>可以，支持 Apple 芯片（M1 及以上）的 Mac。应用没有签名，第一次打开时如果出现"已损坏，无法打开"，按下载页面的说明在终端运行一行命令即可。Mac 上暂不支持基岩版服务器和隧道，新版本需要在应用提示后手动下载。</p>',
       q5: '<summary>创建的服务器保存在哪里？</summary><p>保存在你自己的电脑上（%APPDATA%\\mc-server-manager）。卸载应用后服务器和备份仍会保留。</p>',
       foot: '非 Minecraft 官方产品，与 Mojang、Microsoft 无关。',
       soon: '即将发布', version: '版本', bits: '（64 位）', changes: '更新内容'
     }
   }
-  const KO = { shareText: 'PC에서 열어 주세요 - 마인크래프트 서버 프로그램', copied: '복사했어요!', soon: '곧 공개돼요', version: '버전', bits: '(64비트)', changes: '바뀐 점' }
+  const KO = { dlMac: '맥용 무료 다운로드', mac: 'macOS (Apple 칩)', shareText: 'PC에서 열어 주세요 - 마인크래프트 서버 프로그램', copied: '복사했어요!', soon: '곧 공개돼요', version: '버전', bits: '(64비트)', changes: '바뀐 점' }
   const original = {}
   document.querySelectorAll('[data-i18n]').forEach((el) => (original[el.dataset.i18n] = el.innerHTML))
   let lang = 'ko'
@@ -294,8 +297,10 @@
     const { r, exe } = release
     const mb = Math.round(exe.size / 1048576)
     const date = new Date(r.published_at).toLocaleDateString(lang === 'zh' ? 'zh-CN' : lang === 'en' ? 'en-US' : 'ko-KR')
-    meta.innerHTML = `${word('version')} ${r.tag_name.replace(/^v/, '')} · ${mb}MB · ${date} · Windows 10 · 11 ${word('bits')} · <a href="${r.html_url}">${word('changes')}</a>`
+    meta.innerHTML = `${word('version')} ${r.tag_name.replace(/^v/, '')} · ${mb}MB · ${date} · Windows 10 · 11 ${word('bits')} · ${word('mac')} · <a href="${r.html_url}">${word('changes')}</a>`
   }
+
+  const onMac = /Mac/i.test(navigator.platform || navigator.userAgent) && !/iPhone|iPad/i.test(navigator.userAgent)
 
   function setLang(l) {
     lang = T[l] ? l : 'ko'
@@ -310,6 +315,7 @@
     })
     document.querySelectorAll('#langs button').forEach((b) => b.classList.toggle('on', b.dataset.l === lang))
     showRelease()
+    if (onMac) document.getElementById('dl-text').textContent = word('dlMac')
     try {
       localStorage.setItem('lang', lang)
     } catch {}
