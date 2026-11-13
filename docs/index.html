@@ -152,7 +152,7 @@
     <p class="lead" data-i18n="lead">명령어도, 설정 파일도 몰라도 돼요. 서버 만들기부터 모드·모드팩 설치, 백업, 튕김 원인 찾기까지 한 앱에서 해요.</p>
     <a class="dl" id="dl" data-goatcounter-click="download" data-goatcounter-title="다운로드 버튼" href="/download" aria-disabled="false">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12" /><path d="m7 10 5 5 5-5" /><path d="M5 21h14" /></svg>
-      <span id="dl-text" data-i18n="dl">윈도우용 무료 다운로드</span>
+      <span id="dl-text" data-i18n="dl">무료 다운로드</span>
     </a>
     <div class="dl-meta" id="dl-meta" data-i18n="meta">Windows 10 · 11 (64비트) · macOS (Apple 칩) · 무료</div>
     <div class="mobile-note" id="mobile-note" hidden>
@@ -222,7 +222,7 @@
       nav1: 'Features', nav2: 'Install', nav3: 'FAQ',
       h1: 'A <em>Minecraft server</em> for your players,<br />in just a few clicks',
       lead: 'No commands or config files needed. Create servers, install mods and modpacks, back up, and find crash causes, all in one app.',
-      dl: 'Free download for Windows', meta: 'Windows 10 · 11 (64-bit) · macOS (Apple silicon) · Free', dlMac: 'Free download for Mac', mac: 'macOS (Apple silicon)',
+      dl: 'Free download', meta: 'Windows 10 · 11 (64-bit) · macOS (Apple silicon) · Free', dlMac: 'Free download for Mac', mac: 'macOS (Apple silicon)',
       mob: '📱 This is a PC (Windows) app.<br />Send the link to yourself and open it on your PC.', share: '📤 Send to myself', shareText: 'Open on your PC - Minecraft server app', copy: 'Copy link', copied: 'Copied!',
       fh: 'What you can do', fs: 'The app handles the hard parts and only asks what you need to choose.',
       c1t: 'Create servers', c1p: 'Vanilla, Paper, Fabric, Forge, NeoForge, Quilt, Purpur. Pick a version and the app even downloads Java.',
@@ -251,7 +251,7 @@
       nav1: '功能', nav2: '安装方法', nav3: '常见问题',
       h1: '和玩家们一起玩的<em>Minecraft 服务器</em>，<br />点几下就搞定',
       lead: '不懂命令和配置文件也没关系。从创建服务器到安装模组和整合包、备份、查找崩溃原因，一个应用全搞定。',
-      dl: 'Windows 免费下载', meta: 'Windows 10 · 11（64 位）· macOS（Apple 芯片）· 免费', dlMac: 'Mac 免费下载', mac: 'macOS（Apple 芯片）',
+      dl: '免费下载', meta: 'Windows 10 · 11（64 位）· macOS（Apple 芯片）· 免费', dlMac: 'Mac 免费下载', mac: 'macOS（Apple 芯片）',
       mob: '📱 这是 PC（Windows）应用。<br />请把链接发给自己，在电脑上打开。', share: '📤 发给自己', shareText: '请在电脑上打开 - Minecraft 服务器程序', copy: '复制链接', copied: '已复制！',
       fh: '可以做这些事', fs: '复杂的事交给应用，只问你需要选择的。',
       c1t: '创建服务器', c1p: '原版、Paper、Fabric、Forge、NeoForge、Quilt、Purpur。选好版本，连 Java 都会自动下载。',
@@ -300,8 +300,6 @@
     meta.innerHTML = `${word('version')} ${r.tag_name.replace(/^v/, '')} · ${mb}MB · ${date} · Windows 10 · 11 ${word('bits')} · ${word('mac')} · <a href="${r.html_url}">${word('changes')}</a>`
   }
 
-  const onMac = /Mac/i.test(navigator.platform || navigator.userAgent) && !/iPhone|iPad/i.test(navigator.userAgent)
-
   function setLang(l) {
     lang = T[l] ? l : 'ko'
     document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang
@@ -315,7 +313,6 @@
     })
     document.querySelectorAll('#langs button').forEach((b) => b.classList.toggle('on', b.dataset.l === lang))
     showRelease()
-    if (onMac) document.getElementById('dl-text').textContent = word('dlMac')
     try {
       localStorage.setItem('lang', lang)
     } catch {}
