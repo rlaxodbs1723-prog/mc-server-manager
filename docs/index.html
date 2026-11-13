@@ -103,6 +103,43 @@
   .step b { display: block; margin-bottom: 2px; }
   .step span { color: var(--text-2); font-size: 14.5px; }
 
+  /* 보안 경고 안내 */
+  .warn-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; align-items: start; }
+  .warn-card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .warn-card .os { display: flex; align-items: baseline; gap: 8px; }
+  .warn-card .os b { font-size: 17px; }
+  .warn-card .os span { color: var(--text-3); font-size: 13px; }
+  .warn-card .how { margin: 0; color: var(--text-2); font-size: 14px; }
+  .warn-card .how .n { font-style: normal; display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 12px; margin-right: 4px; }
+  .warn-card .how.muted { color: var(--text-3); font-size: 13px; }
+  .mock { border-radius: 10px; padding: 14px 16px; font-size: 12.5px; line-height: 1.5; user-select: none; }
+  .mock p { margin: 6px 0 0; }
+  .mock .hl { outline: 2px solid #ffd43b; outline-offset: 3px; border-radius: 4px; animation: hl 1.6s ease-in-out infinite; }
+  @keyframes hl { 50% { outline-color: rgba(255, 212, 59, 0.35); } }
+  .smartscreen { background: #0a5fad; color: #fff; }
+  .ss-title { font-size: 17px; font-weight: 300; }
+  .ss-link { display: inline-block; margin-top: 8px; text-decoration: underline; }
+  .ss-btns, .uac-btns, .mac-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+  .ss-btn { padding: 4px 14px; border: 1px solid rgba(255, 255, 255, 0.8); }
+  .uac { background: #f3f3f3; color: #1b1b1b; }
+  .uac-top { font-size: 11.5px; color: #555; }
+  .uac-q { font-weight: 600; font-size: 13.5px; }
+  .uac-app { color: #333; }
+  .uac-btn { flex: 1; text-align: center; padding: 5px; background: #e1e1e1; border-radius: 4px; }
+  .uac-btn.hl { background: #0067c0; color: #fff; }
+  .macalert { background: #ececec; color: #1d1d1f; text-align: center; }
+  .mac-icon { width: 34px; height: 34px; margin: 0 auto; border-radius: 50%; background: #f5b400; color: #fff; font-weight: 800; display: grid; place-items: center; }
+  .macalert .small { font-size: 11.5px; color: #555; }
+  .mac-btns { justify-content: center; }
+  .mac-btn { padding: 4px 12px; background: #fff; border-radius: 5px; border: 1px solid #ccc; }
+  .mac-btn.hl { background: #0a84ff; color: #fff; border-color: #0a84ff; }
+  .cmd { display: flex; align-items: center; gap: 8px; background: #0b0c0f; border: 1px solid var(--line); border-radius: 10px; padding: 8px 8px 8px 12px; }
+  .cmd code { flex: 1; min-width: 0; font-size: 12.5px; color: #9fe6b8; word-break: break-all; }
+  .cmd button { flex: none; font: inherit; font-size: 12.5px; font-weight: 700; padding: 6px 10px; border: 0; border-radius: 8px; background: var(--surface-2); color: var(--text); cursor: pointer; }
+  .mac-dl { display: block; text-align: center; padding: 11px; border-radius: 12px; background: var(--surface-2); color: var(--text); font-weight: 700; text-decoration: none; }
+  .mac-dl:hover { background: #2b2f38; }
+  .mac-dl[hidden] { display: none; }
+
   /* 자주 묻는 질문 */
   details { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; margin-bottom: 10px; }
   summary { cursor: pointer; font-weight: 700; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
@@ -165,6 +202,31 @@
   </div>
   <div class="shot reveal"><img src="screenshot.webp" width="1359" height="823" alt="MC CubePanel" /></div>
   </div>
+
+  <section id="warn">
+    <div class="wrap">
+      <h2 data-i18n="wh">보안 경고가 뜨면</h2>
+      <p class="sub" data-i18n="ws">개인이 만든 무료 앱이라 처음 실행할 때 경고가 떠요. 앱의 코드는 깃허브에 모두 공개돼 있어요.</p>
+      <div class="warn-grid">
+        <div class="warn-card reveal" data-i18n="win"><div class="os"><b>윈도우</b><span>처음 설치할 때</span></div>
+      <div class="mock smartscreen"><div class="ss-title">Windows의 PC 보호</div><p>Microsoft Defender SmartScreen에서 인식할 수 없는 앱의 시작을 차단했습니다.</p><span class="ss-link hl">추가 정보</span></div>
+      <p class="how"><i class="n">1</i> 파란 창에서 <b>추가 정보</b>를 눌러요</p>
+      <div class="mock smartscreen"><div class="ss-title">Windows의 PC 보호</div><p>앱: MC-CubePanel-Setup.exe<br>게시자: 알 수 없는 게시자</p><div class="ss-btns"><span class="ss-btn hl">실행</span><span class="ss-btn">실행 안 함</span></div></div>
+      <p class="how"><i class="n">2</i> <b>실행</b>을 누르면 설치가 시작돼요</p></div>
+        <div class="warn-card reveal" data-i18n="upd"><div class="os"><b>윈도우</b><span>업데이트할 때</span></div>
+      <div class="mock uac"><div class="uac-top">사용자 계정 컨트롤</div><p class="uac-q">게시자를 알 수 없는 이 앱이 디바이스를 변경할 수 있도록 허용하시겠어요?</p><p class="uac-app">MC CubePanel Setup.exe</p><div class="uac-btns"><span class="uac-btn hl">예</span><span class="uac-btn">아니요</span></div></div>
+      <p class="how"><b>예</b>를 누르면 업데이트가 설치돼요. 앱을 "모든 사용자"용으로 설치했으면 업데이트 때마다 이 창이 떠요.</p>
+      <p class="how muted">계속 다시 뜨면 위에서 설치 파일을 새로 받아 실행해 주세요. 서버와 월드는 그대로 남아요.</p></div>
+        <div class="warn-card reveal" data-i18n="mac"><div class="os"><b>맥</b><span>Apple 칩 · 시험판</span></div>
+      <div class="mock macalert"><div class="mac-icon">!</div><p><b>"MC CubePanel"이(가) 손상되었기 때문에 열 수 없습니다.</b></p><p class="small">휴지통으로 이동해야 합니다.</p><div class="mac-btns"><span class="mac-btn">휴지통으로 이동</span><span class="mac-btn hl">취소</span></div></div>
+      <p class="how"><i class="n">1</i> 이 창이 뜨면 <b>취소</b>를 누르고, 앱을 응용 프로그램 폴더로 옮겨요</p>
+      <p class="how"><i class="n">2</i> 터미널을 열고 아래를 붙여 넣은 뒤 Enter를 눌러요</p>
+      <div class="cmd"><code>xattr -cr "/Applications/MC CubePanel.app"</code><button type="button" data-copy='xattr -cr "/Applications/MC CubePanel.app"'>복사</button></div>
+      <p class="how"><i class="n">3</i> 앱을 다시 열면 돼요. 맥은 아직 시험 중이라 문제가 있으면 디스코드로 알려 주세요.</p>
+      <a class="mac-dl" id="mac-dl" hidden>맥 시험판 받기 (.dmg)</a></div>
+      </div>
+    </div>
+  </section>
 
   <section id="features">
     <div class="wrap">
@@ -240,6 +302,25 @@
       q3: '<summary>A "Windows protected your PC" window appears. Is that OK?</summary><p>Yes. It appears because this personal app has no code signing certificate. Click More info → Run anyway. All of the app’s code is public on GitHub.</p>',
       q4: '<summary>Players can’t join.</summary><p>Click the check button next to the connection address under the server name (check outside access). If a red "Can’t be reached from outside" appears, click it → <b>Open with tunnel</b> → log in or sign up at playit.gg → approve. You only do this once; after that it opens automatically.</p>',
       priv: 'Privacy Policy',
+      wh: `If a security warning appears`,
+      ws: `This is a free app made by an individual, so a warning appears the first time. All of the app’s code is public on GitHub.`,
+      win: `<div class="os"><b>Windows</b><span>First install</span></div>
+      <div class="mock smartscreen"><div class="ss-title">Windows protected your PC</div><p>Microsoft Defender SmartScreen prevented an unrecognized app from starting.</p><span class="ss-link hl">More info</span></div>
+      <p class="how"><i class="n">1</i> Click <b>More info</b> in the blue window</p>
+      <div class="mock smartscreen"><div class="ss-title">Windows protected your PC</div><p>App: MC-CubePanel-Setup.exe<br>Publisher: Unknown publisher</p><div class="ss-btns"><span class="ss-btn hl">Run anyway</span><span class="ss-btn">Don’t run</span></div></div>
+      <p class="how"><i class="n">2</i> Click <b>Run anyway</b> to start installing</p>`,
+      upd: `<div class="os"><b>Windows</b><span>When updating</span></div>
+      <div class="mock uac"><div class="uac-top">User Account Control</div><p class="uac-q">Do you want to allow this app from an unknown publisher to make changes to your device?</p><p class="uac-app">MC CubePanel Setup.exe</p><div class="uac-btns"><span class="uac-btn hl">Yes</span><span class="uac-btn">No</span></div></div>
+      <p class="how">Click <b>Yes</b> to install the update. If you installed the app for all users, this window appears on every update.</p>
+      <p class="how muted">If it keeps coming back, download the installer above and run it again. Your servers and worlds are kept.</p>`,
+      mac: `<div class="os"><b>Mac</b><span>Apple silicon · Preview</span></div>
+      <div class="mock macalert"><div class="mac-icon">!</div><p><b>“MC CubePanel” is damaged and can’t be opened.</b></p><p class="small">You should move it to the Trash.</p><div class="mac-btns"><span class="mac-btn">Move to Trash</span><span class="mac-btn hl">Cancel</span></div></div>
+      <p class="how"><i class="n">1</i> Click <b>Cancel</b>, then move the app to the Applications folder</p>
+      <p class="how"><i class="n">2</i> Open Terminal, paste the line below and press Enter</p>
+      <div class="cmd"><code>xattr -cr "/Applications/MC CubePanel.app"</code><button type="button" data-copy='xattr -cr "/Applications/MC CubePanel.app"'>Copy</button></div>
+      <p class="how"><i class="n">3</i> Open the app again. The Mac version is still in testing, so please report problems on Discord.</p>
+      <a class="mac-dl" id="mac-dl" hidden>Download Mac preview (.dmg)</a>`,
+      copy2: 'Copy', copied2: 'Copied',
       q6: '<summary>Does the app send my data?</summary><p>Usage stats only count app launches and server types anonymously, without names, server names or IPs. You can turn them off in App settings → Privacy. Name addresses store the public IP of your server computer to point the address at it. See the <a href="/privacy">Privacy Policy</a> for details.</p>',
       q5: '<summary>Where are my servers stored?</summary><p>On your own computer (%APPDATA%\\mc-server-manager). Servers and backups stay even if you uninstall the app.</p>',
       foot: 'Not an official Minecraft product. Not associated with Mojang or Microsoft.',
@@ -268,13 +349,32 @@
       q3: '<summary>弹出"Windows 已保护你的电脑"窗口，没问题吗？</summary><p>没问题。这是没有代码签名证书的个人应用才会出现的窗口。点击 更多信息 → 仍要运行 即可。应用的代码全部公开在 GitHub 上。</p>',
       q4: '<summary>玩家进不来。</summary><p>点击服务器名称下方连接地址旁的检查按钮（检查外部能否连接）。如果出现红色的"无法从外部连接"，点击它 → <b>通过隧道开放</b> → 在 playit.gg 登录或注册 → 授权。只需做一次，之后会自动开放。</p>',
       priv: '隐私政策',
+      wh: `出现安全警告时`,
+      ws: `这是个人开发的免费应用，第一次运行时会出现警告。应用的代码全部公开在 GitHub 上。`,
+      win: `<div class="os"><b>Windows</b><span>首次安装</span></div>
+      <div class="mock smartscreen"><div class="ss-title">Windows 已保护你的电脑</div><p>Microsoft Defender SmartScreen 阻止了无法识别的应用启动。</p><span class="ss-link hl">更多信息</span></div>
+      <p class="how"><i class="n">1</i> 在蓝色窗口中点击<b>更多信息</b></p>
+      <div class="mock smartscreen"><div class="ss-title">Windows 已保护你的电脑</div><p>应用：MC-CubePanel-Setup.exe<br>发布者：未知发布者</p><div class="ss-btns"><span class="ss-btn hl">仍要运行</span><span class="ss-btn">不运行</span></div></div>
+      <p class="how"><i class="n">2</i> 点击<b>仍要运行</b>开始安装</p>`,
+      upd: `<div class="os"><b>Windows</b><span>更新时</span></div>
+      <div class="mock uac"><div class="uac-top">用户账户控制</div><p class="uac-q">你要允许此来自未知发布者的应用对你的设备进行更改吗？</p><p class="uac-app">MC CubePanel Setup.exe</p><div class="uac-btns"><span class="uac-btn hl">是</span><span class="uac-btn">否</span></div></div>
+      <p class="how">点击<b>是</b>即可安装更新。如果安装时选择了"所有用户"，每次更新都会出现这个窗口。</p>
+      <p class="how muted">如果反复出现，请在上方重新下载安装程序并运行。服务器和世界会保留。</p>`,
+      mac: `<div class="os"><b>Mac</b><span>Apple 芯片 · 测试版</span></div>
+      <div class="mock macalert"><div class="mac-icon">!</div><p><b>“MC CubePanel”已损坏，无法打开。</b></p><p class="small">你应该将它移到废纸篓。</p><div class="mac-btns"><span class="mac-btn">移到废纸篓</span><span class="mac-btn hl">取消</span></div></div>
+      <p class="how"><i class="n">1</i> 点击<b>取消</b>，然后把应用移到"应用程序"文件夹</p>
+      <p class="how"><i class="n">2</i> 打开终端，粘贴下面这行并按回车</p>
+      <div class="cmd"><code>xattr -cr "/Applications/MC CubePanel.app"</code><button type="button" data-copy='xattr -cr "/Applications/MC CubePanel.app"'>复制</button></div>
+      <p class="how"><i class="n">3</i> 再次打开应用即可。Mac 版本仍在测试中，有问题请在 Discord 告诉我们。</p>
+      <a class="mac-dl" id="mac-dl" hidden>下载 Mac 测试版 (.dmg)</a>`,
+      copy2: '复制', copied2: '已复制',
       q6: '<summary>应用会发送我的信息吗？</summary><p>使用统计只匿名统计应用打开次数和服务器类型，不包含名字、服务器名称、IP，可以在 应用设置 → 隐私 中关闭。使用名称地址时，会保存服务器电脑的公网 IP 来连接地址。详情请看<a href="/privacy">隐私政策</a>。</p>',
       q5: '<summary>创建的服务器保存在哪里？</summary><p>保存在你自己的电脑上（%APPDATA%\\mc-server-manager）。卸载应用后服务器和备份仍会保留。</p>',
       foot: '非 Minecraft 官方产品，与 Mojang、Microsoft 无关。',
       soon: '即将发布', version: '版本', bits: '（64 位）', changes: '更新内容'
     }
   }
-  const KO = { shareText: 'PC에서 열어 주세요 - 마인크래프트 서버 프로그램', copied: '복사했어요!', soon: '곧 공개돼요', version: '버전', bits: '(64비트)', changes: '바뀐 점' }
+  const KO = { copy2: '복사', copied2: '복사됨', shareText: 'PC에서 열어 주세요 - 마인크래프트 서버 프로그램', copied: '복사했어요!', soon: '곧 공개돼요', version: '버전', bits: '(64비트)', changes: '바뀐 점' }
   const original = {}
   document.querySelectorAll('[data-i18n]').forEach((el) => (original[el.dataset.i18n] = el.innerHTML))
   let lang = 'ko'
@@ -297,6 +397,23 @@
     meta.innerHTML = `${word('version')} ${r.tag_name.replace(/^v/, '')} · ${mb}MB · ${date} · Windows 10 · 11 ${word('bits')} · <a href="${r.html_url}">${word('changes')}</a>`
   }
 
+  // 맥 시험판 링크: 최신 릴리스에 dmg가 있으면 보여 준다 (언어를 바꾸면 글이 새로 그려져서 그때마다 다시 단다)
+  let dmgUrl = ''
+  function showMac() {
+    const a = document.getElementById('mac-dl')
+    if (!a || !dmgUrl) return
+    a.href = dmgUrl
+    a.hidden = false
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-copy]')
+    if (!b) return
+    navigator.clipboard?.writeText(b.dataset.copy).then(() => {
+      b.textContent = word('copied2')
+      setTimeout(() => (b.textContent = word('copy2')), 1500)
+    })
+  })
+
   function setLang(l) {
     lang = T[l] ? l : 'ko'
     document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang
@@ -310,6 +427,7 @@
     })
     document.querySelectorAll('#langs button').forEach((b) => b.classList.toggle('on', b.dataset.l === lang))
     showRelease()
+    showMac()
     try {
       localStorage.setItem('lang', lang)
     } catch {}
@@ -391,6 +509,11 @@
       if (!res.ok) return
       const r = await res.json()
       const exe = (r.assets || []).find((a) => /\.exe$/i.test(a.name))
+      const dmg = (r.assets || []).find((a) => /\.dmg$/i.test(a.name))
+      if (dmg) {
+        dmgUrl = dmg.browser_download_url
+        showMac()
+      }
       if (!exe) return
       btn.href = exe.browser_download_url
       release = { r, exe }
