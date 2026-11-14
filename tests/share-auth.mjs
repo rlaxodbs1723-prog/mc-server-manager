@@ -47,6 +47,12 @@ try {
   expect((await (await go('/api/auth/providers')).json()).providers?.join() === 'dev', '로그인 방식 목록이 이상해요')
   expect((await me('a'.repeat(64))).status === 401, '아무 토큰이나 받아 줬어요')
 
+  // 관리자 통계: 열쇠가 있어야만, 숫자만
+  expect((await go('/api/auth/stats')).status === 403, '열쇠 없이 통계가 열렸어요')
+  expect((await go('/api/auth/stats', { headers: { Authorization: 'Bearer wrong-key-xxxx' } })).status === 403, '틀린 열쇠로 통계가 열렸어요')
+  const st = await (await go('/api/auth/stats', { headers: { Authorization: 'Bearer dev-admin-key' } })).json()
+  expect(st.accounts >= 1 && st.loggedInDevices >= 1 && st.byProvider?.dev >= 1 && !JSON.stringify(st).includes('시험 계정'), `통계가 이상해요: ${JSON.stringify(st)}`)
+
   // 잘못된 시작 요청
   expect((await go('/api/auth/dev/start?port=80&challenge=' + sha('x'))).status === 400, '이상한 포트를 받아 줬어요')
   expect((await go('/api/auth/nope/start?port=45678&challenge=' + sha('x'))).status === 404, '없는 로그인 방식을 받아 줬어요')

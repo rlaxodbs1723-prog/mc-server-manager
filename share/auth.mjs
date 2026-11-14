@@ -72,9 +72,39 @@ async function getJson(url, token) {
 
 // store: { get(k), put(k, v), delete(k), list(prefix) → Map } (await 가능)
 // base: 이 중계의 바깥 주소 (예: https://cubepanel.kr)
-export async function handleAuth(req, { store, providers, base, now = () => Date.now() }) {
+// adminKey: 관리자 통계(/api/auth/stats)를 여는 비밀 값 (없으면 통계는 닫혀 있다)
+export async function handleAuth(req, { store, providers, base, adminKey = '', now = () => Date.now() }) {
   const url = new URL(req.url)
   const path = url.pathname.replace(/^\/api\/auth\//, '')
+
+  // 관리자 통계: 숫자만 (이름·이메일 같은 개인 정보는 내보내지 않는다). Authorization: Bearer <ADMIN_KEY>
+  if (path === 'stats' && req.method === 'GET') {
+    const key = (req.headers.get('Authorization') ?? '').replace(/^Bearer /, '')
+    if (!adminKey || key.length !== adminKey.length || !(await same(key, adminKey))) return json({ error: 'forbidden' }, 403)
+    const t = now()
+    const accts = [...(await store.list('acct:')).values()]
+    const sessions = [...(await store.list('ss:')).values()].filter((x) => x?.exp > t)
+    const byProvider = {}
+    for (const a of accts) byProvider[a.provider] = (byProvider[a.provider] ?? 0) + 1
+    const since = (ms) => accts.filter((a) => t - (a.created ?? 0) < ms).length
+    return json({
+      accounts: accts.length,
+      byProvider,
+      loggedInDevices: sessions.length,
+      loggedInAccounts: new Set(sessions.map((x) => x.acct)).size,
+      new1d: since(86400_000),
+      new7d: since(7 * 86400_000),
+      // 최근 30일 날짜별 새 가입 (한국 시간 기준 날짜)
+      daily: Object.entries(
+        accts.reduce((m, a) => {
+          if (t - (a.created ?? 0) > 30 * 86400_000) return m
+          const d = new Date((a.created ?? 0) + 9 * 3600_000).toISOString().slice(0, 10)
+          m[d] = (m[d] ?? 0) + 1
+          return m
+        }, {})
+      ).sort()
+    })
+  }
 
   // 쓸 수 있는 로그인 방식 (앱이 버튼을 만든다)
   if (path === 'providers' && req.method === 'GET') return json({ providers: Object.keys(providers) })
@@ -194,6 +224,14 @@ async function dropSession(store, acct, sh) {
 async function sweep(store, prefix, t) {
   const list = await store.list(prefix)
   for (const [k, v] of list) if (v?.exp < t) await store.delete(k)
+}
+
+// 시간 차이 없이 비교 (해시끼리 비교한다)
+async function same(a, b) {
+  const [x, y] = await Promise.all([hash(a), hash(b)])
+  let d = 0
+  for (let i = 0; i < x.length; i++) d |= x.charCodeAt(i) ^ y.charCodeAt(i)
+  return d === 0
 }
 
 const pub = (a) => ({ id: a.id, provider: a.provider, name: a.name, avatar: a.avatar ?? '' })

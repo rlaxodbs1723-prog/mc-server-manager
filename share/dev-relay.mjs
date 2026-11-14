@@ -38,7 +38,7 @@ export function startDevRelay(port = PORT) {
     for await (const c of req) chunks.push(c)
     const body = chunks.length ? Buffer.concat(chunks) : undefined
     const base = `http://localhost:${port}`
-    const out = await handleAuth(new Request(base + req.url, { method: req.method, headers: req.headers, body }), { store: authStore, providers, base })
+    const out = await handleAuth(new Request(base + req.url, { method: req.method, headers: req.headers, body }), { store: authStore, providers, base, adminKey: 'dev-admin-key' })
     res.writeHead(out.status, Object.fromEntries(out.headers))
     res.end(Buffer.from(await out.arrayBuffer()))
   })

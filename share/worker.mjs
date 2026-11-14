@@ -28,7 +28,7 @@ export class Auth extends DurableObject {
   }
 
   async fetch(req) {
-    return handleAuth(req, { store: this.store(), providers: realProviders(this.env), base: new URL(req.url).origin })
+    return handleAuth(req, { store: this.store(), providers: realProviders(this.env), base: new URL(req.url).origin, adminKey: this.env.ADMIN_KEY ?? '' })
   }
 
   // 방(ShareRoom)이 부른다: 세션 토큰 → { id, name } 또는 null
