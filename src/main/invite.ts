@@ -27,6 +27,8 @@ let emitEvent: (e: ServerEvent) => void = () => {}
 
 // 기본 포트면 주소 뒤에 :25565를 붙이지 않는다 (배드락은 19132)
 const withPort = (host: string, port: number, bedrock = false): string => (port === (bedrock ? 19132 : 25565) ? host : `${host}:${port}`)
+// 이름 주소: 자바는 포트가 담긴 SRV 기록이 있어서 주소만 써도 접속된다. 배드락만 SRV를 못 읽어서 포트를 붙인다
+const domainAddress = (host: string, port: number, bedrock = false): string => (bedrock ? withPort(host, port, true) : host)
 
 function set(folderPath: string, invite: InviteStatus): void {
   status.set(folderPath, invite)
@@ -60,7 +62,7 @@ async function open(folderPath: string, name: string): Promise<void> {
     if (status.get(folderPath)?.state !== 'opening') return
     if (manualIp) {
       set(folderPath, { state: 'open', address: withPort(manualIp, port, bedrock), lan, port })
-      void refreshDomain(folderPath).then((host) => setInviteDomain(folderPath, host ? withPort(host, port, bedrock) : undefined))
+      void refreshDomain(folderPath).then((host) => setInviteDomain(folderPath, host ? domainAddress(host, port, bedrock) : undefined))
       return
     }
     // 공유기로 못 열면, playit을 연결해 둔 사람은 터널로 연다
@@ -95,7 +97,7 @@ async function open(folderPath: string, name: string): Promise<void> {
   }
   set(folderPath, { state: 'open', address: withPort(result.externalIp, port, bedrock), lan, port })
   // 이름 주소를 만들어 뒀으면 지금 IP로 갱신하고, 끝나면 접속 주소를 이름 주소로 보여 준다 (실패해도 IP 주소가 그대로 쓰인다)
-  void refreshDomain(folderPath).then((host) => setInviteDomain(folderPath, host ? withPort(host, port, bedrock) : undefined))
+  void refreshDomain(folderPath).then((host) => setInviteDomain(folderPath, host ? domainAddress(host, port, bedrock) : undefined))
 }
 
 // 직접 연 포트 확인: 내 공인 IP를 알아내고, 서버가 켜지면 바깥 인터넷에서 그 주소로 접속되는지 본다. 접속되면 IP, 아니면 null
@@ -160,7 +162,7 @@ export function applyDomain(folderPath: string): void {
   const cur = status.get(folderPath)
   if (cur?.state !== 'open') return
   const bedrock = isBedrockFolder(folderPath)
-  void refreshDomain(folderPath, cur.tunnel ? cur.address : undefined).then((host) => setInviteDomain(folderPath, host ? withPort(host, cur.port, bedrock) : undefined))
+  void refreshDomain(folderPath, cur.tunnel ? cur.address : undefined).then((host) => setInviteDomain(folderPath, host ? domainAddress(host, cur.port, bedrock) : undefined))
 }
 
 // 켜져 있는 동안 주기적으로 "아직 켜져 있다"고 알린다. 그래야 소식이 끊긴 기록과 구별되고, 지워졌더라도 다시 만들어진다

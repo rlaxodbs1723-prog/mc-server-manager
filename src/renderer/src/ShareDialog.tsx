@@ -151,7 +151,7 @@ export default function ShareDialog({ folderPath, onClose }: { folderPath: strin
             <Copy size={15} />
             복사
           </button>
-          <button className="btn sm primary" disabled={busy || !online} onClick={makeCode}>
+          <button className="btn sm primary" disabled={busy} onClick={makeCode}>
             {busy ? <span className="spinner" /> : <Link2 size={15} />}
             {code ? '새 코드 만들기' : '코드 만들기'}
           </button>

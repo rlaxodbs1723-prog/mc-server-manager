@@ -2225,5 +2225,12 @@
  "서버 공유에 필요해요": "Needed for server sharing",
  "서버가 켜지면 이 친구에게 알림을 보내요": "Notify this friend when the server starts",
  "서버 열 때 알림 가기": "Notify when server opens",
- "계정을 확인하는 데만 써요. 비밀번호는 CubePanel이 받지 않아요.": "Only used to identify your account. CubePanel never sees your password."
+ "계정을 확인하는 데만 써요. 비밀번호는 CubePanel이 받지 않아요.": "Only used to identify your account. CubePanel never sees your password.",
+ "삭제된 서버": "Deleted server",
+ "삭제된 서버입니다": "This server was deleted",
+ "공유가 꺼졌어요": "Sharing was turned off",
+ "공유가 끊겼어요": "Sharing was cut off",
+ "방장이 이 서버를 지웠어요.": "The host deleted this server.",
+ "방장이 이 서버의 공유를 껐어요.": "The host turned off sharing for this server.",
+ "방장이 나를 이 서버의 친구 목록에서 뺐어요.": "The host removed you from this server’s friends."
 }

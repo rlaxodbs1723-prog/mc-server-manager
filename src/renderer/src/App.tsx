@@ -8,7 +8,7 @@ import ServerPanel, { type PanelAction } from './ServerPanel'
 import ContextMenu from './ContextMenu'
 import { TasksProvider } from './tasks'
 import TitleBar from './TitleBar'
-import { Confirm, SoftwareBadge, ToastProvider, useToast } from './ui'
+import { Confirm, Modal, SoftwareBadge, ToastProvider, useToast } from './ui'
 import { readStored, STATE_LABEL, writeStored } from './util'
 
 // 앱을 닫을 때 확인 창 문구
@@ -52,6 +52,7 @@ export default function App() {
   const [servers, setServers] = useState<ServerListItem[]>([])
   const [selected, setSelected] = useState<string | null>(null) // 서버 폴더 경로, null이면 "새 서버" 화면
   const [askQuit, setAskQuit] = useState<{ creating: number; jobs: string[] } | null>(null)
+  const [goneRoom, setGoneRoom] = useState<string | null>(null) // 더는 쓸 수 없는 공유받은 서버 (삭제됨·공유 꺼짐·끊김): 알려 주고 목록에서 뺀다
   const [now, setNow] = useState(Date.now()) // 켠 시간·백업 시간 표시용 (1분마다)
   const [quitting, setQuitting] = useState(false)
   const [dragging, setDragging] = useState<string | null>(null) // 끌고 있는 서버 폴더
@@ -126,6 +127,11 @@ export default function App() {
   }, [refresh])
 
   const current = servers.find((s) => s.folderPath === selected)
+  const goneServer = servers.find((s) => s.folderPath === goneRoom)
+  // 보고 있던 공유받은 서버가 방금 끊기면 바로 알려 준다
+  useEffect(() => {
+    if (current?.remote?.gone) setGoneRoom(current.folderPath)
+  }, [current?.folderPath, current?.remote?.gone])
   const mine = servers.filter((s) => !s.remote) // 이 컴퓨터의 서버 (끌어서 순서 바꾸기는 이것만)
   const shared = servers.filter((s) => s.remote) // 친구가 공유해 준 서버
   const runningCount = servers.filter((s) => s.state !== 'stopped').length
@@ -211,14 +217,14 @@ export default function App() {
               ))}
               {shared.length > 0 && <div className="sidebar-title" style={{ marginTop: 14 }}>공유받은 서버 {shared.length}</div>}
               {shared.map((s) => (
-                <button key={s.folderPath} className={`server-item ${selected === s.folderPath ? 'active' : ''}`} onClick={() => setSelected(s.folderPath)}>
+                <button key={s.folderPath} className={`server-item ${selected === s.folderPath ? 'active' : ''}`} onClick={() => (s.remote?.gone ? setGoneRoom(s.folderPath) : setSelected(s.folderPath))}>
                   <SoftwareBadge software={s.software ?? 'vanilla'} size={36} name={s.name} icon={s.icon} />
                   <div className="meta">
                     <div className="name">{s.name}</div>
                     <div className="sub">
                       {(SOFTWARE_INFO[s.software ?? 'vanilla']?.label ?? String(s.software ?? 'vanilla'))} · {s.mcVersion}
                     </div>
-                    <div className={`sub status ${s.state}`}>{s.remote?.hostOnline ? serverStatusLine(s, now, null) : '방장 컴퓨터 꺼짐'}</div>
+                    <div className={`sub status ${s.remote?.gone ? 'stopped' : s.state}`}>{s.remote?.gone ? GONE_TEXT[s.remote.gone].short : s.remote?.hostOnline ? serverStatusLine(s, now, null) : '방장 컴퓨터 꺼짐'}</div>
                   </div>
                   <span className={`dot ${s.remote?.hostOnline ? s.state : 'stopped'}`} title={s.remote?.hostOnline ? STATE_LABEL[s.state] : '방장 컴퓨터 꺼짐'} />
                 </button>
@@ -271,6 +277,27 @@ export default function App() {
           })()}
       </TasksProvider>
 
+      {goneServer?.remote?.gone && (
+        <Modal>
+          <h2>{GONE_TEXT[goneServer.remote.gone].title}</h2>
+          <p className="body">{GONE_TEXT[goneServer.remote.gone].body}</p>
+          <div className="actions">
+            <button
+              className="btn primary"
+              autoFocus
+              onClick={() => {
+                const path = goneServer.folderPath
+                setGoneRoom(null)
+                if (selected === path) setSelected(null)
+                window.api.leaveShare(path).then(() => refresh())
+              }}
+            >
+              확인
+            </button>
+          </div>
+        </Modal>
+      )}
+
       {askQuit && (
         <Confirm
           title={quitTitle(runningCount, askQuit.creating, askQuit.jobs)}
@@ -299,6 +326,13 @@ export default function App() {
     </ToastProvider>
   )
 }
+
+// 공유받은 서버를 더는 쓸 수 없을 때 보여 주는 글
+const GONE_TEXT = {
+  deleted: { short: '삭제된 서버', title: '삭제된 서버입니다', body: '방장이 이 서버를 지웠어요.' },
+  off: { short: '공유가 꺼졌어요', title: '공유가 꺼졌어요', body: '방장이 이 서버의 공유를 껐어요.' },
+  revoked: { short: '공유가 끊겼어요', title: '공유가 끊겼어요', body: '방장이 나를 이 서버의 친구 목록에서 뺐어요.' }
+} as const
 
 // 서버가 튕기면 알려 준다. 자동으로 다시 켜면 알림만(분석은 콘솔에), 아니면 원인·해결 방법 창을 띄운다
 function CrashWatcher({ servers }: { servers: ServerListItem[] }) {

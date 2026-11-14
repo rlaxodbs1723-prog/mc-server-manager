@@ -798,6 +798,8 @@ async function shareChecks(): Promise<void> {
       // 친구를 끊으면 그 친구는 더 이상 요청할 수 없다
       await revokeShareDevice(dir, devices[0].id)
       expect(await waitUntil(() => remoteServers().every((s) => !s.remote?.hostOnline)), '끊긴 친구가 아직 연결돼 있어요')
+      // 끊긴 친구 앱에는 "끊겼다"는 이유가 남는다 (눌러 보면 알려 주고 목록에서 뺀다)
+      expect(await waitUntil(() => remoteServers().some((s) => s.folderPath === remotePath && s.remote?.gone === 'revoked')), `끊긴 이유가 친구 쪽에 안 남았어요: ${JSON.stringify(remoteServers().map((s) => s.remote))}`)
       const after = await ipc.__invoke('getLog', remotePath).then(() => 'answered', () => 'refused')
       expect(after !== 'answered' || (await shareDevices(dir)).length === 0, '끊긴 친구의 요청에 방장이 답했어요')
       leaveShare(remotePath.slice('remote:'.length))

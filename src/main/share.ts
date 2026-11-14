@@ -103,7 +103,7 @@ class Link {
     private room: string,
     private hello: () => object,
     private onMsg: (m: Record<string, unknown>) => void,
-    private onState: (open: boolean, code?: number) => void
+    private onState: (open: boolean, code?: number, reason?: string) => void
   ) {
     this.open()
   }
@@ -129,7 +129,7 @@ class Link {
     }
     ws.onclose = (e) => {
       if (this.ws === ws) this.ws = null
-      this.onState(false, e.code)
+      this.onState(false, e.code, e.reason)
       // 주인이 아님·끊김·코드 무효·로그인 필요·다른 계정은 다시 붙어도 안 된다 (로그인하면 restart로 다시 붙는다)
       if ([4001, 4003, 4004, 4010, 4011].includes(e.code)) this.stopped = true
       this.later()
@@ -200,6 +200,9 @@ function meta(folderPath: string): object {
   return { type: 'meta', name: info.name, software: info.software, mcVersion: info.mcVersion, loaderVersion: info.loaderVersion }
 }
 
+// 방이 알려 준 친구 목록(원본). 공유 창이 열릴 때 기다리지 않고 바로 보여 주려고 미리 받아 둔다
+const deviceCache = new Map<string, unknown>()
+
 function hostLink(folderPath: string): void {
   const share = readServerInfo(folderPath).share
   if (!share || hosting.has(folderPath)) return
@@ -208,11 +211,17 @@ function hostLink(folderPath: string): void {
     share.room,
     () => ({ t: 'auth', as: 'host', key: share.key, session: sessionToken() }),
     (m) => {
-      if (m.t === 'ok') h.online = true // 방장으로 들어갔다
+      if (m.t === 'ok') {
+        h.online = true // 방장으로 들어갔다
+        h.link.send({ t: 'devices' }) // 친구 목록을 미리 받아 둔다
+      }
+      if (m.t === 'devices') deviceCache.set(folderPath, m.list) // 누가 물었든 최신 목록은 적어 둔다
+      if (m.t === 'left') h.link.send({ t: 'devices' })
       if (h.waiters.some((w, i) => w(m) && (h.waiters.splice(i, 1), true))) return
       if (m.t === 'rpc') void answer(folderPath, h, m)
       // 친구가 들어오면 이 서버가 무엇인지와 지금 상태를 그 친구에게 알린다
       if (m.t === 'joined') {
+        h.link.send({ t: 'devices' })
         // 처음 들어온 친구: 그 초대 코드에 정해 둔 권한을 준다
         if (m.first) {
           const share = readServerInfo(folderPath).share
@@ -317,7 +326,9 @@ export function startSharing(folderPath: string): void {
 async function hostRequest<T>(folderPath: string, msg: object, pred: (m: Record<string, unknown>) => T | undefined): Promise<T> {
   const h = hosting.get(folderPath)
   if (!h) throw new Error('공유하고 있지 않은 서버예요.')
-  if (!h.online) throw new Error(getAccount() ? '공유 중계 서버에 연결하는 중이에요. 잠시 뒤에 다시 해 주세요.' : '서버 공유는 로그인이 필요해요.')
+  if (!getAccount()) throw new Error('서버 공유는 로그인이 필요해요.')
+  // 아직 중계 서버에 붙는 중이면 붙을 때까지 기다린다 (버튼을 일찍 눌러도 되게)
+  if (!h.online) await waitFor(h.waiters, (m) => (m.t === 'ok' ? true : undefined), 12_000)
   const wait = waitFor(h.waiters, pred)
   h.link.send(msg)
   return wait
@@ -353,8 +364,15 @@ export function setShareNotify(folderPath: string, device: string, on: boolean):
   patchServerInfo(folderPath, { share: { ...share, notify: { ...(share.notify ?? {}), [device]: on } } })
   hosting.get(folderPath)?.link.send({ t: 'ev', to: device, e: { type: 'notify', on } })
 }
-export const shareDevices = (folderPath: string): Promise<ShareDevice[]> =>
-  hostRequest(folderPath, { t: 'devices' }, (m) => (m.t === 'devices' ? withPerms(folderPath, m.list) : undefined))
+export async function shareDevices(folderPath: string): Promise<ShareDevice[]> {
+  const cached = deviceCache.get(folderPath)
+  if (cached) {
+    hosting.get(folderPath)?.link.send({ t: 'devices' }) // 새 목록은 뒤에서 받아 둔다 (다음에 열면 최신)
+    return withPerms(folderPath, cached) ?? []
+  }
+  const list = await hostRequest(folderPath, { t: 'devices' }, (m) => (m.t === 'devices' ? m.list : undefined))
+  return withPerms(folderPath, list) ?? []
+}
 export async function revokeShareDevice(folderPath: string, device: string): Promise<ShareDevice[]> {
   const list = await hostRequest(folderPath, { t: 'revoke', device }, (m) => (m.t === 'devices' ? m.list : undefined))
   savePerms(folderPath, device, null)
@@ -372,11 +390,13 @@ export async function setSharePerms(folderPath: string, device: string, raw: Sha
 }
 
 // 공유 끄기: 친구를 모두 끊고 이 서버의 공유 정보를 지운다 (다시 공유하면 새 방·새 코드)
-export async function stopSharing(folderPath: string): Promise<void> {
+// why: 'off'(공유 끄기) · 'deleted'(서버를 지움). 친구 앱이 이유를 보여 준다
+export async function stopSharing(folderPath: string, why: 'off' | 'deleted' = 'off'): Promise<void> {
   const h = hosting.get(folderPath)
-  if (h?.online) await hostRequest(folderPath, { t: 'close-room' }, (m) => (m.t === 'closed' ? true : undefined)).catch(() => undefined)
+  if (h?.online) await hostRequest(folderPath, { t: 'close-room', why }, (m) => (m.t === 'closed' ? true : undefined)).catch(() => undefined)
   h?.link.stop()
   hosting.delete(folderPath)
+  deviceCache.delete(folderPath)
   patchServerInfo(folderPath, { share: undefined })
 }
 
@@ -393,6 +413,7 @@ interface Joined {
   role: ShareRole
   perms?: SharePerm[] // 방장이 알려 준 내 권한 (모르면 role로 짐작)
   notify?: boolean // 방장이 정한 "서버가 켜지면 알림" (false면 알리지 않음)
+  gone?: 'revoked' | 'off' | 'deleted' // 더는 쓸 수 없는 이유: 방장이 나를 뺌 · 공유를 껐음 · 서버를 지웠음 (눌러 보면 알려 주고 목록에서 뺀다)
   name: string
   software: Software
   mcVersion: string
@@ -456,12 +477,19 @@ function connectRemote(joined: Joined, hello: object = {}): Remote {
         else p.reject(new Error(m.error === 'host-offline' ? '방장 컴퓨터가 꺼져 있어요. 방장이 CubePanel을 켜면 다시 연결돼요.' : String(m.error ?? '오류가 났어요.')))
       } else if (m.t === 'ev') onHostEvent(r, (m.e ?? {}) as Record<string, unknown>)
     },
-    (open, code) => {
+    (open, code, reason) => {
       if (!open) {
         // 들어가다 막혔으면(코드 무효·인원 꽉 참 등) 기다리던 쪽에 바로 알린다
         for (const w of r.waiters.splice(0)) w({ t: 'closed', code })
         r.hostOnline = false
-        if (code === 4003) toWindows({ type: 'shares', folderPath: '' }) // 방장이 끊었다
+        if (code === 4003 && joined.token) {
+          // 방장이 끊었다: 이유를 적어 두고 (앱을 껐다 켜도 남는다) 눌러 보면 알려 준 뒤 목록에서 뺀다
+          if (!joined.gone) {
+            joined.gone = reason === 'deleted' ? 'deleted' : reason === 'off' || reason === 'closed' ? 'off' : 'revoked'
+            writeJoined()
+          }
+          toWindows({ type: 'shares', folderPath: '' })
+        }
         emit(joined.room, { type: 'status', state: 'stopped' })
       }
     }
@@ -555,7 +583,9 @@ export async function joinShare(input: string): Promise<string> {
 }
 
 export function leaveShare(room: string): void {
-  remotes.get(room)?.link.stop()
+  const r = remotes.get(room)
+  if (r && !r.joined.gone) r.link.send({ t: 'leave' }) // 방장 친구 목록에서도 빠지게 알린다
+  r?.link.stop()
   remotes.delete(room)
   writeJoined()
   toWindows({ type: 'shares', folderPath: '' })
@@ -577,6 +607,6 @@ export function remoteServers(): ServerListItem[] {
     playerCount: r.players.length,
     modCount: null,
     lastBackupAt: null,
-    remote: { role: r.joined.role, hostOnline: r.hostOnline, perms: r.joined.perms ? cleanPerms(r.joined.perms) : presetOf(r.joined.role) }
+    remote: { role: r.joined.role, hostOnline: r.hostOnline, gone: r.joined.gone, perms: r.joined.perms ? cleanPerms(r.joined.perms) : presetOf(r.joined.role) }
   }))
 }

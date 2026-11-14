@@ -170,7 +170,7 @@ export interface ServerListItem extends ServerInfo {
   playerCount: number
   modCount: number | null // 켜진 모드·플러그인 수 (모드를 못 쓰는 서버면 null)
   lastBackupAt: number | null
-  remote?: { role: ShareRole; hostOnline: boolean; perms: SharePerm[] } // 공유받은 서버(친구 앱): 내 권한과 방장 앱이 켜져 있는지
+  remote?: { role: ShareRole; hostOnline: boolean; perms: SharePerm[]; gone?: 'revoked' | 'off' | 'deleted' } // 공유받은 서버(친구 앱): 내 권한과 방장 앱이 켜져 있는지
 }
 
 // ---------- 서버 공유 ----------

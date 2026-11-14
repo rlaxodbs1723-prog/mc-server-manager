@@ -351,6 +351,7 @@ ipcMain.handle('duplicateServer', (_event, folderPath: string, name: string) => 
 ipcMain.handle('deleteServer', async (_event, folderPath: string) => {
   const target = checkServerFolder(folderPath)
   if (getState(target) !== 'stopped') throw new Error('서버를 끈 다음에 삭제할 수 있어요.')
+  await stopSharing(target, 'deleted').catch(() => undefined) // 공유 중이면 친구 앱에 "삭제된 서버"라고 알리고 끝낸다
   await releaseDomain(target).catch(() => undefined) // 이름 주소가 있으면 같이 지운다 (다른 사람이 쓸 수 있게)
   await withLock(target, '서버 삭제', () => deleteServer(target))
 })

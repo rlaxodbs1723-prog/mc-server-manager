@@ -23,6 +23,7 @@ function connect() {
   const inbox = []
   const waiters = []
   let closed = null
+  let closedReason = ''
   ws.onmessage = (e) => {
     const m = JSON.parse(e.data)
     const w = waiters.findIndex((x) => x.pred(m))
@@ -31,7 +32,8 @@ function connect() {
   }
   ws.onclose = (e) => {
     closed = e.code
-    for (const w of waiters.splice(0)) w.resolve({ t: 'closed', code: e.code })
+    closedReason = e.reason
+    for (const w of waiters.splice(0)) w.resolve({ t: 'closed', code: e.code, reason: e.reason })
   }
   const open = new Promise((r) => (ws.onopen = r))
   return {
@@ -42,7 +44,7 @@ function connect() {
       new Promise((resolve) => {
         const i = inbox.findIndex(pred)
         if (i >= 0) return resolve(inbox.splice(i, 1)[0])
-        if (closed != null) return resolve({ t: 'closed', code: closed })
+        if (closed != null) return resolve({ t: 'closed', code: closed, reason: closedReason })
         waiters.push({ pred, resolve })
         setTimeout(() => resolve({ t: 'timeout' }), ms)
       }),
@@ -133,11 +135,40 @@ try {
   host2.send({ t: 'auth', as: 'host', key: hostKey, session: hostS })
   await host2.next((m) => m.t === 'ok')
   host2.send({ t: 'revoke', device: welcome.device })
-  expect((await friend.next((m) => m.t === 'closed')).code === 4003, '끊은 친구의 연결이 남았어요')
+  const cut = await friend.next((m) => m.t === 'closed')
+  expect(cut.code === 4003, '끊은 친구의 연결이 남았어요')
   const friend3 = connect()
   await friend3.open
   friend3.send({ t: 'auth', as: 'client', token: welcome.token, session: friendS })
   expect((await friend3.next()).code === 4003, '끊은 친구의 열쇠가 아직 돼요')
+
+  // 친구가 스스로 목록에서 빼면(leave) 방장 친구 목록에서도 사라진다
+  const joinAs = async (name, session) => {
+    const c = 'CODE-' + Math.random().toString(36).slice(2, 10)
+    host2.send({ t: 'invite', codeHash: await sha256(c), role: 'view' })
+    await host2.next((m) => m.t === 'invited')
+    const fr = connect()
+    await fr.open
+    fr.send({ t: 'auth', as: 'join', code: c, name, session })
+    const ok = await fr.next((m) => m.t === 'ok')
+    return { fr, ok }
+  }
+  const leaver = await joinAs('나가는 친구', friendS)
+  leaver.fr.send({ t: 'leave' })
+  await leaver.fr.next((m) => m.t === 'closed')
+  host2.send({ t: 'devices' })
+  expect((await host2.next((m) => m.t === 'devices')).list.length === 0, '스스로 나간 친구가 방장 친구 목록에 남았어요')
+
+  // 공유를 끄면(close-room) 친구에게 이유(off·deleted)가 가고, 나중에 다시 붙어도 같은 이유를 받는다
+  const stay = await joinAs('남은 친구', friendS)
+  host2.send({ t: 'close-room', why: 'deleted' })
+  const gone = await stay.fr.next((m) => m.t === 'closed')
+  expect(gone.code === 4003 && gone.reason === 'deleted', `서버를 지웠다는 이유가 안 갔어요: ${JSON.stringify(gone)}`)
+  const back = connect()
+  await back.open
+  back.send({ t: 'auth', as: 'client', token: stay.ok.token, session: friendS })
+  const again2 = await back.next()
+  expect(again2.code === 4003 && again2.reason === 'deleted', `다시 붙었을 때 이유가 달라요: ${JSON.stringify(again2)}`)
 
   // 인증 없이 다른 메시지를 먼저 보내면 끊는다
   const rude = connect()

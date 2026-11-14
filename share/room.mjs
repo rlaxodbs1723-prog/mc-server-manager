@@ -97,7 +97,8 @@ async function auth(env, ws, msg) {
     const devices = (await env.store.get('devices')) ?? {}
     const hash = await sha256(msg.token)
     const device = Object.keys(devices).find((id) => devices[id].tokenHash === hash)
-    if (!device) return ws.close(4003, 'revoked')
+    // 공유를 껐거나 서버를 지운 방이면 그 이유를, 아니면 방장이 이 친구를 뺀 것
+    if (!device) return ws.close(4003, (await env.store.get('closedWhy')) ?? 'revoked')
     const d = devices[device]
     // 기기 열쇠는 처음 들어온 계정만 쓸 수 있다 (열쇠를 남에게 넘겨도 못 쓴다)
     if (d.acct && d.acct !== acct.id) return ws.close(4011, 'other account')
@@ -151,7 +152,10 @@ async function fromHost(env, ws, msg) {
   }
   if (msg.t === 'close-room') {
     // 공유를 끈다: 친구를 모두 끊고 초대·친구 목록을 비운다 (앱은 다음에 공유하면 새 방을 만든다)
-    for (const s of clients(env)) s.close(4003, 'closed')
+    // why: 'off'(공유 끄기) · 'deleted'(서버 지움). 친구 앱이 이유를 보여 주려고 닫는 이유로 보낸다
+    const why = msg.why === 'deleted' ? 'deleted' : 'off'
+    await env.store.put('closedWhy', why)
+    for (const s of clients(env)) s.close(4003, why)
     await env.store.delete('devices')
     await env.store.delete('invites')
     return ws.send({ t: 'closed' })
@@ -169,6 +173,15 @@ async function fromHost(env, ws, msg) {
 }
 
 async function fromClient(env, ws, me, msg) {
+  if (msg.t === 'leave') {
+    // 친구가 스스로 목록에서 뺐다: 방장 친구 목록에서도 지운다 (자리 30개를 계속 차지하지 않게)
+    const devices = (await env.store.get('devices')) ?? {}
+    if (devices[me.device]) {
+      delete devices[me.device]
+      await env.store.put('devices', devices)
+    }
+    return ws.close(1000, 'left')
+  }
   if (msg.t !== 'rpc' || typeof msg.m !== 'string' || msg.m.length > 64) return
   const host = hostSocket(env)
   if (!host) return ws.send({ t: 'res', id: msg.id, ok: false, error: 'host-offline' })
