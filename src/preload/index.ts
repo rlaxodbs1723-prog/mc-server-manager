@@ -24,6 +24,7 @@ const api: Api = {
   setSharePerms: (folderPath, device, perms) => ipcRenderer.invoke('setSharePerms', folderPath, device, perms),
   setShareNotify: (folderPath, device, on) => ipcRenderer.invoke('setShareNotify', folderPath, device, on),
   joinShare: (code) => ipcRenderer.invoke('joinShare', code),
+  getAvatar: (name, kind, size) => ipcRenderer.invoke('getAvatar', name, kind, size),
   getAccount: () => ipcRenderer.invoke('getAccount'),
   loginProviders: () => ipcRenderer.invoke('loginProviders'),
   login: (provider) => ipcRenderer.invoke('login', provider),

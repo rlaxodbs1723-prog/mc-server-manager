@@ -580,6 +580,7 @@ export interface Api {
   setShareNotify: (folderPath: string, device: string, on: boolean) => Promise<void>
   // 서버 공유 (친구)
   joinShare: (code: string) => Promise<string>
+  getAvatar: (name: string, kind?: 'avatar' | 'body', size?: number) => Promise<string | null>
   getAccount: () => Promise<Account | null>
   loginProviders: () => Promise<string[]>
   login: (provider: string) => Promise<Account>

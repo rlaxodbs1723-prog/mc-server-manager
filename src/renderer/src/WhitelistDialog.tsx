@@ -1,3 +1,4 @@
+import McHead from './McHead'
 import { UserPlus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { WhitelistInfo } from '../../shared-types'
@@ -119,11 +120,7 @@ export function WhitelistPanel({ folderPath, autoFocus }: { folderPath: string; 
         ) : (
           info.players.map((p) => (
             <div className="wl-item" key={p.uuid}>
-              <img
-                src={`https://mc-heads.net/avatar/${encodeURIComponent(p.name)}/32`}
-                alt=""
-                onError={(e) => (e.currentTarget.style.visibility = 'hidden')}
-              />
+              <McHead name={p.name} size={32} />
               <span className="wl-name">{p.name}</span>
               <button className="btn sm ghost" onClick={() => remove(p.name)}>
                 빼기

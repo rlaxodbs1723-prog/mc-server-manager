@@ -1,3 +1,4 @@
+import McHead from './McHead'
 import { useEffect, useState, type ReactNode } from 'react'
 import type { ManageAction, PlayerData, PlayerRecord } from '../../shared-types'
 import { EnderChest, PlayerInventory } from './Inventory'
@@ -165,7 +166,7 @@ export default function PlayerDialog({ folderPath, record: r, running, act, onCl
           header={
             <>
               <div className="pd-head">
-                <img src={`https://mc-heads.net/body/${r.name}/80`} alt="" onError={(e) => (e.currentTarget.style.visibility = 'hidden')} />
+                <McHead name={r.name} kind="body" size={80} />
                 <div>
                   <h2>{r.name}</h2>
                   <span className={`pill ${r.online ? 'running' : ''}`}>

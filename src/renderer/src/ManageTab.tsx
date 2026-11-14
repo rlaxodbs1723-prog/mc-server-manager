@@ -1,3 +1,4 @@
+import McHead from './McHead'
 import type { SharePerm } from '../../shared-types'
 import { Perm, useCan } from './perms'
 import { Ban, Users, CloudLightning, Gamepad2, ShieldCheck, CloudRain, Crown, LogOut, Megaphone, Moon, Send, Sun, Sunrise } from 'lucide-react'
@@ -126,7 +127,7 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
               <div className="player-list scroll">
                 {info.players.map((p) => (
                   <div className="player" key={p.name}>
-                    <img src={`https://mc-heads.net/avatar/${p.name}/40`} alt="" onError={(e) => (e.currentTarget.style.visibility = 'hidden')} />
+                    <McHead name={p.name} />
                     <button className="player-name linkish" title={`${p.name} 정보 보기`} onClick={() => setOpenPlayer(p.name)}>
                       <span className="n">{p.name}</span>
                       {p.op && <span className="chip blue">관리자</span>}
@@ -165,7 +166,7 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
               <div className="player-list scroll">
                 {info.banned.map((name) => (
                   <div className="player" key={name}>
-                    <img src={`https://mc-heads.net/avatar/${name}/40`} alt="" onError={(e) => (e.currentTarget.style.visibility = 'hidden')} />
+                    <McHead name={name} />
                     <div className="player-name" title={name}>
                       <span className="n">{name}</span>
                     </div>
@@ -261,7 +262,7 @@ export default function ManageTab({ folderPath, running }: { folderPath: string;
                 .filter((h) => h.name.toLowerCase().includes(findPlayer.trim().toLowerCase()))
                 .map((h) => (
                   <button className="history-card" key={h.name} title={`${h.name} 정보 보기`} onClick={() => setOpenPlayer(h.name)}>
-                    <img src={`https://mc-heads.net/avatar/${h.name}/40`} alt="" onError={(e) => (e.currentTarget.style.visibility = 'hidden')} />
+                    <McHead name={h.name} />
                     <span className="history-text">
                       <b>{h.name}</b>
                       <span className={h.online ? 'history-on' : 'hint'}>{h.online ? '접속 중' : ago(h.lastSeen)}</span>

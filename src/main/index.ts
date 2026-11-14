@@ -11,6 +11,7 @@ import { getHardcore, setHardcore } from './hardcore'
 import { getGameRuleLang } from './lang'
 import { applyDomain, checkReachable, closeAllPorts, getInvite, initInvite, recheckInvite, setInviteDomain, useTunnel } from './invite'
 import { checkDomainName, claimDomain, getDomain, releaseDomain } from './domain'
+import { getAvatar } from './avatar'
 import { cancelLogin, deleteAccount, getAccount, login, loginProviders, logout, refreshAccount } from './account'
 import { createShareInvite, initShareClient, initShareHost, joinShare, leaveShare, remoteServers, revokeShareDevice, setShareNotify, setSharePerms, shareDevices, shareStatus, startSharing, stopSharing } from './share'
 import { detectServer } from './importserver'
@@ -328,6 +329,7 @@ ipcMain.handle('revokeShareDevice', (_event, folderPath: string, device: string)
 ipcMain.handle('setShareNotify', (_event, folderPath: string, device: string, on: boolean) => setShareNotify(checkServerFolder(folderPath), String(device), !!on))
 ipcMain.handle('setSharePerms', (_event, folderPath: string, device: string, perms: SharePerm[]) => setSharePerms(checkServerFolder(folderPath), String(device), perms))
 ipcMain.handle('joinShare', (_event, code: string) => joinShare(String(code)))
+ipcMain.handle('getAvatar', (_event, name: string, kind: 'avatar' | 'body', size: number) => getAvatar(String(name), kind === 'body' ? 'body' : 'avatar', Number(size)))
 ipcMain.handle('getAccount', () => getAccount())
 ipcMain.handle('loginProviders', () => loginProviders())
 ipcMain.handle('login', (_event, provider: string) => login(String(provider)))

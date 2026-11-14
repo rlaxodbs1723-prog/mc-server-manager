@@ -1,3 +1,4 @@
+import McHead from './McHead'
 import { ArrowDown, Search } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ChatEvent, ChatLogList } from '../../shared-types'
@@ -133,12 +134,7 @@ export default function ChatLogTab({ folderPath, readOnly = false }: { folderPat
                           (e.kind === 'say' ? (
                             <span className="chat-avatar say">📢</span>
                           ) : (
-                            <img
-                              className="chat-avatar"
-                              src={`https://mc-heads.net/avatar/${e.name}/32`}
-                              alt=""
-                              onError={(ev) => (ev.currentTarget.style.visibility = 'hidden')}
-                            />
+                            <McHead className="chat-avatar" name={e.name} size={32} />
                           ))}
                         <div className="chat-body">
                           {!grouped && <b className="chat-name">{e.kind === 'say' ? '서버 공지' : e.name}</b>}
