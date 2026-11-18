@@ -38,6 +38,7 @@ export default function ModsTab({ folderPath, kind, serverOn }: Props) {
   const [page, setPage] = useState(0) // 다음에 불러올 페이지
   const [updates, setUpdates] = useState<Record<string, string> | null>(null) // 파일 이름 -> 새 버전 (확인 전이면 null)
   const [checking, setChecking] = useState(false)
+  const [adding, setAdding] = useState<{ done: number; total: number; identifying: boolean } | null>(null) // 파일을 끌어다 넣는 중 (몇 개 중 몇 개)
   const [versionOf, setVersionOf] = useState<InstalledMod | null>(null)
   const [identifyFailing, setIdentifyFailing] = useState(false) // 사이트 오류로 직접 넣은 파일을 아직 못 알아봄
   const [site, setSite] = useStored<SearchSite>('searchSite', 'all') // 고른 사이트는 다음에도 기억한다
@@ -244,22 +245,31 @@ export default function ModsTab({ folderPath, kind, serverOn }: Props) {
   const lockedWhy = serverOn ? `서버가 켜져 있어서 ${josa(kind.kind, '을/를')} 바꿀 수 없어요` : working ? '다른 작업이 끝나면 할 수 있어요' : undefined
 
   async function addFiles(files: FileList) {
-    // 여러 개를 넣으면 알림을 하나로 모은다
+    // 여러 개를 넣으면 알림을 하나로 모은다. 넣는 동안 몇 개째인지 보여 준다 (많이 넣을 때 아무 표시가 없어 멈춘 것처럼 보이던 것)
+    const list = Array.from(files)
     const added: string[] = []
-    for (const f of Array.from(files)) {
-      try {
-        added.push(await window.api.addModFile(folderPath, f, part))
-      } catch (e) {
-        toast(files.length > 1 ? `${f.name}: ${cleanError(e)}` : cleanError(e), 'error')
+    setAdding({ done: 0, total: list.length, identifying: false })
+    try {
+      for (const f of list) {
+        try {
+          added.push(await window.api.addModFile(folderPath, f, part))
+        } catch (e) {
+          toast(list.length > 1 ? `${f.name}: ${cleanError(e)}` : cleanError(e), 'error')
+        }
+        setAdding({ done: added.length, total: list.length, identifying: false })
+        if (added.length && added.length % 5 === 0) await refreshInstalled() // 넣은 것이 목록에 하나씩 늘어나게 (5개마다)
       }
-    }
-    if (added.length) toast(added.length > 1 ? `${added.length}개를 넣었어요` : `${added[0]}을(를) 넣었어요`)
-    checkOffSuggestions() // 서버에 맞지 않아 보이는 것이 있으면 끌지 물어본다
-    await refreshInstalled()
-    // 넣은 파일이 어떤 모드인지 바로 알아본다 (찾으면 아이콘·이름이 생긴다)
-    if (await window.api.identifyMods(folderPath, part)) {
-      refreshInstalled()
-      runSearch(query)
+      if (added.length) toast(added.length > 1 ? `${added.length}개를 넣었어요` : `${added[0]}을(를) 넣었어요`)
+      checkOffSuggestions() // 서버에 맞지 않아 보이는 것이 있으면 끌지 물어본다
+      await refreshInstalled()
+      // 넣은 파일이 어떤 모드인지 바로 알아본다 (찾으면 아이콘·이름이 생긴다)
+      setAdding({ done: added.length, total: list.length, identifying: true })
+      if (await window.api.identifyMods(folderPath, part)) {
+        refreshInstalled()
+        runSearch(query)
+      }
+    } finally {
+      setAdding(null)
     }
   }
 
@@ -270,6 +280,17 @@ export default function ModsTab({ folderPath, kind, serverOn }: Props) {
           <div className="banner">
             <Lock size={16} />
             서버가 켜져 있어서 {josa(kind.kind, '을/를')} 바꿀 수 없어요. 먼저 서버를 꺼 주세요.
+          </div>
+        )}
+        {adding && (
+          <div className="progress-card">
+            <div className="row">
+              <span className="spinner" />
+              {adding.identifying ? '넣은 파일이 어떤 모드인지 확인하는 중이에요' : `${josa(kind.kind, '을/를')} 넣는 중이에요 (${adding.done}/${adding.total})`}
+            </div>
+            <div className={`bar ${adding.identifying ? 'indeterminate' : ''}`}>
+              <i style={adding.identifying ? undefined : { width: `${Math.round((adding.done / Math.max(1, adding.total)) * 100)}%` }} />
+            </div>
           </div>
         )}
         <div className="search-row">

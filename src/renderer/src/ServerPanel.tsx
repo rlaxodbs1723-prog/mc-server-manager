@@ -738,9 +738,10 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
         <OffSuggestDialog
           folderPath={folderPath}
           serverOn={on}
-          onAnswered={() => {
+          onAnswered={(autoStarted) => {
             if (!resumeStart.current) return
             resumeStart.current = false
+            if (autoStarted) return // 앱이 이미 켜기 시작했다
             void start()
           }}
           onLater={() => {

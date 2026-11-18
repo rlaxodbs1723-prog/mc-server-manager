@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { SOFTWARE_INFO, type CrashAnalysis, type ServerListItem } from '../../shared-types'
 import CrashDialog from './CrashDialog'
 import CreateServer from './CreateServer'
+import Library from './Library'
 import ServerPanel, { type PanelAction } from './ServerPanel'
 import ContextMenu from './ContextMenu'
 import { TasksProvider } from './tasks'
@@ -53,6 +54,7 @@ export default function App() {
   const [selected, setSelected] = useState<string | null>(null) // 서버 폴더 경로, null이면 "새 서버" 화면
   const [askQuit, setAskQuit] = useState<{ creating: number; jobs: string[] } | null>(null)
   const [goneRoom, setGoneRoom] = useState<string | null>(null) // 더는 쓸 수 없는 공유받은 서버 (삭제됨·공유 꺼짐·끊김): 알려 주고 목록에서 뺀다
+  const [library, setLibrary] = useState(false) // 서버 모음(카드) 화면을 보는 중
   const [now, setNow] = useState(Date.now()) // 켠 시간·백업 시간 표시용 (1분마다)
   const [quitting, setQuitting] = useState(false)
   const [dragging, setDragging] = useState<string | null>(null) // 끌고 있는 서버 폴더
@@ -100,6 +102,7 @@ export default function App() {
   useEffect(() => {
     if (selected) writeStored('lastServer', selected)
   }, [selected])
+  useEffect(() => setLibrary(false), [selected]) // 다른 곳에서 서버를 열면 모음 화면은 닫는다
 
   useEffect(() => {
     refresh().then((list) =>
@@ -151,14 +154,20 @@ export default function App() {
           <TitleBar />
           <div className="shell">
             <aside className="sidebar">
-              <button className={`new-server ${!current ? 'active' : ''}`} onClick={() => setSelected(null)}>
+              <button className={`new-server ${!current && !library ? 'active' : ''}`} onClick={() => {
+                  setLibrary(false)
+                  setSelected(null)
+                }}
+              >
                 <span className="plus">
                   <Plus size={18} strokeWidth={2.5} />
                 </span>
                 새 서버 만들기
               </button>
 
-              <div className="sidebar-title">내 서버 {mine.length > 0 && mine.length}</div>
+              <button className={`sidebar-title link ${library ? 'active' : ''}`} onClick={() => setLibrary(true)} title="서버를 카드로 모아 보기">
+                내 서버 {mine.length > 0 && mine.length}
+              </button>
               {mine.length === 0 && (
                 <p className="empty-side">
                   아직 만든 서버가 없어요.
@@ -169,7 +178,10 @@ export default function App() {
                 <button
                   key={s.folderPath}
                   className={`server-item ${selected === s.folderPath ? 'active' : ''} ${dragging === s.folderPath ? 'dragging' : ''} ${dragging && dropAt === idx ? 'drop-before' : ''} ${dragging && dropAt === idx + 1 && idx === mine.length - 1 ? 'drop-after' : ''}`}
-                  onClick={() => setSelected(s.folderPath)}
+                  onClick={() => {
+                    setLibrary(false)
+                    setSelected(s.folderPath)
+                  }}
                   draggable
                   onDragStart={(e) => {
                     e.dataTransfer.effectAllowed = 'move'
@@ -217,7 +229,12 @@ export default function App() {
               ))}
               {shared.length > 0 && <div className="sidebar-title" style={{ marginTop: 14 }}>공유받은 서버 {shared.length}</div>}
               {shared.map((s) => (
-                <button key={s.folderPath} className={`server-item ${selected === s.folderPath ? 'active' : ''}`} onClick={() => (s.remote?.gone ? setGoneRoom(s.folderPath) : setSelected(s.folderPath))}>
+                <button key={s.folderPath} className={`server-item ${selected === s.folderPath ? 'active' : ''}`} onClick={() => {
+                    setLibrary(false)
+                    if (s.remote?.gone) setGoneRoom(s.folderPath)
+                    else setSelected(s.folderPath)
+                  }}
+                >
                   <SoftwareBadge software={s.software ?? 'vanilla'} size={36} name={s.name} icon={s.icon} />
                   <div className="meta">
                     <div className="name">{s.name}</div>
@@ -232,8 +249,21 @@ export default function App() {
               <ProfileBox />
             </aside>
 
-            <main className={`main ${current ? 'fill' : ''}`}>
-              {current ? (
+            <main className={`main ${current && !library ? 'fill' : ''}`}>
+              {library ? (
+                <Library
+                  servers={servers}
+                  onOpen={(s) => {
+                    setLibrary(false)
+                    if (s.remote?.gone) setGoneRoom(s.folderPath)
+                    else setSelected(s.folderPath)
+                  }}
+                  onCreate={() => {
+                    setLibrary(false)
+                    setSelected(null)
+                  }}
+                />
+              ) : current ? (
                 <ServerPanel
                   key={current.folderPath}
                   server={current}

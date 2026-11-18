@@ -66,6 +66,7 @@ const api: Api = {
   openEulaPage: () => ipcRenderer.invoke('openEulaPage'),
   acceptEula: (folderPath) => ipcRenderer.invoke('acceptEula', folderPath),
   startServer: (folderPath) => ipcRenderer.invoke('startServer', folderPath),
+  autoFixStart: (folderPath) => ipcRenderer.invoke('autoFixStart', folderPath),
   stopServer: (folderPath, force) => ipcRenderer.invoke('stopServer', folderPath, force),
   sendCommand: (folderPath, command) => ipcRenderer.invoke('sendCommand', folderPath, command),
   getLog: (folderPath) => ipcRenderer.invoke('getLog', folderPath),

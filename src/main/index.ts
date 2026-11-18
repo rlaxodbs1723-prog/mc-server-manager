@@ -46,10 +46,10 @@ import * as whitelist from './whitelist'
 import { getManageInfo, runAction } from './manage'
 import { getVersions } from './mojang'
 import { acceptEula, anyRunning, getLog, getState, onServerEvent, sendCommand, stopAll, stopServer } from './runner'
-import { changeVersion, deleteServer, memoryRange, cancelAutoRestarts, setServerOrder, duplicateServer, renameServer, createServer, patchServerInfo, getSettings, readServerInfo, listServers, cleanupUnfinished, getCleanupReport, resetWorld, saveSettings, serversRoot, startServerAt } from './servers'
+import { changeVersion, deleteServer, memoryRange, cancelAutoRestarts, startWithAutoFix, setServerOrder, duplicateServer, renameServer, createServer, patchServerInfo, getSettings, readServerInfo, listServers, cleanupUnfinished, getCleanupReport, resetWorld, saveSettings, serversRoot, startServerAt } from './servers'
 import { assertFree, busyJobs, setOnJobDone, withLock } from './lock'
 import { getSiteStatus } from './sitestatus'
-import { runPreflight } from './preflight'
+import { attachNeededBy, runPreflight } from './preflight'
 import { autoStartServers, setStarter } from './automation'
 import { createBackup, deleteBackup, getBackupSettings, listBackups, openBackupFolder, restoreBackup, setBackupSettings } from './backup'
 import { tr } from './i18n'
@@ -385,6 +385,10 @@ async function startWithChecks(target: string, report: (p: Progress) => void): P
   trackUsage(`start-${info.software ?? 'vanilla'}`)
 }
 setStarter((f) => startWithChecks(f, () => undefined))
+ipcMain.handle('autoFixStart', (event, folderPath: string) => {
+  const target = checkServerFolder(folderPath)
+  return startWithAutoFix(target, (p) => event.sender.send('progress', { ...p, folderPath: target }))
+})
 ipcMain.handle('stopServer', (_event, folderPath: string, force?: boolean) =>
   stopServer(checkServerFolder(folderPath), !!force)
 )
@@ -645,7 +649,10 @@ ipcMain.handle('exportClientPack', (event, folderPath: string, format: string) =
   mods.exportClientPack(checkServerFolder(folderPath), format === 'zip' ? 'zip' : 'mrpack', BrowserWindow.fromWebContents(event.sender))
 )
 ipcMain.handle('listMods', (_event, folderPath: string, part?: ModPart) => mods.inPart(part, () => mods.list(checkServerFolder(folderPath))))
-ipcMain.handle('offSuggestions', (_event, folderPath: string) => mods.offSuggestions(checkServerFolder(folderPath)))
+ipcMain.handle('offSuggestions', (_event, folderPath: string) => {
+  const target = checkServerFolder(folderPath)
+  return attachNeededBy(target, mods.offSuggestions(target)).catch(() => mods.offSuggestions(target))
+})
 ipcMain.handle('applyOffSuggestions', (_event, folderPath: string, fileNames: string[]) => {
   const target = checkServerFolder(folderPath)
   return withLock(target, '모드 끄기', () => mods.applyOffSuggestions(target, Array.isArray(fileNames) ? fileNames.map(String) : []))

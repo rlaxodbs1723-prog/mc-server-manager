@@ -127,18 +127,37 @@ export async function suggestFromCrash(folderPath: string, log: string[]): Promi
   if (!ids.size && /invalid dist DEDICATED_SERVER/.test(text)) {
     for (const m of text.matchAll(/handler\$[0-9a-f]+\$([a-z][a-z0-9_]*)\$/g)) ids.add(m[1])
   }
-  if (!ids.size) return 0
+  if (!ids.size && !/invalid dist DEDICATED_SERVER|NoClassDefFoundError: net\/minecraft\/client\//.test(text)) return 0
   const { dir } = load(folderPath)
   if (!fs.existsSync(dir)) return 0
+  const jars = fs.readdirSync(dir).filter((x) => /\.jar$/i.test(x))
+  // "실패했다"고 적힌 모드는 남의 설정을 읽다가 같이 실패한 피해자일 수 있다 (Framework가 Controllable 때문에 실패한 경우).
+  // 게임 화면 클래스를 서버에서 불러서 실패했다는 줄 바로 아래 호출 기록의 첫 줄이 실제로 불러온 jar라서, 있으면 그 jar를 지목한다
+  // 같은 문제가 두 가지 문구로 나온다: "invalid dist DEDICATED_SERVER" (처음) / "NoClassDefFoundError: net/minecraft/client/..." (같은 클래스를 다시 불러서 실패할 때)
+  const culprits = new Set(
+    [...text.matchAll(/(?:invalid dist DEDICATED_SERVER|NoClassDefFoundError: net\/minecraft\/client\/\S+|ClassNotFoundException: net\.minecraft\.client\.\S+)[^\n]*\n\s*at [^\n]*?~\[([^\]!%]+?\.jar)/g)].map((m) => m[1])
+  )
+  const direct = jars.filter((x) => culprits.has(x))
   const found: [string, OffReason][] = []
-  for (const f of fs.readdirSync(dir).filter((x) => /\.jar$/i.test(x))) {
-    const id = (await localInfo(path.join(dir, f)).catch(() => ({ id: null }))).id
-    if (id && ids.has(id)) found.push([f, 'startFail'])
-  }
+  if (direct.length) for (const f of direct) found.push([f, 'startFail'])
+  else
+    for (const f of jars) {
+      const id = (await localInfo(path.join(dir, f)).catch(() => ({ id: null }))).id
+      if (id && ids.has(id)) found.push([f, 'startFail'])
+    }
   // 튕긴 증거가 있으니, 전에 "켜 두기"로 고른 것도 다시 묻는다
   if (found.length) {
     const drop = new Set([...found.map(([f]) => f), ...[...ids].map((id) => `id:${id}`)])
     fs.writeFileSync(path.join(folderPath, KEEP_FILE), JSON.stringify(readKeep(folderPath).filter((k) => !drop.has(k))))
+  }
+  // 호출 기록으로 진짜 범인을 찾았으면, 예전에 잘못 올려 둔 "켜다가 멈춤" 기록(남의 실패를 대신 보고한 모드)은 지운다
+  if (direct.length) {
+    const cur = readSuggest(folderPath)
+    const stale = Object.keys(cur).filter((f) => cur[f] === 'startFail' && !direct.includes(f))
+    if (stale.length) {
+      for (const f of stale) delete cur[f]
+      fs.writeFileSync(path.join(folderPath, SUGGEST_FILE), JSON.stringify(cur))
+    }
   }
   suggestOff(folderPath, found)
   return found.length

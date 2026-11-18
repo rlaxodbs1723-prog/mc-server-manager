@@ -189,12 +189,12 @@ button:disabled { cursor: default; }
 
 .sidebar::-webkit-scrollbar { width: 6px; }
 .sidebar { width: 260px; flex-shrink: 0; display: flex; flex-direction: column; padding: 8px 12px 16px; gap: 4px; overflow-y: auto; }
-.sidebar-title { font-size: 13px; font-weight: 600; color: var(--text-3); padding: 12px 12px 6px; }
-.new-server { display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 12px; border-radius: var(--r-md); font-weight: 700; color: var(--primary); transition: background 0.15s; }
+.sidebar-title { flex-shrink: 0; font-size: 13px; font-weight: 600; color: var(--text-3); padding: 12px 12px 6px; }
+.new-server { flex-shrink: 0; display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 12px; border-radius: var(--r-md); font-weight: 700; color: var(--primary); transition: background 0.15s; }
 .new-server:hover, .new-server.active { background: var(--primary-soft); }
 .new-server .plus { width: 32px; height: 32px; border-radius: 10px; background: var(--primary-soft); display: grid; place-items: center; }
 
-.server-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--r-md); text-align: left; transition: background 0.15s; }
+.server-item { flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--r-md); text-align: left; transition: background 0.15s; }
 .server-item:hover { background: var(--surface); }
 .server-item.active { background: var(--surface-2); }
 .server-item .meta { flex: 1; min-width: 0; }
@@ -1178,3 +1178,17 @@ button.player.history .hint { flex-shrink: 0; white-space: nowrap; }
 img.profile-avatar { object-fit: cover; }
 .profile-box .profile-avatar { flex: 0 0 34px; width: 34px; height: 34px; min-height: 34px; max-height: 34px; aspect-ratio: 1; align-self: center; }
 .friend-notify { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+
+/* 서버 모음 화면 (왼쪽의 "내 서버"를 누르면) */
+.sidebar-title.link { text-align: left; width: 100%; cursor: pointer; border-radius: var(--r-md); transition: color 0.15s, background 0.15s; }
+.sidebar-title.link:hover, .sidebar-title.link.active { color: var(--text); background: var(--surface); }
+.library { padding: 4px 0 24px; }
+.lib-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.lib-sec { font-size: 18px; margin: 28px 0 14px; }
+.lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 14px; }
+.lib-card { display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: var(--r-lg, 16px); background: var(--surface); text-align: left; transition: background 0.15s, transform 0.15s; min-width: 0; }
+.lib-card:hover { background: var(--surface-2); transform: translateY(-2px); }
+.lib-icon { position: relative; display: grid; place-items: center; padding: 14px 0 10px; border-radius: 12px; background: var(--surface-2); margin-bottom: 8px; }
+.lib-state { position: absolute; left: 8px; bottom: 8px; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text-2); padding: 3px 8px; border-radius: 999px; background: rgba(0, 0, 0, 0.45); }
+.lib-name { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lib-sub { font-size: 13px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

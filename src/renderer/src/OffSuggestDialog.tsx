@@ -9,15 +9,18 @@ const WHY: Record<OffSuggestion['reason'], string> = {
   startFail: '켜다가 멈춤'
 }
 
+// 이 모드를 필요로 하는 모드 이름들 (세 개까지만 보여 준다)
+const needers = (names: string[]): string => names.slice(0, 3).join(', ') + (names.length > 3 ? ` +${names.length - 3}` : '')
+
 // 모드를 넣은 뒤 서버를 확인해 보라고 알린다 (모드 탭 → 이 창)
 export const checkOffSuggestions = (): void => {
   window.dispatchEvent(new Event('off-suggest-check'))
 }
 
 // 서버에 맞지 않아 보이는 모드가 있으면 끌지 물어본다. 고른 것만 끄고, 고르지 않은 것은 다시 묻지 않는다
-// onAnswered: 답을 고른 뒤 (켜기 전 점검에서 뜬 경우 이어서 켜려고)
+// onAnswered: 답을 고른 뒤 (켜기 전 점검에서 뜬 경우 이어서 켜려고). 인자가 true면 앱이 이미 서버를 켜기 시작했다 (켜다가 멈춘 모드를 끈 경우)
 // onLater: "나중에"를 눌렀을 때
-export default function OffSuggestDialog({ folderPath, serverOn, onAnswered, onLater }: { folderPath: string; serverOn: boolean; onAnswered?: () => void; onLater?: () => void }) {
+export default function OffSuggestDialog({ folderPath, serverOn, onAnswered, onLater }: { folderPath: string; serverOn: boolean; onAnswered?: (autoStarted: boolean) => void; onLater?: () => void }) {
   const toast = useToast()
   const [list, setList] = useState<OffSuggestion[]>([])
   const [picked, setPicked] = useState<Set<string>>(new Set())
@@ -30,7 +33,7 @@ export default function OffSuggestDialog({ folderPath, serverOn, onAnswered, onL
       .then((l) => {
         setLater(false)
         setList(l)
-        setPicked(new Set(l.map((x) => x.fileName)))
+        setPicked(new Set(l.filter((x) => !x.neededBy?.length).map((x) => x.fileName))) // 다른 모드가 필요로 하는 것은 기본으로 고르지 않는다
       })
       .catch(() => setList([]))
   }, [folderPath])
@@ -59,7 +62,18 @@ export default function OffSuggestDialog({ folderPath, serverOn, onAnswered, onL
         })
       setList([])
       window.dispatchEvent(new Event('mods-changed'))
-      onAnswered?.()
+      // 켜다가 멈춘 모드를 껐으면 바로 서버를 켜 보고, 같은 문제가 또 나오면 앱이 알아서 이어서 고친다
+      let started = false
+      if (!serverOn && list.some((m) => files.includes(m.fileName) && m.reason === 'startFail')) {
+        try {
+          window.api.autoFixStart(folderPath).catch((e) => toast(cleanError(e), 'error'))
+          started = true
+          toast('서버를 다시 켜 봐요. 같은 문제가 또 나오면 알아서 이어서 고쳐요')
+        } catch {
+          started = false
+        }
+      }
+      onAnswered?.(started)
     } catch (e) {
       toast(cleanError(e), 'error')
     } finally {
@@ -83,16 +97,23 @@ export default function OffSuggestDialog({ folderPath, serverOn, onAnswered, onL
       </div>
       <div className="off-list">
         {list.map((m) => (
-          <label className="mp-check" key={m.fileName}>
-            <input type="checkbox" checked={picked.has(m.fileName)} onChange={() => toggle(m.fileName)} disabled={busy} />
-            <span className="off-title">{m.title}</span>
-            <span
-              className="mini-tag"
-              title={m.reason === 'client' ? '게임 화면용 모드라서 서버에서는 필요 없어요' : '이 버전은 서버에서 켜면 튕겨요 (모드 쪽 버그). 게임에서는 문제없어요'}
-            >
-              {WHY[m.reason]}
-            </span>
-          </label>
+          <div key={m.fileName}>
+            <label className="mp-check">
+              <input type="checkbox" checked={picked.has(m.fileName)} onChange={() => toggle(m.fileName)} disabled={busy} />
+              <span className="off-title">{m.title}</span>
+              <span
+                className="mini-tag"
+                title={m.reason === 'client' ? '게임 화면용 모드라서 서버에서는 필요 없어요' : '이 버전은 서버에서 켜면 튕겨요 (모드 쪽 버그). 게임에서는 문제없어요'}
+              >
+                {WHY[m.reason]}
+              </span>
+            </label>
+            {m.neededBy && m.neededBy.length > 0 && (
+              <p className="error-text" style={{ margin: '2px 0 8px 28px', fontSize: 13 }}>
+                {`${needers(m.neededBy)}가 이 모드를 필요로 해요. 끄면 서버가 안 켜질 수 있어서 기본으로 고르지 않았어요. 튕긴 원인이 다른 모드일 수 있어요.`}
+              </p>
+            )}
+          </div>
         ))}
       </div>
       {serverOn && <p className="error-text">서버가 켜져 있어서 모드를 끌 수 없어요. 먼저 서버를 꺼 주세요.</p>}

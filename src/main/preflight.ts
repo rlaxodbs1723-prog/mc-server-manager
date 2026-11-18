@@ -5,7 +5,7 @@
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import type { PreflightResult } from '../shared-types'
+import type { OffSuggestion, PreflightResult } from '../shared-types'
 import { parseLenient, readEntries } from './clientjar'
 import { checkAddons } from './bedrock'
 import { scanForOff } from './mods'
@@ -139,6 +139,29 @@ async function checkMods(folderPath: string, forge: boolean): Promise<Pick<Prefl
     if (needs.length) out.push({ mod: m.name, needs })
   }
   return { missing: out, duplicates }
+}
+
+// "끄세요" 목록의 모드를 다른 켜진 모드가 필요로 하는지 붙인다.
+// 라이브러리 모드(Framework 등)는 튕긴 모드 대신 실패해서 지목되는 일이 있는데, 끄면 그걸 쓰는 모드가 못 켜진다
+export async function attachNeededBy(folderPath: string, list: OffSuggestion[]): Promise<OffSuggestion[]> {
+  if (!list.length) return list
+  const info = readServerInfo(folderPath)
+  if (!MODDED.includes(info.software ?? 'vanilla')) return list
+  const forge = info.software === 'forge' || info.software === 'neoforge'
+  const dir = path.join(folderPath, 'mods')
+  if (!fs.existsSync(dir)) return list
+  const metas = new Map<string, ModMeta>()
+  for (const f of fs.readdirSync(dir).filter((x) => /\.jar$/i.test(x))) {
+    const m = await readModCached(path.join(dir, f), forge).catch(() => null)
+    if (m) metas.set(f, m)
+  }
+  return list.map((item) => {
+    const me = metas.get(item.fileName)
+    const own = me && !me.bare ? me.provides[0] : undefined
+    if (!own || BUILT_IN.has(own)) return item
+    const by = [...metas].filter(([f, m]) => f !== item.fileName && m.needs.includes(own)).map(([, m]) => m.name)
+    return by.length ? { ...item, neededBy: [...new Set(by)] } : item
+  })
 }
 
 // 자바는 준 메모리를 처음부터 다 쓰지 않아서, 정말 모자랄 때만 알린다

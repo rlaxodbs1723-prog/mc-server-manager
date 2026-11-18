@@ -518,6 +518,7 @@ export interface OffSuggestion {
   fileName: string
   title: string
   reason: 'client' | 'clientMixin' | 'startFail'
+  neededBy?: string[] // 이 모드를 필요로 하는 다른 켜진 모드 (있으면 끄면 서버가 안 켜질 수 있다)
 }
 
 export interface InstalledMod {
@@ -773,6 +774,7 @@ export interface Api {
   // 서버에 맞지 않아 보이는 모드 (끌지 물어본다). 고른 것만 끄고, 나머지는 다시 묻지 않는다
   offSuggestions: (folderPath: string) => Promise<OffSuggestion[]>
   applyOffSuggestions: (folderPath: string, fileNames: string[]) => Promise<void>
+  autoFixStart: (folderPath: string) => Promise<void> // 끈 모드로 서버를 켜고, 켜다가 같은 문제가 또 나오면 알아서 끄고 다시 켠다 (최대 5번)
   identifyMods: (folderPath: string, part?: ModPart) => Promise<boolean | null> // null: 인터넷·사이트 오류로 알아보지 못함
   // 플레이어용 모드팩(.mrpack)을 저장하고 경로를 돌려준다 (취소하면 null)
   exportClientPack: (folderPath: string, format: 'mrpack' | 'zip') => Promise<string | null>

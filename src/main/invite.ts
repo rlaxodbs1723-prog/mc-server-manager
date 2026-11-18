@@ -5,6 +5,8 @@ import { HEADERS } from './download'
 import { closePort, isPrivate, localIPv4, openPort, publicIpFromWeb } from './upnp'
 import { isBedrockFolder } from './bedrock'
 import { readProperties } from './properties'
+import fs from 'fs'
+import path from 'path'
 import { domainProblem, refreshDomain, setDomainOffline } from './domain'
 import { closeAllTunnels, closeTunnel, linkTunnel, openTunnel, tunnelLinked } from './tunnel'
 
@@ -15,13 +17,33 @@ const openedUdp = new Map<string, number[]>() // 서버 폴더 -> 배드락(neth
 const RENEW_MS = 20 * 60 * 1000
 
 // 배드락은 server-port를 TCP로 열고, 접속자가 쓰는 UDP 포트도 연다. server.properties의 server-udp-ports(`[IP:]밖포트[:안포트]`, 포트는 하나 또는 범위)에서 읽는다
-function udpPortsOf(folderPath: string): number[] {
-  if (!isBedrockFolder(folderPath)) return []
+function udpPortsOf(folderPath: string, serverPort: number): number[] {
+  if (!isBedrockFolder(folderPath)) return voicechatPort(folderPath, serverPort)
   const value = (readProperties(folderPath)['server-udp-ports'] ?? '').replace(/^(\[[^\]]*\]|\d+\.\d+\.\d+\.\d+):/, '')
   const m = /^(\d+)(?:-(\d+))?/.exec(value)
   if (!m) return []
   const [a, b] = [Number(m[1]), Number(m[2] ?? m[1])]
   return Array.from({ length: Math.max(0, Math.min(b - a + 1, 20)) }, (_, i) => a + i)
+}
+// Simple Voice Chat 모드는 서버 포트와 별개로 UDP 포트(기본 24454)를 쓴다. 설정 파일의 port가 -1이면 서버 포트를 같이 쓴다.
+// 서버를 처음 켤 때는 모드가 설정 파일을 아직 안 만들었을 수 있어서, 모드 파일이 있으면 기본 포트로 본다
+function voicechatPort(folderPath: string, serverPort: number): number[] {
+  try {
+    for (const rel of ['config/voicechat/voicechat-server.properties', 'plugins/voicechat/voicechat-server.properties']) {
+      const file = path.join(folderPath, rel)
+      if (!fs.existsSync(file)) continue
+      const m = /^s*ports*=s*(-?d+)/m.exec(fs.readFileSync(file, 'utf8'))
+      const p = m ? Number(m[1]) : 24454
+      return p === -1 ? [serverPort] : p > 0 && p < 65536 ? [p] : []
+    }
+    for (const dir of ['mods', 'plugins']) {
+      const d = path.join(folderPath, dir)
+      if (fs.existsSync(d) && fs.readdirSync(d).some((n) => /voicechat/i.test(n) && /.jar$/i.test(n))) return [24454]
+    }
+  } catch {
+    // 읽지 못하면 열지 않는다
+  }
+  return []
 }
 let emitEvent: (e: ServerEvent) => void = () => {}
 
@@ -41,7 +63,7 @@ async function open(folderPath: string, name: string): Promise<void> {
   const port = serverPort(folderPath)
   const bedrock = isBedrockFolder(folderPath) // 배드락은 UDP로 접속한다
   const proto = 'TCP' // 배드락도 server-port는 TCP (접속자용 UDP 포트는 따로 연다)
-  const udp = udpPortsOf(folderPath)
+  const udp = udpPortsOf(folderPath, port)
   const lan = localIPv4().map((ip) => withPort(ip, port, bedrock))
   set(folderPath, { state: 'opening', lan })
   // 시험용: MCSM_FAKE_INVITE=double-nat 처럼 주고 켜면 그 원인으로 실패한 척한다 (빨간 표시 확인용)
@@ -71,7 +93,13 @@ async function open(folderPath: string, name: string): Promise<void> {
   }
   openedPorts.set(folderPath, port)
   openedUdp.set(folderPath, udp)
-  await Promise.all(udp.map((p) => openPort(p, `MC CubePanel - ${name}`, 'UDP').catch(() => undefined)))
+  await Promise.all(
+    udp.map((p) =>
+      openPort(p, `MC CubePanel - ${name}`, 'UDP')
+        .then((r) => console.log(`[port] UDP ${p} open: ${r.ok ? 'ok' : 'failed - ' + r.message}`))
+        .catch(() => undefined)
+    )
+  )
   // 포트는 1시간짜리라, 서버가 켜져 있는 동안 20분마다 다시 요청해 늘린다
   clearInterval(renewTimers.get(folderPath))
   renewTimers.set(

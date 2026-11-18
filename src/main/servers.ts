@@ -32,7 +32,8 @@ import { checkImportFolder, copyServerFolder } from './importserver'
 import { getServerIcon, setServerIconFrom } from './icon'
 import { notify } from './notify'
 import { analyzeCrash, analyzeJoinFailure } from './crash'
-import { suggestFromCrash } from './mods'
+import { applyOffSuggestions, offSuggestions, suggestFromCrash } from './mods'
+import { attachNeededBy } from './preflight'
 import { readYamlValue, writeYamlValue } from './yamlvalue'
 import { appLog, emitEvent, getPlayers, getStartedAt, getState, serverPort, isEulaAccepted, onCrash, onJoinError, onServerEvent, onWorldError, startServer } from './runner'
 
@@ -747,8 +748,57 @@ const serverName = (folderPath: string): string => {
 
 // 서버가 다 켜지면 알려 준다 (켜는 데 오래 걸리는 모드 서버용). 창을 보고 있으면 알리지 않는다
 onServerEvent((e) => {
-  if (e.type === 'status' && e.state === 'running') notify(`${serverName(e.folderPath)} 서버가 켜졌어요`, '이제 플레이어들이 들어올 수 있어요.')
+  if (e.type === 'status' && e.state === 'running') {
+    const chain = chainOf(e.folderPath)
+    autoFix.delete(e.folderPath)
+    if (chain?.fixed.length) {
+      appLog(e.folderPath, `[앱] 서버에 안 맞는 모드 ${chain.fixed.length}개를 끄고 다시 켜서, 서버가 켜졌어요: ${chain.fixed.join(', ')}`)
+      notify(`${serverName(e.folderPath)} 서버가 켜졌어요`, `안 맞는 모드 ${chain.fixed.length}개(${chain.fixed.join(', ')})를 끄고 켰어요. 모드 탭에서 다시 켤 수 있어요.`)
+    } else notify(`${serverName(e.folderPath)} 서버가 켜졌어요`, '이제 플레이어들이 들어올 수 있어요.')
+  }
 })
+
+// ---------- 켜다가 멈추면 안 맞는 모드를 끄고 이어서 다시 켜기 ----------
+// 포지는 처음 실패한 모드에서 멈춰서 한 번에 오류가 하나만 나온다. 사용자가 "끄기"를 한 번 누르면, 같은 종류의 문제가 또 나와도 알아서 끄고 다시 켠다 (최대 5번).
+// 다른 모드가 필요로 하는 모드는 자동으로 끄지 않는다 (평소처럼 창으로 물어본다)
+const AUTOFIX_MAX = 5
+const AUTOFIX_TTL_MS = 30 * 60_000
+const autoFix = new Map<string, { left: number; fixed: string[]; at: number }>()
+const chainOf = (folderPath: string): { left: number; fixed: string[]; at: number } | undefined => {
+  const c = autoFix.get(folderPath)
+  if (c && Date.now() - c.at > AUTOFIX_TTL_MS) {
+    autoFix.delete(folderPath)
+    return undefined
+  }
+  return c
+}
+
+export async function startWithAutoFix(folderPath: string, report: (p: Progress) => void = () => undefined): Promise<void> {
+  autoFix.set(folderPath, { left: AUTOFIX_MAX, fixed: [], at: Date.now() })
+  appLog(folderPath, `[앱] 서버에 안 맞는 모드를 끄고 켜 봐요. 같은 문제가 또 나오면 알아서 이어서 고쳐요. (최대 ${AUTOFIX_MAX}번)`)
+  await startServerAt(folderPath, report)
+}
+
+// 켜다가 튕겼을 때 한 번 고치고 다시 켠다. 고쳤으면 true (튕김 알림은 건너뛴다)
+async function autoFixRound(folderPath: string, chain: { left: number; fixed: string[]; at: number }): Promise<boolean> {
+  if (chain.left <= 0) return false
+  const list = (await attachNeededBy(folderPath, offSuggestions(folderPath))).filter((x) => x.reason === 'startFail' && !x.neededBy?.length)
+  if (!list.length) return false
+  await applyOffSuggestions(folderPath, list.map((x) => x.fileName))
+  chain.left--
+  chain.fixed.push(...list.map((x) => x.title))
+  appLog(folderPath, `[앱] 서버에서 안 맞는 모드를 껐어요: ${list.map((x) => x.title).join(', ')} → 다시 켜 봐요 (${AUTOFIX_MAX - chain.left}/${AUTOFIX_MAX})`)
+  const timer = setTimeout(() => {
+    pendingRestarts.delete(timer)
+    if (getState(folderPath) !== 'stopped') return
+    startServerAt(folderPath, () => undefined).catch((e) => {
+      autoFix.delete(folderPath)
+      appLog(folderPath, `다시 켜지 못했어요: ${e instanceof Error ? e.message : e}`)
+    })
+  }, 3000)
+  pendingRestarts.add(timer)
+  return true
+}
 
 // ---------- 튕기면 자동으로 다시 켜기 ----------
 // 다 켜진 뒤에 튕겼을 때만 5초 뒤 다시 켠다. 10분 안에 3번 넘게 튕기면 계속 튕기는 것이라 멈춘다.
@@ -783,6 +833,12 @@ onWorldError((folderPath) => {
 onCrash(async (folderPath, { log, startedAt, wasRunning }) => {
   // 게임 화면용 모드 때문에 켜다가 멈췄으면 끌지 물어볼 목록에 넣는다 (창은 튕김 알림 뒤에 화면에서 띄운다)
   await suggestFromCrash(folderPath, log).catch(() => 0)
+  // "끄기"를 눌러 이어서 고치는 중이면, 켜다가 튕긴 이번 문제도 알아서 고치고 다시 켠다
+  const chain = chainOf(folderPath)
+  if (chain) {
+    if (!wasRunning && (await autoFixRound(folderPath, chain).catch(() => false))) return
+    autoFix.delete(folderPath) // 더 고칠 것이 없거나 한도까지 갔다: 평소처럼 알린다
+  }
   const analysis = analyzeCrash(folderPath, log, startedAt)
   const reason = analysis.title
   notify(`${serverName(folderPath)} 서버가 튕겼어요`, reason + (wasRunning ? '' : ' (켜지는 중에 꺼졌어요)'))
