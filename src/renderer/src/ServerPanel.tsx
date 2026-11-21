@@ -1,4 +1,6 @@
 import { ArrowDown, CopyPlus, FolderOpen, Pencil, Play, Search, Send, Settings, Share2, Square, Trash2, X, Zap } from 'lucide-react'
+import DiscordLogo from './DiscordLogo'
+import { DiscordDialog } from './DiscordHook'
 import ShareDialog from './ShareDialog'
 import { PERM_INFO, PermsContext, permsLabel } from './perms'
 import LoginGate, { useAccount } from './LoginGate'
@@ -153,6 +155,11 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
       node
     )
   const [showShare, setShowShare] = useState(false)
+  const [showDiscord, setShowDiscord] = useState(false)
+  const [discordOn, setDiscordOn] = useState(false) // 디스코드 알림이 연결돼 있는지 (버튼 색)
+  useEffect(() => {
+    if (!showDiscord) window.api.getDiscordHook(folderPath).then((v) => setDiscordOn(v.configured)).catch(() => undefined)
+  }, [folderPath, showDiscord])
   const account = useAccount()
   const [askLogin, setAskLogin] = useState(false)
   const [askLeave, setAskLeave] = useState(false)
@@ -439,7 +446,31 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
     <PermsContext.Provider value={can}>
     <div className="server">
       <header className="server-head">
-        <SoftwareBadge software={software} size={52} name={server.name} icon={server.icon} />
+        {remote || bedrock ? (
+          <SoftwareBadge software={software} size={52} name={server.name} icon={server.icon} />
+        ) : (
+          // 마우스를 올리면 연필이 떠서, 눌러서 서버 아이콘을 바꿀 수 있다 (설정 → 게임 탭의 "서버 아이콘"과 같다)
+          <button
+            className="icon-edit"
+            title="눌러서 서버 아이콘 바꾸기"
+            onClick={async () => {
+              try {
+                const url = await window.api.pickServerIcon(folderPath)
+                if (url) {
+                  window.dispatchEvent(new Event('servers-changed'))
+                  toast('서버 아이콘을 바꿨어요. 서버를 껐다 켜야 보여요')
+                }
+              } catch (e) {
+                toast(cleanError(e), 'error')
+              }
+            }}
+          >
+            <SoftwareBadge software={software} size={52} name={server.name} icon={server.icon} />
+            <span className="icon-edit-pen">
+              <Pencil size={20} />
+            </span>
+          </button>
+        )}
         <div className="title">
           <h1 className={remote ? '' : 'editable'} onClick={() => !remote && setNaming('rename')} title={remote ? undefined : '눌러서 이름 바꾸기'}>
             <span className="n">{server.name}</span>
@@ -492,6 +523,13 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
           <>
           <button className="btn icon ghost" onClick={() => setShowShare(true)} title="서버 공유: 친구 CubePanel에서도 이 서버를 보고 관리하게 해요">
             <Share2 size={19} />
+          </button>
+          <button
+            className={`btn icon ghost ${discordOn ? 'discord-on' : ''}`}
+            onClick={() => setShowDiscord(true)}
+            title={discordOn ? '디스코드 알림: 연결됨' : '디스코드 알림: 서버가 켜지고 꺼질 때, 접속자가 들어올 때 내 디스코드 채널에 알려 줘요'}
+          >
+            <DiscordLogo size={19} bare />
           </button>
           <button className="btn icon ghost" onClick={() => setShowSettings(true)} title="서버 설정">
             <Settings size={19} />
@@ -787,6 +825,7 @@ export default function ServerPanel({ server, onChanged, onDeleted, request, onR
           <AutoClose onClose={() => setAskLogin(false)} />
         </LoginGate>
       )}
+      {showDiscord && <DiscordDialog folderPath={folderPath} onClose={() => setShowDiscord(false)} />}
       {showShare && (
         <LoginGate onClose={() => setShowShare(false)}>
           <ShareDialog folderPath={folderPath} onClose={() => setShowShare(false)} />

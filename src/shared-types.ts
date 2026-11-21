@@ -514,6 +514,16 @@ export interface InstalledDatapack {
 }
 
 // 서버에 맞지 않아 보여서 끌지 물어볼 모드
+// 디스코드 알림 설정 (웹후크 주소 자체는 화면에 보내지 않고 끝 네 글자만 준다)
+export interface DiscordHookView {
+  configured: boolean
+  tail: string
+  start: boolean
+  stop: boolean
+  join: boolean
+  leave: boolean
+}
+
 export interface OffSuggestion {
   fileName: string
   title: string
@@ -715,7 +725,8 @@ export interface Api {
   // CurseForge 페이지만 브라우저로 연다
   openExternal: (url: string) => Promise<void>
   // 버그 제보: 디스코드로 바로 보낸다 (버전·윈도우·언어는 앱이 붙인다). files는 사진·영상 경로
-  sendBugReport: (title: string, details: string, files: string[]) => Promise<void>
+  sendBugReport: (title: string, details: string, files: string[], logFolder?: string) => Promise<void> // logFolder: 서버 로그를 같이 보낼 서버 폴더
+  bugLogPreview: (folderPath: string) => Promise<{ text: string; lines: number }> // 보내기 전에 보여 줄 로그 (개인 정보는 이미 지운 것)
   pickBugFiles: () => Promise<BugFile[]>
   getMyBugReports: () => Promise<MyBugReport[]>
   markBugRepliesSeen: () => Promise<void>
@@ -774,6 +785,9 @@ export interface Api {
   // 서버에 맞지 않아 보이는 모드 (끌지 물어본다). 고른 것만 끄고, 나머지는 다시 묻지 않는다
   offSuggestions: (folderPath: string) => Promise<OffSuggestion[]>
   applyOffSuggestions: (folderPath: string, fileNames: string[]) => Promise<void>
+  getDiscordHook: (folderPath: string) => Promise<DiscordHookView>
+  setDiscordHook: (folderPath: string, patch: { url?: string; start?: boolean; stop?: boolean; join?: boolean; leave?: boolean }) => Promise<DiscordHookView> // url이 빈 글자면 지운다
+  testDiscordHook: (folderPath: string) => Promise<void>
   autoFixStart: (folderPath: string) => Promise<void> // 끈 모드로 서버를 켜고, 켜다가 같은 문제가 또 나오면 알아서 끄고 다시 켠다 (최대 5번)
   identifyMods: (folderPath: string, part?: ModPart) => Promise<boolean | null> // null: 인터넷·사이트 오류로 알아보지 못함
   // 플레이어용 모드팩(.mrpack)을 저장하고 경로를 돌려준다 (취소하면 null)

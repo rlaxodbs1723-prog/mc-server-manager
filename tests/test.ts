@@ -38,7 +38,8 @@ import dgram from 'dgram'
 import { execFileSync } from 'child_process'
 import { langFromLocale, translator } from '../src/i18n'
 import { tr as mainTr } from '../src/main/i18n'
-import { BUG_MAX_BYTES, bugFileInfo, bugMessage, sendBugReport } from '../src/main/bugreport'
+import { getDiscordHook, setDiscordHook, startDiscordNotifications, testDiscordHook } from '../src/main/discord'
+import { BUG_MAX_BYTES, bugFileInfo, bugMessage, redactLog, sendBugReport } from '../src/main/bugreport'
 import { d1Store, handleDomain } from '../relay/domain.mjs'
 import { child, parseBedrockLevelDat, serializeBedrockLevelDat } from '../src/main/nbt'
 import { getBedrockExperiments, setBedrockExperiment, setBedrockHardcore } from '../src/main/bedrockexperiments'
@@ -250,6 +251,112 @@ async function quick(): Promise<void> {
   await bedrockChecks()
   await backupChecks()
   await shareChecks()
+  await check('디스코드 알림: 웹후크 주소 검사·저장(끝 네 글자만 화면에)·알림 종류 바꾸기·지우기·테스트 메시지(아무도 안 부르기)', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcsm-discord-'))
+    const realFetch = globalThis.fetch
+    try {
+      fs.writeFileSync(path.join(dir, 'server-manager.json'), JSON.stringify({ name: '우리 서버', software: 'vanilla', mcVersion: '1.21', createdAt: '' }))
+      expect(!getDiscordHook(dir).configured, '처음부터 연결돼 있어요')
+      for (const bad of ['', 'https://example.com/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyz0123', 'http://discord.com/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyz0123', 'https://discord.com/api/webhooks/abc/def']) {
+        let threw = false
+        try {
+          setDiscordHook(dir, { url: bad || ' x ' })
+        } catch {
+          threw = true
+        }
+        expect(threw, bad + '을(를) 받아들였어요')
+      }
+      const url = 'https://discord.com/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyzABCD'
+      const v = setDiscordHook(dir, { url })
+      expect(v.configured && v.tail === 'ABCD' && v.start && v.stop && !v.join && !v.leave, '기본값이 이상해요: ' + JSON.stringify(v))
+      expect(!JSON.stringify(v).includes('abcdefghij'), '화면으로 가는 값에 주소가 들어 있어요')
+      expect(setDiscordHook(dir, { join: true, start: false }).join === true && getDiscordHook(dir).start === false && getDiscordHook(dir).tail === 'ABCD', '알림 종류를 바꾸면 주소가 지워져요')
+      // 테스트 메시지: 주소로 한 번 보내고, @everyone 같은 호출은 막는다
+      const calls: { url: string; body: string }[] = []
+      globalThis.fetch = (async (u: unknown, init?: { body?: string }) => {
+        calls.push({ url: String(u), body: String(init?.body ?? '') })
+        return new Response(null, { status: 204 })
+      }) as typeof fetch
+      await testDiscordHook(dir)
+      const sent = JSON.parse(calls[0].body)
+      expect(calls.length === 1 && calls[0].url === url && JSON.stringify(sent.allowed_mentions) === '{"parse":[]}' && sent.embeds[0].title === '우리 서버', '테스트 메시지가 이상해요: ' + calls[0]?.body)
+      globalThis.fetch = (async () => new Response(null, { status: 404 })) as typeof fetch
+      let msg = ''
+      try {
+        await testDiscordHook(dir)
+      } catch (e) {
+        msg = (e as Error).message
+      }
+      expect(/웹후크가 지워졌|webhook was deleted/i.test(msg), '지워진 웹후크의 안내가 이상해요: ' + msg)
+      setDiscordHook(dir, { url: '' })
+      expect(!getDiscordHook(dir).configured && !fs.existsSync(path.join(dir, '.server-manager-discord.json')), '해제했는데 주소가 남았어요')
+    } finally {
+      globalThis.fetch = realFetch
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+  await check('디스코드 알림: 켜짐·접속 모아서·나감·끌 때 "모두 나갔어요"는 없음·평범하게 꺼짐·튕김(꺼짐과 겹치지 않음)', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcsm-discord-ev-'))
+    const realFetch = globalThis.fetch
+    process.env.MCSM_DISCORD_WAIT_MS = '40'
+    const sent: string[] = []
+    const wait = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
+    try {
+      fs.writeFileSync(path.join(dir, 'server-manager.json'), JSON.stringify({ name: '이벤트 서버', software: 'vanilla', mcVersion: '1.21', createdAt: '' }))
+      setDiscordHook(dir, { url: 'https://discord.com/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyzABCD', join: true, leave: true })
+      globalThis.fetch = (async (_u: unknown, init?: { body?: string }) => {
+        const e = JSON.parse(String(init?.body ?? '{}')).embeds?.[0]
+        sent.push(String(e?.description ?? ''))
+        return new Response(null, { status: 204 })
+      }) as typeof fetch
+      startDiscordNotifications()
+      emitEvent({ type: 'status', folderPath: dir, state: 'running' })
+      emitEvent({ type: 'players', folderPath: dir, players: ['Alice', 'Bob'] })
+      await wait(200)
+      expect(sent.length === 2 && /켜졌|up|启动/i.test(sent[0]) && /Alice, Bob/.test(sent[1]) && /2/.test(sent[1]), '켜짐·접속 알림이 이상해요: ' + JSON.stringify(sent))
+      emitEvent({ type: 'players', folderPath: dir, players: ['Alice'] })
+      await wait(200)
+      expect(sent.length === 3 && /Bob/.test(sent[2]) && !/Alice/.test(sent[2]), '나감 알림이 이상해요: ' + JSON.stringify(sent))
+      // 들어왔다 바로 나가면 알리지 않는다
+      emitEvent({ type: 'players', folderPath: dir, players: ['Alice', 'Carl'] })
+      emitEvent({ type: 'players', folderPath: dir, players: ['Alice'] })
+      await wait(200)
+      expect(sent.length === 3, '들어왔다 바로 나갔는데 알렸어요: ' + JSON.stringify(sent))
+      // 끌 때: 끄는 중에 사람 목록이 비어도 "나갔어요"를 쏟아 내지 않고, 꺼짐 알림 하나만
+      emitEvent({ type: 'status', folderPath: dir, state: 'stopping' })
+      emitEvent({ type: 'players', folderPath: dir, players: [] })
+      emitEvent({ type: 'status', folderPath: dir, state: 'stopped' })
+      await wait(250)
+      expect(sent.length === 4 && /꺼졌|off|关闭/i.test(sent[3]), '끌 때 알림이 이상해요: ' + JSON.stringify(sent.slice(3)))
+      // 튕김: 꺼짐 알림 대신 튕김 알림 하나
+      emitEvent({ type: 'status', folderPath: dir, state: 'running' })
+      await wait(100)
+      emitEvent({ type: 'status', folderPath: dir, state: 'stopped' })
+      emitEvent({ type: 'crashed', folderPath: dir, reason: '메모리가 부족해요', restarting: false, analysis: {} as never })
+      await wait(250)
+      const tail = sent.slice(4)
+      expect(tail.length === 2 && /켜졌|up|启动/i.test(tail[0]) && /튕겼|crashed|崩溃/i.test(tail[1]) && /메모리가 부족해요/.test(tail[1]), '튕김 알림이 이상해요: ' + JSON.stringify(tail))
+      // 알림을 안 쓰는 서버는 아무것도 보내지 않는다
+      setDiscordHook(dir, { url: '' })
+      const before = sent.length
+      emitEvent({ type: 'status', folderPath: dir, state: 'running' })
+      await wait(100)
+      expect(sent.length === before, '해제했는데 알림을 보냈어요')
+    } finally {
+      globalThis.fetch = realFetch
+      delete process.env.MCSM_DISCORD_WAIT_MS
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+  await check('버그 제보 로그: 사용자 이름·IP·이메일은 지우고, 내 컴퓨터 주소·모드 버전은 남긴다', () => {
+    const r = redactLog('at C:\\Users\\rlaxo\\AppData\\Roaming\\x.jar\nfile /C:/Users/홍길동/OneDrive/a.txt\nlogged in from /203.0.113.45:51234 and 10.0.0.7:25565\nlocal 127.0.0.1:25565 bind 0.0.0.0\nmod forge-1.20.1-47.4.0 ver 1.2.3\n|VanillaBackport|vanillabackport|1.1.7.10|SIDED|\nmail a.b@example.com')
+    expect(!/rlaxo|홍길동/.test(r), 'Windows 사용자 이름이 남았어요: ' + r)
+    expect(!/203\.0\.113\.45|10\.0\.0\.7/.test(r) && /<ip>/.test(r), 'IP가 남았어요: ' + r)
+    expect(/127\.0\.0\.1:25565/.test(r) && /0\.0\.0\.0/.test(r), '내 컴퓨터 주소까지 지웠어요: ' + r)
+    expect(/forge-1\.20\.1-47\.4\.0/.test(r) && /ver 1\.2\.3/.test(r), '모드 버전을 지웠어요: ' + r)
+    expect(/\|1\.1\.7\.10\|/.test(r), '4자리 모드 버전을 IP로 착각해서 지웠어요: ' + r)
+    expect(!/example\.com/.test(r) && /<email>/.test(r), '이메일이 남았어요: ' + r)
+  })
   await check('버그 제보: 디스코드 메시지 (앱 정보 자동, 길이 자르기, 아무도 안 부르기, 파일 검사)', async () => {
     type Embed = { title: string; description: string; fields: { name: string; value: string }[] }
     const m = bugMessage('모드 & 설치 @everyone', '설명\n둘째 줄', ['a.png'])
@@ -697,6 +804,42 @@ async function domainChecks(): Promise<void> {
       expect(/쓸 수 없는 이름/.test(msg), `막은 이름의 안내 문구가 이상해요: ${msg}`)
     } finally {
       delete process.env.MCSM_DOMAIN_RELAY
+      server.close()
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+  await check('이름 주소: 서버를 켤 때 잠깐 실패하면 다시 해 보고, 확정된 오류(이미 쓰는 이름)는 다시 하지 않는다', async () => {
+    let calls = 0
+    let failFirst = 2
+    let mode: 'flaky' | 'taken' = 'flaky'
+    const server = http.createServer((req, res) => {
+      req.resume()
+      req.on('end', () => {
+        calls++
+        if (mode === 'taken') {
+          res.writeHead(409, { 'Content-Type': 'application/json' })
+          return res.end(JSON.stringify({ ok: false, error: 'taken' }))
+        }
+        if (failFirst-- > 0) return res.destroy() // 연결이 끊기는 것처럼
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ ok: true, host: 'flaky.cubepanel.kr' }))
+      })
+    })
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+    process.env.MCSM_DOMAIN_RELAY = `http://127.0.0.1:${(server.address() as { port: number }).port}/api/domain`
+    process.env.MCSM_DOMAIN_RETRY_MS = '20'
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcsm-domain-retry-'))
+    try {
+      fs.writeFileSync(path.join(dir, 'server-manager.json'), JSON.stringify({ name: 't', software: 'vanilla', mcVersion: '1.21', createdAt: '', domain: { name: 'flaky', key: 'k'.repeat(32) } }))
+      fs.writeFileSync(path.join(dir, 'server.properties'), 'server-port=30002\n')
+      const host = await refreshDomain(dir)
+      expect(host === 'flaky.cubepanel.kr' && calls === 3, `두 번 끊겼는데 세 번째에 성공하지 못했어요: host=${host}, 요청 ${calls}번`)
+      mode = 'taken'
+      calls = 0
+      expect((await refreshDomain(dir)) === null && calls === 1, `이미 쓰는 이름인데 다시 해 봤어요: 요청 ${calls}번`)
+    } finally {
+      delete process.env.MCSM_DOMAIN_RELAY
+      delete process.env.MCSM_DOMAIN_RETRY_MS
       server.close()
       fs.rmSync(dir, { recursive: true, force: true })
     }

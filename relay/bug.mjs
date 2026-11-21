@@ -6,7 +6,7 @@
 const NAME = 'MC CubePanel Bug Report'
 const NO_MENTIONS = { parse: [] }
 const MAX_FILE = 4 * 1024 * 1024 // Netlify 함수 요청 한도(6MB) 안에 들어가게
-const TYPES = /\.(png|jpe?g|gif|webp|mp4|mov|webm)$/i
+const TYPES = /\.(png|jpe?g|gif|webp|mp4|mov|webm|txt)$/i // txt: 서버 로그 (앱이 개인 정보를 지우고 보낸다)
 const DISCORD = 'https://discord.com/api/v10'
 const PAGES = 5 // 답장을 찾을 때 제보 뒤로 최대 500개 메시지까지 본다
 let channelId = null

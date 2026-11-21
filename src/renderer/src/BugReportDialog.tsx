@@ -1,10 +1,10 @@
 import { Paperclip, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import type { BugFile, MyBugReport } from '../../shared-types'
+import type { BugFile, MyBugReport, ServerListItem } from '../../shared-types'
 import DiscordLogo from './DiscordLogo'
 import DropZone from './DropZone'
 import { Modal, useToast } from './ui'
-import { cleanError } from './util'
+import { cleanError, readStored } from './util'
 
 const MAX_FILES = 10
 const mb = (n: number) => (n / 1024 / 1024).toFixed(1)
@@ -20,6 +20,33 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
   const [tab, setTab] = useState<'new' | 'mine'>('new')
   const [openId, setOpenId] = useState<string | null>(null) // 눌러서 자세히 보는 제보
   const open = mine.find((r) => r.id === openId) ?? null
+  // 서버 로그 첨부: 문제가 생긴 서버를 골라 로그를 같이 보낸다 (기본은 안 보냄, 보내기 전에 내용을 볼 수 있다)
+  const [servers, setServers] = useState<ServerListItem[]>([])
+  const [logOn, setLogOn] = useState(false)
+  const [logServer, setLogServer] = useState('')
+  const [logPreview, setLogPreview] = useState<{ text: string; lines: number } | null>(null)
+  const [logError, setLogError] = useState('')
+  useEffect(() => {
+    window.api.listServers().then((list) => {
+      const mine = list.filter((s) => !s.remote)
+      setServers(mine)
+      const last = readStored<string | null>('lastServer', null)
+      setLogServer(mine.find((s) => s.folderPath === last)?.folderPath ?? mine[0]?.folderPath ?? '')
+    })
+  }, [])
+  useEffect(() => {
+    setLogPreview(null)
+    setLogError('')
+    if (!logOn || !logServer) return
+    let on = true
+    window.api
+      .bugLogPreview(logServer)
+      .then((p) => on && setLogPreview(p))
+      .catch((e) => on && setLogError(cleanError(e)))
+    return () => {
+      on = false
+    }
+  }, [logOn, logServer])
 
   // 내가 보낸 제보와 답장. 답장이 안 읽은 게 있으면 처음부터 그쪽을 보여 준다
   useEffect(() => {
@@ -69,7 +96,8 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
       await window.api.sendBugReport(
         title,
         details,
-        files.map((f) => f.path)
+        files.map((f) => f.path),
+        logOn && logServer ? logServer : undefined
       )
       toast('제보를 보냈어요. 고마워요!')
       onClose()
@@ -154,6 +182,33 @@ export default function BugReportDialog({ onClose }: { onClose: () => void }) {
               사진·영상 첨부
             </button>
           </div>
+          {servers.length > 0 && (
+            <div className="bug-log">
+              <label className="mp-check">
+                <input type="checkbox" checked={logOn} onChange={(e) => setLogOn(e.target.checked)} disabled={sending} />
+                <span>서버 로그도 함께 보내기</span>
+              </label>
+              {logOn && (
+                <>
+                  <select className="input" value={logServer} onChange={(e) => setLogServer(e.target.value)} disabled={sending}>
+                    {servers.map((s) => (
+                      <option key={s.folderPath} value={s.folderPath}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="hint">서버가 튕기거나 안 켜질 때 원인을 바로 찾을 수 있어요. 컴퓨터 사용자 이름, IP 주소, 이메일은 지우고 보내요.</p>
+                  {logError && <p className="error-text">{logError}</p>}
+                  {logPreview && (
+                    <details>
+                      <summary>{`보낼 내용 보기 (${logPreview.lines}줄)`}</summary>
+                      <textarea className="input bug-log-preview" readOnly value={logPreview.text} rows={8} />
+                    </details>
+                  )}
+                </>
+              )}
+            </div>
+          )}
           <p className="hint">앱 버전과 윈도우 정보가 같이 보내져요. 사진·영상은 파일당 4MB까지예요. 답장이 오면 알려 드려요.</p>
           <div className="bug-discord">
             <span>디스코드 서버에 가입하면 더 빨리 답변을 받을 수 있어요.</span>

@@ -895,7 +895,8 @@ export function renameServer(folderPath: string, name: string): void {
   fs.writeFileSync(path.join(folderPath, INFO_FILE), JSON.stringify(info, null, 2))
 }
 
-const SKIP_ON_COPY = new Set(['logs', 'crash-reports', CREATING_FILE, 'session.lock', '.server-manager-running'])
+// '.server-manager-discord.json'은 디스코드 웹후크 주소(비밀 값)라서 복제본에 넣지 않는다 (복제본이 같은 채널에 알림을 보내지 않게)
+const SKIP_ON_COPY = new Set(['logs', 'crash-reports', CREATING_FILE, 'session.lock', '.server-manager-running', '.server-manager-discord.json'])
 
 export async function duplicateServer(folderPath: string, name: string): Promise<ServerInfo> {
   if (getState(folderPath) !== 'stopped') throw new Error('서버를 끈 다음에 복제할 수 있어요.')

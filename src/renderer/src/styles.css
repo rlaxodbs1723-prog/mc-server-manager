@@ -1192,3 +1192,20 @@ img.profile-avatar { object-fit: cover; }
 .lib-state { position: absolute; left: 8px; bottom: 8px; display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text-2); padding: 3px 8px; border-radius: 999px; background: rgba(0, 0, 0, 0.45); }
 .lib-name { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lib-sub { font-size: 13px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 서버 아이콘: 마우스를 올리면 연필이 떠서 눌러서 바꿀 수 있다 */
+.icon-edit { position: relative; flex-shrink: 0; padding: 0; border-radius: 16px; cursor: pointer; display: inline-grid; }
+.icon-edit .icon-edit-pen { position: absolute; inset: 0; display: grid; place-items: center; border-radius: 16px; background: rgba(0, 0, 0, 0.55); color: #fff; opacity: 0; transition: opacity 0.15s; }
+.icon-edit:hover .icon-edit-pen, .icon-edit:focus-visible .icon-edit-pen { opacity: 1; }
+
+/* 버그 제보: 서버 로그 첨부 */
+.bug-log { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 10px; background: var(--surface); }
+.bug-log select { height: 40px; }
+.bug-log summary { cursor: pointer; font-size: 13px; color: var(--text-2); }
+.bug-log .bug-log-preview { margin-top: 6px; font-family: ui-monospace, Consolas, monospace; font-size: 11.5px; min-height: 120px; white-space: pre; }
+
+/* 디스코드 알림 (서버 설정 → 자동) */
+.discord-hook { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+.discord-hook .input { flex: 1; min-width: 0; height: 40px; }
+.discord-kinds { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; margin-top: 12px; }
+.btn.discord-on { color: #5865f2; }

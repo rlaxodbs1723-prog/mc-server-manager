@@ -28,7 +28,8 @@ import { arclightMcVersions, getLoaderVersions } from './loaders'
 import * as mods from './mods'
 import { CancelledError, cancelTask, runCancellable, throwIfCancelled } from './cancel'
 import { notify } from './notify'
-import { bugFileInfo, checkBugReplies, getMyBugReports, markBugRepliesSeen, pickBugFiles, sendBugReport } from './bugreport'
+import { getDiscordHook, setDiscordHook, startDiscordNotifications, testDiscordHook } from './discord'
+import { bugFileInfo, buildBugLog, checkBugReplies, getMyBugReports, markBugRepliesSeen, pickBugFiles, sendBugReport } from './bugreport'
 import { browseModpacks, cleanModpackTemp, gameVersions, modpackVersions, prepareFromCurseForge, prepareFromModrinth, prepareFromUpload } from './modpack'
 import * as datapacks from './datapacks'
 import { getStats, stopAllSamplers } from './stats'
@@ -385,6 +386,18 @@ async function startWithChecks(target: string, report: (p: Progress) => void): P
   trackUsage(`start-${info.software ?? 'vanilla'}`)
 }
 setStarter((f) => startWithChecks(f, () => undefined))
+startDiscordNotifications() // 서버 켜짐·꺼짐·튕김·접속을 내 디스코드 채널에 알려 준다 (서버마다 웹후크를 붙여 넣은 경우만)
+ipcMain.handle('getDiscordHook', (_event, folderPath: string) => getDiscordHook(checkServerFolder(folderPath)))
+ipcMain.handle('setDiscordHook', (_event, folderPath: string, patch: { url?: string; start?: boolean; stop?: boolean; join?: boolean; leave?: boolean }) =>
+  setDiscordHook(checkServerFolder(folderPath), {
+    ...(typeof patch?.url === 'string' && { url: patch.url }),
+    ...(typeof patch?.start === 'boolean' && { start: patch.start }),
+    ...(typeof patch?.stop === 'boolean' && { stop: patch.stop }),
+    ...(typeof patch?.join === 'boolean' && { join: patch.join }),
+    ...(typeof patch?.leave === 'boolean' && { leave: patch.leave })
+  })
+)
+ipcMain.handle('testDiscordHook', (_event, folderPath: string) => testDiscordHook(checkServerFolder(folderPath)))
 ipcMain.handle('autoFixStart', (event, folderPath: string) => {
   const target = checkServerFolder(folderPath)
   return startWithAutoFix(target, (p) => event.sender.send('progress', { ...p, folderPath: target }))
@@ -538,8 +551,9 @@ ipcMain.handle('getMyBugReports', () => getMyBugReports())
 ipcMain.handle('markBugRepliesSeen', () => markBugRepliesSeen())
 ipcMain.handle('getInbox', (_event, fresh?: boolean) => getInbox(!!fresh))
 ipcMain.handle('refreshBugReplies', () => checkBugReplies(() => BrowserWindow.getAllWindows().forEach((w) => w.webContents.send('bugReplies'))))
-ipcMain.handle('sendBugReport', (_event, title: string, details: string, files: string[]) =>
-  sendBugReport(String(title ?? ''), String(details ?? ''), Array.isArray(files) ? files.slice(0, 10).map(String) : [])
+ipcMain.handle('bugLogPreview', (_event, folderPath: string) => buildBugLog(checkServerFolder(folderPath)))
+ipcMain.handle('sendBugReport', (_event, title: string, details: string, files: string[], logFolder?: string) =>
+  sendBugReport(String(title ?? ''), String(details ?? ''), Array.isArray(files) ? files.slice(0, 10).map(String) : [], logFolder ? checkServerFolder(String(logFolder)) : undefined)
 )
 ipcMain.handle('pickBugFiles', (event) => pickBugFiles(BrowserWindow.fromWebContents(event.sender)))
 ipcMain.handle('bugFileInfo', (_event, file: string) => bugFileInfo(String(file)))

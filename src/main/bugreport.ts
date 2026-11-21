@@ -8,6 +8,8 @@ import path from 'path'
 import { getAppSettings } from './appsettings'
 import type { BugFile, MyBugReport } from '../shared-types'
 import { notify } from './notify'
+import { getLog } from './runner'
+import { readServerInfo } from './servers'
 
 export const BUG_MAX_BYTES = 4 * 1024 * 1024 // 중계 서버(Netlify 함수) 요청 한도 안에 들어가게 (파일당 4MB)
 export const BUG_MAX_FILES = 10
@@ -44,6 +46,60 @@ export function bugMessage(title: string, details: string, fileNames: string[] =
   }
 }
 
+// ---------- 서버 로그 첨부 ----------
+// 문제가 생긴 서버의 최근 콘솔과 마지막 크래시 보고서를 모아 보낸다. 보내기 전에 컴퓨터 사용자 이름·IP·이메일은 지운다
+const LOG_LINES = 300
+const CRASH_LINES = 250
+const LOG_MAX_BYTES = 900 * 1024
+const LOG_NAME = 'server-log.txt'
+
+// 개인 정보를 지운다: 윈도우 사용자 폴더 이름, IP 주소(내 컴퓨터 주소 제외), 이메일
+const OCTET = String.raw`(?:25[0-5]|2[0-4]\d|1?\d?\d)`
+// 접속 로그의 IP는 "/1.2.3.4:5555"나 "1.2.3.4:25565" 모양이다. 4자리 모드 버전(1.1.7.10 등)은 지우지 않도록 이 모양일 때만 지운다
+const IP = String.raw`${OCTET}(?:\.${OCTET}){3}`
+const NOT_LOCAL = String.raw`(?!127\.0\.0\.1(?![\w.]))(?!0\.0\.0\.0(?![\w.]))`
+const IP_RE = new RegExp(String.raw`(?<=/)${NOT_LOCAL}${IP}(?![\w.-])|(?<![\w.-])${NOT_LOCAL}${IP}(?=:\d{2,5}\b)`, 'g')
+export function redactLog(text: string): string {
+  return String(text)
+    .replace(/[A-Za-z]:[\\/]+Users[\\/]+[^\\/\s"')\]]+/gi, 'C:\\Users\\<user>')
+    .replace(IP_RE, '<ip>')
+    .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, '<email>')
+}
+
+// 서버 하나의 첨부용 로그. 서버를 못 읽으면 오류
+export function buildBugLog(folderPath: string): { text: string; lines: number } {
+  const info = readServerInfo(folderPath) // 폴더가 서버가 아니면 여기서 오류가 난다
+  const out: string[] = []
+  const modsDir = path.join(folderPath, info.software === 'paper' || info.software === 'purpur' ? 'plugins' : 'mods')
+  let mods = 0
+  try {
+    mods = fs.readdirSync(modsDir).filter((f) => /\.jar$/i.test(f)).length
+  } catch {
+    // 모드 폴더가 없는 서버
+  }
+  out.push(`App: MC CubePanel ${app.getVersion()} / ${os.release()} (${process.arch})`)
+  out.push(`Server: ${info.software ?? 'vanilla'} ${info.mcVersion ?? '?'}${info.loaderVersion ? ` (loader ${info.loaderVersion})` : ''}, memory ${info.memoryMb ?? '?'}MB, ${mods} mods/plugins`)
+  out.push('', `===== console (last ${LOG_LINES} lines) =====`)
+  out.push(...getLog(folderPath).slice(-LOG_LINES))
+  try {
+    const dir = path.join(folderPath, 'crash-reports')
+    const newest = fs
+      .readdirSync(dir)
+      .filter((f) => /\.txt$/i.test(f))
+      .map((f) => ({ f, t: fs.statSync(path.join(dir, f)).mtimeMs }))
+      .sort((a, b) => b.t - a.t)[0]
+    if (newest) {
+      out.push('', `===== latest crash report (${newest.f}) =====`)
+      out.push(...fs.readFileSync(path.join(dir, newest.f), 'utf8').split(/\r?\n/).slice(0, CRASH_LINES))
+    }
+  } catch {
+    // 크래시 보고서가 없다
+  }
+  let text = redactLog(out.map((l) => (l.length > 600 ? l.slice(0, 600) + '…' : l)).join('\n'))
+  if (Buffer.byteLength(text) > LOG_MAX_BYTES) text = text.slice(-Math.floor(LOG_MAX_BYTES / 2)) // 너무 크면 뒤쪽(최근)만
+  return { text, lines: text.split('\n').length }
+}
+
 // 첨부할 수 있는 파일인지 보고 정보를 돌려준다 (사진·영상만, 4MB 이하)
 export function bugFileInfo(file: string): BugFile {
   const p = path.resolve(String(file))
@@ -78,22 +134,29 @@ async function post(url: string, body: FormData | string): Promise<string> {
   return res.text()
 }
 
-export async function sendBugReport(title: string, details: string, files: string[] = []): Promise<void> {
+export async function sendBugReport(title: string, details: string, files: string[] = [], logFolder?: string): Promise<void> {
   if (!String(title ?? '').trim() && !String(details ?? '').trim()) throw new Error('무슨 문제인지 적어 주세요.')
   const url = hook()
   if (!url) throw new Error('이 버전에서는 제보를 보낼 수 없어요. 앱을 업데이트해 주세요.')
   const wait = lastSent + GAP_MS - Date.now()
   if (wait > 0) throw new Error(`방금 제보를 보냈어요. ${Math.ceil(wait / 1000)}초 뒤에 다시 보낼 수 있어요.`)
   const list = files.slice(0, BUG_MAX_FILES).map(bugFileInfo)
+  const log = logFolder ? buildBugLog(logFolder) : null // 서버 로그 (사용자가 고른 경우만)
   lastSent = Date.now()
   try {
-    const sent = await post(url, JSON.stringify(bugMessage(title, details, list.map((f) => f.name))))
+    const sent = await post(url, JSON.stringify(bugMessage(title, details, [...list.map((f) => f.name), ...(log ? [LOG_NAME] : [])])))
     remember(sent, String(title ?? '').trim() || String(details ?? '').trim().slice(0, 60), String(details ?? '').trim().slice(0, 4000))
     // 파일은 한 개씩 (여러 개를 한 번에 보내면 합친 크기 한도에 걸린다)
     for (const f of list) {
       const form = new FormData()
       form.append('payload_json', JSON.stringify({ username: 'MC CubePanel Bug Report', allowed_mentions: { parse: [] } }))
       form.append('files[0]', new Blob([new Uint8Array(fs.readFileSync(f.path))]), f.name)
+      await post(url, form)
+    }
+    if (log) {
+      const form = new FormData()
+      form.append('payload_json', JSON.stringify({ username: 'MC CubePanel Bug Report', allowed_mentions: { parse: [] } }))
+      form.append('files[0]', new Blob([log.text], { type: 'text/plain' }), LOG_NAME)
       await post(url, form)
     }
   } catch (e) {

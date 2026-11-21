@@ -2,6 +2,7 @@ import { Cpu, Layers, MessageSquare, Package, Save, Swords, Timer, Users, Wrench
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useLeaveAnimation } from './leave'
 import { PAPER_FIELDS, type PaperField, type ServerAutomation, type ServerSettings, type Software } from '../../shared-types'
+import { DiscordRows } from './DiscordHook'
 import Select from './Select'
 import { Confirm, Loading, Modal, useToast } from './ui'
 import VersionSection, { versionLabel, type PickedVersion } from './VersionSection'
@@ -411,6 +412,7 @@ export default function SettingsDialog({ folderPath, serverOn, mcVersion, softwa
             }
           />
         )}
+        {tab === '자동' && <DiscordRows folderPath={folderPath} />}
         {tab === 'Paper' && settings.paper && (
           <PaperRows
             values={settings.paper}

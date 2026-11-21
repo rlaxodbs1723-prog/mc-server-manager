@@ -7,6 +7,7 @@ import https from 'https'
 import dns from 'dns'
 import { patchServerInfo, readServerInfo } from './servers'
 import { serverPort } from './runner'
+import { publicIpFromWeb } from './upnp'
 
 // 시험용: MCSM_DOMAIN_RELAY로 다른 주소를 쓴다
 const RELAY = (): string => process.env.MCSM_DOMAIN_RELAY ?? 'https://cubepanel.kr/api/domain'
@@ -21,6 +22,19 @@ export function cleanDomainName(raw: string): string {
   if (!NAME_RE.test(name)) throw new Error('이름은 영어 소문자, 숫자, 하이픈(-)으로 3~20자로 적어 주세요. (하이픈은 처음과 끝에 쓸 수 없어요)')
   return name
 }
+
+// 잠깐 실패한 것(인터넷이 순간 끊김, DNS 서버가 바쁨)은 transient라서 다시 해 본다. "이미 쓰는 이름" 같은 확정된 오류는 다시 하지 않는다
+class DomainError extends Error {
+  constructor(
+    message: string,
+    readonly transient = false
+  ) {
+    super(message)
+  }
+}
+const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
+// 다시 해 보기 전에 기다리는 시간 (시험용: MCSM_DOMAIN_RETRY_MS)
+const retryWaits = (): number[] => (process.env.MCSM_DOMAIN_RETRY_MS ? [Number(process.env.MCSM_DOMAIN_RETRY_MS), Number(process.env.MCSM_DOMAIN_RETRY_MS)] : [3000, 8000])
 
 const MESSAGES: Record<string, string> = {
   name: '이름은 영어 소문자, 숫자, 하이픈(-)으로 3~20자로 적어 주세요.',
@@ -63,7 +77,7 @@ async function call(body: Record<string, unknown>, timeoutMs = 15000): Promise<{
       res = await postJson(RELAY(), payload, timeoutMs)
     }
   } catch {
-    throw new Error('주소를 만드는 서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.')
+    throw new DomainError('주소를 만드는 서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.', true)
   }
   let out: { ok?: boolean; error?: string; host?: string } | null = null
   try {
@@ -71,8 +85,44 @@ async function call(body: Record<string, unknown>, timeoutMs = 15000): Promise<{
   } catch {
     out = null
   }
-  if (!out?.ok) throw new Error(MESSAGES[out?.error ?? ''] ?? '이름 주소를 만들지 못했어요. 잠시 뒤에 다시 해 주세요.')
+  if (!out?.ok) {
+    const known = MESSAGES[out?.error ?? '']
+    // 'dns'(주소를 만드는 곳이 바쁨)와 알 수 없는 오류(서버 점검 중 등)는 잠깐일 수 있다
+    throw new DomainError(known ?? '이름 주소를 만들지 못했어요. 잠시 뒤에 다시 해 주세요.', out?.error === 'dns' || !known)
+  }
   return out
+}
+
+// 잠깐 실패하면 다시 해 본다 (최대 3번)
+async function callRetry(body: Record<string, unknown>): Promise<{ host?: string }> {
+  const waits = retryWaits()
+  for (let i = 0; ; i++) {
+    try {
+      return await call(body)
+    } catch (e) {
+      if (!(e instanceof DomainError && e.transient) || i >= waits.length) throw e
+      await sleep(waits[i])
+    }
+  }
+}
+
+// 등록한 뒤 이름 주소가 정말 내 공인 IP를 가리키는지 확인한다. 아니면(공인 IP가 바뀌었는데 예전 기록이 남았거나 갱신이 안 퍼졌을 때) 한 번 다시 등록한다.
+// 서버 켜기를 기다리게 하지 않고 뒤에서 하고, 못 확인하면(인터넷이 없거나 IP를 못 알아냄) 아무것도 하지 않는다
+async function verifyDomain(host: string, body: Record<string, unknown>): Promise<void> {
+  try {
+    await sleep(4000)
+    const ip = await publicIpFromWeb()
+    if (!ip) return
+    const resolver = new dns.promises.Resolver()
+    resolver.setServers(['1.1.1.1', '8.8.8.8']) // 내 컴퓨터가 기억한 옛 답이 아니라 바깥 DNS에 묻는다
+    const points = async (): Promise<boolean> => (await resolver.resolve4(host).catch(() => [] as string[])).includes(ip)
+    if (await points()) return
+    await callRetry(body).catch(() => undefined)
+    await sleep(6000)
+    await points()
+  } catch {
+    // 확인하지 못해도 서버 열기에는 영향이 없다
+  }
 }
 
 // 서버를 만들기 전에 이 이름을 쓸 수 있는지 확인한다. 'free' 쓸 수 있음, 'taken' 이미 쓰는 이름, 'full' 이름은 비었지만 지금은 새 주소를 만들 자리가 없음. 아무것도 만들지 않는다
@@ -158,13 +208,14 @@ export async function refreshDomain(folderPath: string, tunnelAddress?: string):
     // 배드락은 터널 주소로 이름을 이어 줄 수 없다 (SRV를 못 읽는다)
     if (bedrock && tunnelAddress) return null
     const t = tunnelAddress ? await tunnelTarget(tunnelAddress) : null
-    const out = await call(
-      t
-        ? { action: 'claim', name: d.name, key: d.key, port: t.port, target: t.target }
-        : { action: 'claim', name: d.name, key: d.key, port: serverPort(folderPath), ...(bedrock && { bedrock: true }) }
-    )
+    const body = t
+      ? { action: 'claim', name: d.name, key: d.key, port: t.port, target: t.target }
+      : { action: 'claim', name: d.name, key: d.key, port: serverPort(folderPath), ...(bedrock && { bedrock: true }) }
+    const out = await callRetry(body)
     problems.delete(folderPath)
-    return out.host ?? `${d.name}.${DOMAIN_BASE}`
+    const host = out.host ?? `${d.name}.${DOMAIN_BASE}`
+    if (!t && !process.env.MCSM_DOMAIN_RELAY) void verifyDomain(host, body) // 시험용 중계를 쓸 때는 인터넷에 묻지 않는다
+    return host
   } catch (e) {
     problems.set(folderPath, e instanceof Error ? e.message : String(e))
     return null
